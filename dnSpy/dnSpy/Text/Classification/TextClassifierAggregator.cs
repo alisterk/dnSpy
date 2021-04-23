@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using dnSpy.Contracts.Text.Classification;
 using Microsoft.VisualStudio.Text;
@@ -34,17 +35,23 @@ namespace dnSpy.Text.Classification {
 		readonly ITextClassifier[] textClassifiers;
 
 		public TextClassifierAggregator(IClassificationTypeRegistryService classificationTypeRegistryService, IEnumerable<ITextClassifier> textClassifiers) {
-			if (classificationTypeRegistryService == null)
-				throw new ArgumentNullException(nameof(classificationTypeRegistryService));
-			if (textClassifiers == null)
+			if (textClassifiers is null)
 				throw new ArgumentNullException(nameof(textClassifiers));
-			this.classificationTypeRegistryService = classificationTypeRegistryService;
+			this.classificationTypeRegistryService = classificationTypeRegistryService ?? throw new ArgumentNullException(nameof(classificationTypeRegistryService));
 			this.textClassifiers = textClassifiers.ToArray();
 		}
 
 		sealed class TextClassificationTagComparer : IComparer<TextClassificationTag> {
 			public static readonly TextClassificationTagComparer Instance = new TextClassificationTagComparer();
-			public int Compare(TextClassificationTag x, TextClassificationTag y) => x.Span.Start - y.Span.Start;
+			public int Compare([AllowNull] TextClassificationTag x, [AllowNull] TextClassificationTag y) {
+				if ((object?)x == y)
+					return 0;
+				if (x is null)
+					return -1;
+				if (y is null)
+					return 1;
+				return x.Span.Start - y.Span.Start;
+			}
 		}
 
 		public IEnumerable<TextClassificationTag> GetTags(TextClassifierContext context) {

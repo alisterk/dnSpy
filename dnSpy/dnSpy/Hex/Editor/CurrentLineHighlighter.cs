@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -44,9 +44,7 @@ namespace dnSpy.Hex.Editor {
 		readonly HexEditorFormatMapService editorFormatMapService;
 
 		[ImportingConstructor]
-		CurrentLineHighlighterWpfHexViewCreationListener(HexEditorFormatMapService editorFormatMapService) {
-			this.editorFormatMapService = editorFormatMapService;
-		}
+		CurrentLineHighlighterWpfHexViewCreationListener(HexEditorFormatMapService editorFormatMapService) => this.editorFormatMapService = editorFormatMapService;
 
 		public override void HexViewCreated(WpfHexView hexView) =>
 			hexView.Properties.GetOrCreateSingletonProperty(() => new CurrentLineHighlighter(hexView, editorFormatMapService.GetEditorFormatMap(hexView)));
@@ -56,7 +54,7 @@ namespace dnSpy.Hex.Editor {
 	}
 
 	sealed class CurrentLineHighlighter {
-#pragma warning disable 0169
+#pragma warning disable CS0169
 		[Export(typeof(HexAdornmentLayerDefinition))]
 		[VSUTIL.Name(PredefinedHexAdornmentLayers.CurrentLineHighlighter)]
 		[VSUTIL.Order(After = PredefinedHexAdornmentLayers.BottomLayer, Before = PredefinedHexAdornmentLayers.TopLayer)]
@@ -66,31 +64,27 @@ namespace dnSpy.Hex.Editor {
 		[VSUTIL.Order(Before = PredefinedHexAdornmentLayers.TextMarker)]
 		[VSUTIL.Order(Before = PredefinedHexAdornmentLayers.GlyphTextMarker)]
 		[VSUTIL.Order(After = PredefinedHexAdornmentLayers.Outlining)]
-		static HexAdornmentLayerDefinition theAdornmentLayerDefinition;
-#pragma warning restore 0169
+		static HexAdornmentLayerDefinition? theAdornmentLayerDefinition;
+#pragma warning restore CS0169
 
 		readonly WpfHexView wpfHexView;
 		readonly VSTC.IEditorFormatMap editorFormatMap;
 		readonly CurrentLineHighlighterElement currentLineHighlighterElement;
-		HexAdornmentLayer adornmentLayer;
+		HexAdornmentLayer? adornmentLayer;
 		bool isActive;
 		bool selectionIsEmpty;
 		bool enabled;
 
 		public CurrentLineHighlighter(WpfHexView wpfHexView, VSTC.IEditorFormatMap editorFormatMap) {
-			if (wpfHexView == null)
-				throw new ArgumentNullException(nameof(wpfHexView));
-			if (editorFormatMap == null)
-				throw new ArgumentNullException(nameof(editorFormatMap));
-			this.wpfHexView = wpfHexView;
-			this.editorFormatMap = editorFormatMap;
+			this.wpfHexView = wpfHexView ?? throw new ArgumentNullException(nameof(wpfHexView));
+			this.editorFormatMap = editorFormatMap ?? throw new ArgumentNullException(nameof(editorFormatMap));
 			currentLineHighlighterElement = new CurrentLineHighlighterElement();
 			wpfHexView.Closed += WpfHexView_Closed;
 			wpfHexView.Options.OptionChanged += Options_OptionChanged;
 			UpdateEnableState();
 		}
 
-		void Options_OptionChanged(object sender, VSTE.EditorOptionChangedEventArgs e) {
+		void Options_OptionChanged(object? sender, VSTE.EditorOptionChangedEventArgs e) {
 			if (e.OptionId == DefaultWpfHexViewOptions.EnableHighlightCurrentLineName)
 				UpdateEnableState();
 		}
@@ -99,7 +93,7 @@ namespace dnSpy.Hex.Editor {
 		void UpdateEnableState() {
 			enabled = wpfHexView.Options.IsHighlightCurrentLineEnabled();
 			if (enabled) {
-				if (adornmentLayer == null)
+				if (adornmentLayer is null)
 					adornmentLayer = wpfHexView.GetAdornmentLayer(PredefinedHexAdornmentLayers.CurrentLineHighlighter);
 				if (!hasHookedEvents) {
 					RegisterEnabledEvents();
@@ -144,6 +138,7 @@ namespace dnSpy.Hex.Editor {
 				adornmentLayer?.RemoveAllAdornments();
 				return;
 			}
+			Debug2.Assert(adornmentLayer is not null);
 
 			var line = wpfHexView.Caret.ContainingHexViewLine;
 			if (line.IsVisible()) {
@@ -157,10 +152,10 @@ namespace dnSpy.Hex.Editor {
 				adornmentLayer.RemoveAllAdornments();
 		}
 
-		void WpfHexView_LayoutChanged(object sender, HexViewLayoutChangedEventArgs e) => PositionLineElement();
-		void Caret_PositionChanged(object sender, HexCaretPositionChangedEventArgs e) => PositionLineElement();
+		void WpfHexView_LayoutChanged(object? sender, HexViewLayoutChangedEventArgs e) => PositionLineElement();
+		void Caret_PositionChanged(object? sender, HexCaretPositionChangedEventArgs e) => PositionLineElement();
 
-		void Selection_SelectionChanged(object sender, EventArgs e) {
+		void Selection_SelectionChanged(object? sender, EventArgs e) {
 			bool newSelectionIsEmpty = wpfHexView.Selection.IsEmpty;
 			if (selectionIsEmpty == newSelectionIsEmpty)
 				return;
@@ -168,8 +163,8 @@ namespace dnSpy.Hex.Editor {
 			PositionLineElement();
 		}
 
-		void WpfHexView_GotAggregateFocus(object sender, EventArgs e) => UpdateFocus();
-		void WpfHexView_LostAggregateFocus(object sender, EventArgs e) => UpdateFocus();
+		void WpfHexView_GotAggregateFocus(object? sender, EventArgs e) => UpdateFocus();
+		void WpfHexView_LostAggregateFocus(object? sender, EventArgs e) => UpdateFocus();
 
 		void UpdateFocus() {
 			bool newIsActive = wpfHexView.HasAggregateFocus;
@@ -185,14 +180,14 @@ namespace dnSpy.Hex.Editor {
 			currentLineHighlighterElement.BackgroundBrush = TE.ResourceDictionaryUtilities.GetBackgroundBrush(props);
 		}
 
-		void EditorFormatMap_FormatMappingChanged(object sender, VSTC.FormatItemsEventArgs e) {
+		void EditorFormatMap_FormatMappingChanged(object? sender, VSTC.FormatItemsEventArgs e) {
 			if ((isActive && e.ChangedItems.Contains(CTC.ThemeClassificationTypeNameKeys.HexCurrentLine)) ||
 				(!isActive && e.ChangedItems.Contains(CTC.ThemeClassificationTypeNameKeys.HexCurrentLineNoFocus))) {
 				UpdateLineElementBrushes();
 			}
 		}
 
-		void WpfHexView_Closed(object sender, EventArgs e) {
+		void WpfHexView_Closed(object? sender, EventArgs e) {
 			wpfHexView.Closed -= WpfHexView_Closed;
 			wpfHexView.Options.OptionChanged -= Options_OptionChanged;
 			UnregisterEnabledEvents();
@@ -203,8 +198,8 @@ namespace dnSpy.Hex.Editor {
 	sealed class CurrentLineHighlighterElement : UIElement {
 		const int PEN_THICKNESS = 2;
 
-		public Brush BackgroundBrush {
-			get { return backgroundBrush; }
+		public Brush? BackgroundBrush {
+			get => backgroundBrush;
 			set {
 				if (!TWPF.BrushComparer.Equals(backgroundBrush, value)) {
 					backgroundBrush = value;
@@ -212,14 +207,14 @@ namespace dnSpy.Hex.Editor {
 				}
 			}
 		}
-		Brush backgroundBrush;
+		Brush? backgroundBrush;
 
-		public Brush ForegroundBrush {
-			get { return foregroundBrush; }
+		public Brush? ForegroundBrush {
+			get => foregroundBrush;
 			set {
 				if (!TWPF.BrushComparer.Equals(foregroundBrush, value)) {
 					foregroundBrush = value;
-					if (foregroundBrush == null)
+					if (foregroundBrush is null)
 						pen = null;
 					else {
 						pen = new Pen(foregroundBrush, PEN_THICKNESS);
@@ -231,17 +226,17 @@ namespace dnSpy.Hex.Editor {
 				}
 			}
 		}
-		Brush foregroundBrush;
-		Pen pen;
+		Brush? foregroundBrush;
+		Pen? pen;
 
 		Rect geometryRect;
-		Geometry geometry;
+		Geometry? geometry;
 
 		public void SetLine(HexViewLine line, double width) {
-			if (line == null)
+			if (line is null)
 				throw new ArgumentNullException(nameof(line));
 			var newRect = new Rect(PEN_THICKNESS / 2, PEN_THICKNESS / 2, Math.Max(0, width - PEN_THICKNESS), Math.Max(0, line.TextHeight + HexFormattedLineImpl.DEFAULT_BOTTOM_SPACE - PEN_THICKNESS));
-			if (geometry != null && newRect == geometryRect)
+			if (geometry is not null && newRect == geometryRect)
 				return;
 			geometryRect = newRect;
 			if (geometryRect.Height == 0 || geometryRect.Width == 0)
@@ -256,7 +251,7 @@ namespace dnSpy.Hex.Editor {
 
 		protected override void OnRender(DrawingContext drawingContext) {
 			base.OnRender(drawingContext);
-			if (geometry != null)
+			if (geometry is not null)
 				drawingContext.DrawGeometry(BackgroundBrush, pen, geometry);
 		}
 	}

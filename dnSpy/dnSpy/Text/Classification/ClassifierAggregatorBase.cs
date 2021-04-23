@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using dnSpy.Contracts.Text.Classification;
 using dnSpy.Contracts.Text.Tagging;
@@ -33,23 +34,17 @@ namespace dnSpy.Text.Classification {
 		readonly ISynchronousTagAggregator<IClassificationTag> tagAggregator;
 		readonly ITextBuffer textBuffer;
 
-		public event EventHandler<ClassificationChangedEventArgs> ClassificationChanged;
+		public event EventHandler<ClassificationChangedEventArgs>? ClassificationChanged;
 
 		protected ClassifierAggregatorBase(ISynchronousTagAggregator<IClassificationTag> tagAggregator, IClassificationTypeRegistryService classificationTypeRegistryService, ITextBuffer textBuffer) {
-			if (tagAggregator == null)
-				throw new ArgumentNullException(nameof(tagAggregator));
-			if (classificationTypeRegistryService == null)
-				throw new ArgumentNullException(nameof(classificationTypeRegistryService));
-			if (textBuffer == null)
-				throw new ArgumentNullException(nameof(textBuffer));
-			this.classificationTypeRegistryService = classificationTypeRegistryService;
-			this.tagAggregator = tagAggregator;
-			this.textBuffer = textBuffer;
+			this.classificationTypeRegistryService = classificationTypeRegistryService ?? throw new ArgumentNullException(nameof(classificationTypeRegistryService));
+			this.tagAggregator = tagAggregator ?? throw new ArgumentNullException(nameof(tagAggregator));
+			this.textBuffer = textBuffer ?? throw new ArgumentNullException(nameof(textBuffer));
 			tagAggregator.TagsChanged += TagAggregator_TagsChanged;
 		}
 
-		void TagAggregator_TagsChanged(object sender, TagsChangedEventArgs e) {
-			if (ClassificationChanged == null)
+		void TagAggregator_TagsChanged(object? sender, TagsChangedEventArgs e) {
+			if (ClassificationChanged is null)
 				return;
 			foreach (var span in e.Span.GetSpans(textBuffer))
 				ClassificationChanged?.Invoke(this, new ClassificationChangedEventArgs(span));
@@ -57,7 +52,15 @@ namespace dnSpy.Text.Classification {
 
 		sealed class ClassificationSpanComparer : IComparer<ClassificationSpan> {
 			public static readonly ClassificationSpanComparer Instance = new ClassificationSpanComparer();
-			public int Compare(ClassificationSpan x, ClassificationSpan y) => x.Span.Start.Position - y.Span.Start.Position;
+			public int Compare([AllowNull] ClassificationSpan x, [AllowNull] ClassificationSpan y) {
+				if ((object?)x == y)
+					return 0;
+				if (x is null)
+					return -1;
+				if (y is null)
+					return 1;
+				return x.Span.Start.Position - y.Span.Start.Position;
+			}
 		}
 
 		public IList<ClassificationSpan> GetClassificationSpans(SnapshotSpan span) =>
@@ -67,18 +70,18 @@ namespace dnSpy.Text.Classification {
 			GetClassificationSpansCore(span, cancellationToken);
 
 		IList<ClassificationSpan> GetClassificationSpansCore(SnapshotSpan span, CancellationToken? cancellationToken) {
-			if (span.Snapshot == null)
+			if (span.Snapshot is null)
 				throw new ArgumentException();
 			if (span.Length == 0)
 				return Array.Empty<ClassificationSpan>();
 
 			var list = new List<ClassificationSpan>();
 			var targetSnapshot = span.Snapshot;
-			var tags = cancellationToken != null ? tagAggregator.GetTags(span, cancellationToken.Value) : tagAggregator.GetTags(span);
+			var tags = cancellationToken is not null ? tagAggregator.GetTags(span, cancellationToken.Value) : tagAggregator.GetTags(span);
 			foreach (var mspan in tags) {
 				foreach (var s in mspan.Span.GetSpans(textBuffer)) {
 					var overlap = span.Overlap(s.TranslateTo(targetSnapshot, SpanTrackingMode.EdgeExclusive));
-					if (overlap != null)
+					if (overlap is not null)
 						list.Add(new ClassificationSpan(overlap.Value, mspan.Tag.ClassificationType));
 				}
 			}

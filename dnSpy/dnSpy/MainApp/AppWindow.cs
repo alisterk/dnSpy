@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -23,6 +23,7 @@ using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Reflection;
+using System.Security.Principal;
 using System.Windows;
 using System.Windows.Input;
 using dnSpy.Contracts.App;
@@ -31,6 +32,7 @@ using dnSpy.Contracts.Documents.Tabs;
 using dnSpy.Contracts.Settings;
 using dnSpy.Controls;
 using dnSpy.Events;
+using dnSpy.Properties;
 
 namespace dnSpy.MainApp {
 	[Export, Export(typeof(IAppWindow))]
@@ -40,9 +42,9 @@ namespace dnSpy.MainApp {
 		public IAppStatusBar StatusBar => statusBar;
 		readonly AppStatusBar statusBar;
 
-		Window IAppWindow.MainWindow => mainWindow;
-		internal MainWindow MainWindow => mainWindow;
-		MainWindow mainWindow;
+		Window IAppWindow.MainWindow => mainWindow!;
+		internal MainWindow MainWindow => mainWindow!;
+		MainWindow? mainWindow;
 
 		public IWpfCommands MainWindowCommands => mainWindowCommands;
 		readonly IWpfCommands mainWindowCommands;
@@ -52,7 +54,11 @@ namespace dnSpy.MainApp {
 		public string AssemblyInformationalVersion => assemblyInformationalVersion;
 		readonly string assemblyInformationalVersion;
 
-		public IAppCommandLineArgs CommandLineArgs { get; set; }
+		public IAppCommandLineArgs CommandLineArgs {
+			get => commandLineArgs!;
+			set => commandLineArgs = value;
+		}
+		IAppCommandLineArgs? commandLineArgs;
 
 		sealed class UISettings {
 			static readonly Guid SETTINGS_GUID = new Guid("33E1988B-8EFF-4F4C-A064-FA99A7D0C64D");
@@ -66,6 +72,8 @@ namespace dnSpy.MainApp {
 
 			public UISettings(ISettingsService settingsService) {
 				this.settingsService = settingsService;
+				SavedWindowState = null!;
+				MainWindowControlState = null!;
 			}
 
 			public void Read() {
@@ -106,10 +114,10 @@ namespace dnSpy.MainApp {
 		static string CalculateAssemblyInformationalVersion(Assembly asm) {
 			var attrs = asm.GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false);
 			var attr = attrs.Length == 0 ? null : attrs[0] as AssemblyInformationalVersionAttribute;
-			Debug.Assert(attr != null);
-			if (attr != null)
+			Debug2.Assert(attr is not null);
+			if (attr is not null)
 				return attr.InformationalVersion;
-			return asm.GetName().Version.ToString();
+			return asm.GetName().Version!.ToString();
 		}
 
 		static readonly Rect DefaultWindowLocation = new Rect(10, 10, 1300, 730);
@@ -119,7 +127,19 @@ namespace dnSpy.MainApp {
 			sc.AddChild(stackedContent, StackedContentChildInfo.CreateVertical(new GridLength(1, GridUnitType.Star)));
 			sc.AddChild(statusBar, StackedContentChildInfo.CreateVertical(new GridLength(0, GridUnitType.Auto)));
 			mainWindow = new MainWindow(sc.UIObject);
-			AddTitleInfo(IntPtr.Size == 4 ? "x86" : "x64");
+			AddTitleInfo(IntPtr.Size == 4 ? "32-bit" : "64-bit");
+#if NETFRAMEWORK
+			AddTitleInfo(".NET Framework");
+#elif NET
+			AddTitleInfo(".NET");
+#else
+#error Unknown target framework
+#endif
+#if DEBUG
+			AddTitleInfo("Debug Build");
+#endif
+			if (IsAdministrator())
+				AddTitleInfo(dnSpy_Resources.User_Administrator);
 			wpfCommandService.Add(ControlConstants.GUID_MAINWINDOW, mainWindow);
 			new SavedWindowStateRestorer(mainWindow, uiSettings.SavedWindowState, DefaultWindowLocation);
 			mainWindow.Closing += MainWindow_Closing;
@@ -127,6 +147,11 @@ namespace dnSpy.MainApp {
 			mainWindow.GotKeyboardFocus += MainWindow_GotKeyboardFocus;
 			RefreshToolBar();
 			return mainWindow;
+		}
+
+		static bool IsAdministrator() {
+			using (var id = WindowsIdentity.GetCurrent())
+				return new WindowsPrincipal(id).IsInRole(WindowsBuiltInRole.Administrator);
 		}
 
 		void IDsLoaderContentProvider.SetLoadingContent(object content) {
@@ -140,24 +165,22 @@ namespace dnSpy.MainApp {
 			mainWindowControl.Initialize(StackedContentChildImpl.GetOrCreate(documentTabService.TabGroupService, documentTabService.TabGroupService.UIObject), uiSettings.MainWindowControlState);
 		}
 
-		void MainWindow_Closing(object sender, CancelEventArgs e) {
+		void MainWindow_Closing(object? sender, CancelEventArgs e) {
 			mainWindowClosing.Raise(this, e);
 			if (e.Cancel)
 				return;
 
-			uiSettings.SavedWindowState = new SavedWindowState(mainWindow);
+			uiSettings.SavedWindowState = new SavedWindowState(mainWindow!);
 			uiSettings.MainWindowControlState = mainWindowControl.CreateState();
 			uiSettings.Write();
 		}
 
-		void MainWindow_Closed(object sender, EventArgs e) {
-			mainWindowClosed.Raise(this, e);
-		}
+		void MainWindow_Closed(object? sender, EventArgs e) => mainWindowClosed.Raise(this, e);
 
-		void MainWindow_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) {
+		void MainWindow_GotKeyboardFocus(object? sender, KeyboardFocusChangedEventArgs e) {
 			if (e.NewFocus == MainWindow) {
 				var g = documentTabService.TabGroupService.ActiveTabGroup;
-				if (g != null && g.ActiveTabContent != null) {
+				if (g is not null && g.ActiveTabContent is not null) {
 					g.SetFocus(g.ActiveTabContent);
 					e.Handled = true;
 					return;
@@ -166,28 +189,25 @@ namespace dnSpy.MainApp {
 		}
 
 		public event EventHandler<CancelEventArgs> MainWindowClosing {
-			add { mainWindowClosing.Add(value); }
-			remove { mainWindowClosing.Remove(value); }
+			add => mainWindowClosing.Add(value);
+			remove => mainWindowClosing.Remove(value);
 		}
 		readonly WeakEventList<CancelEventArgs> mainWindowClosing;
 
 		public event EventHandler<EventArgs> MainWindowClosed {
-			add { mainWindowClosed.Add(value); }
-			remove { mainWindowClosed.Remove(value); }
+			add => mainWindowClosed.Add(value);
+			remove => mainWindowClosed.Remove(value);
 		}
 		readonly WeakEventList<EventArgs> mainWindowClosed;
 
 		public void RefreshToolBar() {
-			if (mainWindow != null)
+			if (mainWindow is not null)
 				appToolBar.Initialize(mainWindow);
 		}
 
-		void UpdateTitle() => mainWindow.Title = GetDefaultTitle();
+		void UpdateTitle() => mainWindow!.Title = GetDefaultTitle();
 
-		string GetDefaultTitle() {
-			var t = string.Format("dnSpy {0} ({1})", AssemblyInformationalVersion, string.Join(", ", titleInfos.ToArray()));
-			return t;
-		}
+		string GetDefaultTitle() => $"{Constants.DnSpy} {AssemblyInformationalVersion} ({string.Join(", ", titleInfos.ToArray())})";
 		readonly List<string> titleInfos = new List<string>();
 
 		public void AddTitleInfo(string info) {

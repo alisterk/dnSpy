@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -25,18 +25,18 @@ using dnSpy.Contracts.MVVM;
 namespace dnSpy.ToolBars {
 	sealed class ToolBarButtonVM : ViewModelBase {
 		public ICommand Command { get; }
-		public IInputElement CommandTarget { get; }
-		public string Header { get; }
+		public IInputElement? CommandTarget { get; }
+		public string? Header { get; }
 		public bool HasHeader => !string.IsNullOrEmpty(Header);
-		public string ToolTip { get; }
+		public string? ToolTip { get; }
 		public ImageReference ImageReference { get; }
 
-		public ToolBarButtonVM(ICommand command, IInputElement commandTarget, string header, string toolTip, ImageReference? imageReference) {
+		public ToolBarButtonVM(ICommand command, IInputElement? commandTarget, string? header, string? toolTip, ImageReference? imageReference) {
 			Command = command;
 			CommandTarget = commandTarget;
 			Header = string.IsNullOrEmpty(header) ? null : header;
 			ToolTip = string.IsNullOrEmpty(toolTip) ? null : toolTip;
-			ImageReference = imageReference ?? default(ImageReference);
+			ImageReference = imageReference ?? default;
 		}
 	}
 }

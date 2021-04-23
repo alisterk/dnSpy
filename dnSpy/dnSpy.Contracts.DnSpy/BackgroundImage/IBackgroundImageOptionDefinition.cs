@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -25,7 +25,7 @@ using Microsoft.VisualStudio.Text.Editor;
 namespace dnSpy.Contracts.BackgroundImage {
 	/// <summary>
 	/// Defines background image options. Use <see cref="ExportBackgroundImageOptionDefinitionAttribute"/>
-	/// to export an instance. See also <see cref="IBackgroundImageOptionDefinition2"/>
+	/// to export an instance.
 	/// </summary>
 	public interface IBackgroundImageOptionDefinition {
 		/// <summary>
@@ -52,7 +52,7 @@ namespace dnSpy.Contracts.BackgroundImage {
 		/// Gets the default settings or null if none
 		/// </summary>
 		/// <returns></returns>
-		DefaultImageSettings GetDefaultImageSettings();
+		DefaultImageSettings? GetDefaultImageSettings();
 
 		/// <summary>
 		/// Returns true if the text view should use this instance's background image settings
@@ -60,13 +60,7 @@ namespace dnSpy.Contracts.BackgroundImage {
 		/// <param name="textView">Text view</param>
 		/// <returns></returns>
 		bool IsSupported(ITextView textView);
-	}
 
-	/// <summary>
-	/// Defines background image options. Use <see cref="ExportBackgroundImageOptionDefinitionAttribute"/>
-	/// to export an instance.
-	/// </summary>
-	public interface IBackgroundImageOptionDefinition2 : IBackgroundImageOptionDefinition {
 		/// <summary>
 		/// Returns true if the hex view should use this instance's background image settings
 		/// </summary>
@@ -91,9 +85,7 @@ namespace dnSpy.Contracts.BackgroundImage {
 		/// </summary>
 		/// <param name="order">Order of this instance, eg. <see cref="BackgroundImageOptionDefinitionConstants.AttrOrder_Default"/></param>
 		public ExportBackgroundImageOptionDefinitionAttribute(double order)
-			: base(typeof(IBackgroundImageOptionDefinition)) {
-			Order = order;
-		}
+			: base(typeof(IBackgroundImageOptionDefinition)) => Order = order;
 
 		/// <summary>
 		/// Order of this instance

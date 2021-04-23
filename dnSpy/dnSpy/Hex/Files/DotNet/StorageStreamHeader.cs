@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -21,15 +21,13 @@ using System;
 using dnSpy.Contracts.Hex;
 
 namespace dnSpy.Hex.Files.DotNet {
-	struct StorageStreamHeader {
+	readonly struct StorageStreamHeader {
 		public string Name { get; }
 		public HexSpan Span { get; }
 		public HexSpan DataSpan { get; }
 		public int StringLength { get; }
 		public StorageStreamHeader(string name, HexSpan span, HexSpan dataSpan, int stringLength) {
-			if (name == null)
-				throw new ArgumentNullException(nameof(name));
-			Name = name;
+			Name = name ?? throw new ArgumentNullException(nameof(name));
 			Span = span;
 			DataSpan = dataSpan;
 			StringLength = stringLength;

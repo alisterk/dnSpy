@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -40,7 +40,7 @@ namespace dnSpy.Contracts.TreeView {
 		/// <summary>See <see cref="ExportTreeNodeDataProviderAttribute.Order"/></summary>
 		double Order { get; }
 		/// <summary>See <see cref="ExportTreeNodeDataProviderAttribute.Guid"/></summary>
-		string Guid { get; }
+		string? Guid { get; }
 	}
 
 	/// <summary>
@@ -50,9 +50,7 @@ namespace dnSpy.Contracts.TreeView {
 	public sealed class ExportTreeNodeDataProviderAttribute : ExportAttribute, ITreeNodeDataProviderMetadata {
 		/// <summary>Constructor</summary>
 		public ExportTreeNodeDataProviderAttribute()
-			: base(typeof(ITreeNodeDataProvider)) {
-			Order = double.MaxValue;
-		}
+			: base(typeof(ITreeNodeDataProvider)) => Order = double.MaxValue;
 
 		/// <summary>
 		/// Order of this instance
@@ -63,6 +61,6 @@ namespace dnSpy.Contracts.TreeView {
 		/// Guid of owner <see cref="TreeNodeData"/> that will receive the new
 		/// <see cref="TreeNodeData"/> nodes
 		/// </summary>
-		public string Guid { get; set; }
+		public string? Guid { get; set; }
 	}
 }

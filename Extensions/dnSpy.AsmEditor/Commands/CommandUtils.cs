@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -25,9 +25,7 @@ using dnSpy.Contracts.Documents.Tabs;
 namespace dnSpy.AsmEditor.Commands {
 	static class CommandUtils {
 		static readonly RoutedCommand SettingsRoutedCommand = new RoutedCommand("Settings", typeof(CommandUtils));
-		static CommandUtils() {
-			SettingsRoutedCommand.InputGestures.Add(new KeyGesture(Key.Enter, ModifierKeys.Alt));
-		}
+		static CommandUtils() => SettingsRoutedCommand.InputGestures.Add(new KeyGesture(Key.Enter, ModifierKeys.Alt));
 
 		public static void AddRemoveCommand(this IWpfCommandService wpfCommandService, EditMenuHandler settingsCmd) {
 			var cmds = wpfCommandService.GetCommands(ControlConstants.GUID_DOCUMENT_TREEVIEW);
@@ -39,12 +37,12 @@ namespace dnSpy.AsmEditor.Commands {
 			cmds.Add(EditingCommands.Delete, new CodeContextMenuHandlerCommandProxy(settingsCmd, documentTabService), ModifierKeys.None, Key.Delete);
 		}
 
-		public static void AddSettingsCommand(this IWpfCommandService wpfCommandService, IDocumentTabService documentTabService, EditMenuHandler treeViewCmd, CodeContextMenuHandler textEditorCmd) {
-			if (treeViewCmd != null) {
+		public static void AddSettingsCommand(this IWpfCommandService wpfCommandService, IDocumentTabService documentTabService, EditMenuHandler? treeViewCmd, CodeContextMenuHandler? textEditorCmd) {
+			if (treeViewCmd is not null) {
 				var cmds = wpfCommandService.GetCommands(ControlConstants.GUID_DOCUMENT_TREEVIEW);
 				cmds.Add(SettingsRoutedCommand, new EditMenuHandlerCommandProxy(treeViewCmd));
 			}
-			if (textEditorCmd != null) {
+			if (textEditorCmd is not null) {
 				var cmds = wpfCommandService.GetCommands(ControlConstants.GUID_DOCUMENTVIEWER_UICONTEXT);
 				cmds.Add(SettingsRoutedCommand, new CodeContextMenuHandlerCommandProxy(textEditorCmd, documentTabService), ModifierKeys.Alt, Key.Enter);
 			}

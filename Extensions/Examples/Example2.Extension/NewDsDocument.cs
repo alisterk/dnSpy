@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel.Composition;
 using System.IO;
 using dnSpy.Contracts.Decompiler;
@@ -28,27 +28,25 @@ namespace Example2.Extension {
 		// Used by MyDsDocumentNode.Decompile() to show the file in the text editor
 		public string Text {
 			get {
-				if (text != null)
+				if (text is not null)
 					return text;
 				try {
 					return text = File.ReadAllText(Filename);
 				}
 				catch {
-					return text = string.Format("Couldn't read the file: {0}", Filename);
+					return text = $"Couldn't read the file: {Filename}";
 				}
 			}
 		}
-		string text;
+		string? text;
 
-		public static MyDsDocument TryCreate(string filename) {
+		public static MyDsDocument? TryCreate(string filename) {
 			if (!File.Exists(filename))
 				return null;
 			return new MyDsDocument(filename);
 		}
 
-		MyDsDocument(string filename) {
-			Filename = filename;
-		}
+		MyDsDocument(string filename) => Filename = filename;
 	}
 
 	// Gets called by the IDsDocumentService instance to create IDsDocument instances. If it's a .txt file
@@ -57,7 +55,7 @@ namespace Example2.Extension {
 	sealed class MyDsDocumentProvider : IDsDocumentProvider {
 		public double Order => 0;
 
-		public IDsDocument Create(IDsDocumentService documentService, DsDocumentInfo documentInfo) {
+		public IDsDocument? Create(IDsDocumentService documentService, DsDocumentInfo documentInfo) {
 			if (documentInfo.Type == MyDsDocument.THE_GUID)
 				return MyDsDocument.TryCreate(documentInfo.Name);
 			// Also check for normal files
@@ -66,7 +64,7 @@ namespace Example2.Extension {
 			return null;
 		}
 
-		public IDsDocumentNameKey CreateKey(IDsDocumentService documentService, DsDocumentInfo documentInfo) {
+		public IDsDocumentNameKey? CreateKey(IDsDocumentService documentService, DsDocumentInfo documentInfo) {
 			if (documentInfo.Type == MyDsDocument.THE_GUID)
 				return new FilenameKey(documentInfo.Name);  // Must match the key in MyDsDocument.Key
 			// Also check for normal files
@@ -90,9 +88,8 @@ namespace Example2.Extension {
 	// Gets called by dnSpy to create a DsDocumentNode
 	[ExportDsDocumentNodeProvider]
 	sealed class MyDsDocumentNodeProvider : IDsDocumentNodeProvider {
-		public DsDocumentNode Create(IDocumentTreeView documentTreeView, DsDocumentNode owner, IDsDocument document) {
-			var myDocument = document as MyDsDocument;
-			if (myDocument != null)
+		public DsDocumentNode? Create(IDocumentTreeView documentTreeView, DsDocumentNode? owner, IDsDocument document) {
+			if (document is MyDsDocument myDocument)
 				return new MyDsDocumentNode(myDocument);
 			return null;
 		}
@@ -110,9 +107,7 @@ namespace Example2.Extension {
 		public override Guid Guid => THE_GUID;
 
 		public MyDsDocumentNode(MyDsDocument document)
-			: base(document) {
-			this.document = document;
-		}
+			: base(document) => this.document = document;
 
 		protected override ImageReference GetIcon(IDotNetImageService dnImgMgr) => DsImages.TextFile;
 		protected override void WriteCore(ITextColorWriter output, IDecompiler decompiler, DocumentNodeWriteOptions options) =>

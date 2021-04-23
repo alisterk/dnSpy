@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -41,7 +41,7 @@ namespace dnSpy.Hex.Files.DnSpy {
 			this.hexFileImageReferenceProviders = hexFileImageReferenceProviders.ToArray();
 		}
 
-		public override HexFileStructureInfoProvider Create(HexView hexView) =>
+		public override HexFileStructureInfoProvider? Create(HexView hexView) =>
 			new DefaultHexFileStructureInfoProvider(toolTipCreatorFactory, hexFileImageReferenceProviders);
 	}
 
@@ -50,15 +50,11 @@ namespace dnSpy.Hex.Files.DnSpy {
 		readonly Lazy<HexFileImageReferenceProvider>[] hexFileImageReferenceProviders;
 
 		public DefaultHexFileStructureInfoProvider(ToolTipCreatorFactory toolTipCreatorFactory, Lazy<HexFileImageReferenceProvider>[] hexFileImageReferenceProviders) {
-			if (toolTipCreatorFactory == null)
-				throw new ArgumentNullException(nameof(toolTipCreatorFactory));
-			if (hexFileImageReferenceProviders == null)
-				throw new ArgumentNullException(nameof(hexFileImageReferenceProviders));
-			this.toolTipCreatorFactory = toolTipCreatorFactory;
-			this.hexFileImageReferenceProviders = hexFileImageReferenceProviders;
+			this.toolTipCreatorFactory = toolTipCreatorFactory ?? throw new ArgumentNullException(nameof(toolTipCreatorFactory));
+			this.hexFileImageReferenceProviders = hexFileImageReferenceProviders ?? throw new ArgumentNullException(nameof(hexFileImageReferenceProviders));
 		}
 
-		public override object GetToolTip(HexBufferFile file, ComplexData structure, HexPosition position) {
+		public override object? GetToolTip(HexBufferFile file, ComplexData structure, HexPosition position) {
 			var toolTipCreator = toolTipCreatorFactory.Create();
 			var contentCreator = toolTipCreator.ToolTipContentCreator;
 
@@ -71,7 +67,7 @@ namespace dnSpy.Hex.Files.DnSpy {
 		ImageReference GetImage(ComplexData structure, HexPosition position) {
 			foreach (var lz in hexFileImageReferenceProviders) {
 				var imgRef = lz.Value.GetImage(structure, position);
-				if (imgRef != null)
+				if (imgRef is not null)
 					return imgRef.Value;
 			}
 			return DsImages.FieldPublic;

@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2011 AlphaSierraPapa for the SharpDevelop Team
+// Copyright (c) 2011 AlphaSierraPapa for the SharpDevelop Team
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this
 // software and associated documentation files (the "Software"), to deal in the Software
@@ -33,22 +33,21 @@ namespace dnSpy.Documents.Tabs {
 
 		[ExportMenuItem(Header = "res:SearchMsdnCommand", Icon = DsImagesAttribute.Search, Group = MenuConstants.GROUP_CTX_DOCVIEWER_OTHER, Order = 10)]
 		sealed class CodeCommand : MenuItemBase {
-			public override bool IsVisible(IMenuItemContext context) => GetMemberRef(context) != null;
-			static IMemberRef GetMemberRef(IMenuItemContext context) => GetMemberRef(context, MenuConstants.GUIDOBJ_DOCUMENTVIEWERCONTROL_GUID);
+			public override bool IsVisible(IMenuItemContext context) => GetMemberRef(context) is not null;
+			static IMemberRef? GetMemberRef(IMenuItemContext context) => GetMemberRef(context, MenuConstants.GUIDOBJ_DOCUMENTVIEWERCONTROL_GUID);
 			public override void Execute(IMenuItemContext context) => SearchMsdn(GetMemberRef(context));
 
-			internal static IMemberRef GetMemberRef(IMenuItemContext context, string guid) {
+			internal static IMemberRef? GetMemberRef(IMenuItemContext context, string guid) {
 				if (context.CreatorObject.Guid != new Guid(guid))
 					return null;
-				var @ref = context.Find<TextReference>();
-				return @ref == null ? null : @ref.Reference as IMemberRef;
+				return context.Find<TextReference>()?.Reference as IMemberRef;
 			}
 		}
 
 		[ExportMenuItem(Header = "res:SearchMsdnCommand", Icon = DsImagesAttribute.Search, Group = MenuConstants.GROUP_CTX_SEARCH_OTHER, Order = 10)]
 		sealed class SearchCommand : MenuItemBase {
-			public override bool IsVisible(IMenuItemContext context) => GetMemberRef(context) != null;
-			static IMemberRef GetMemberRef(IMenuItemContext context) => CodeCommand.GetMemberRef(context, MenuConstants.GUIDOBJ_SEARCH_GUID);
+			public override bool IsVisible(IMenuItemContext context) => GetMemberRef(context) is not null;
+			static IMemberRef? GetMemberRef(IMenuItemContext context) => CodeCommand.GetMemberRef(context, MenuConstants.GUIDOBJ_SEARCH_GUID);
 			public override void Execute(IMenuItemContext context) => SearchMsdn(GetMemberRef(context));
 		}
 
@@ -62,18 +61,16 @@ namespace dnSpy.Documents.Tabs {
 				if (context.CreatorObject.Guid != new Guid(guid))
 					yield break;
 				var nodes = context.Find<TreeNodeData[]>();
-				if (nodes == null)
+				if (nodes is null)
 					yield break;
 				foreach (var node in nodes) {
-					var tokNode = node as IMDTokenNode;
-					if (tokNode != null) {
+					if (node is IMDTokenNode tokNode) {
 						if (IsPublic(tokNode.Reference as IMemberRef))
 							yield return node;
 						continue;
 					}
 
-					var nsNode = node as NamespaceNode;
-					if (nsNode != null) {
+					if (node is NamespaceNode nsNode) {
 						if (!string.IsNullOrEmpty(nsNode.Name))
 							yield return node;
 						continue;
@@ -89,7 +86,7 @@ namespace dnSpy.Documents.Tabs {
 			public override void Execute(IMenuItemContext context) => ExecuteInternal(GetNodes(context));
 		}
 
-		static IMemberDef ResolveDef(IMemberRef mr) {
+		static IMemberDef? ResolveDef(IMemberRef? mr) {
 			if (mr is ITypeDefOrRef)
 				return ((ITypeDefOrRef)mr).ResolveTypeDef();
 			if (mr is IMethod && ((IMethod)mr).IsMethod)
@@ -99,10 +96,10 @@ namespace dnSpy.Documents.Tabs {
 			return mr as IMemberDef;
 		}
 
-		static IMemberDef Resolve(IMemberRef memberRef) {
+		static IMemberDef? Resolve(IMemberRef? memberRef) {
 			var member = ResolveDef(memberRef);
 			var md = member as MethodDef;
-			if (md == null)
+			if (md is null)
 				return member;
 
 			if (md.SemanticsAttributes == 0)
@@ -142,41 +139,37 @@ namespace dnSpy.Documents.Tabs {
 			return member;
 		}
 
-		static bool IsPublic(IMemberRef memberRef) {
+		static bool IsPublic(IMemberRef? memberRef) {
 			var def = Resolve(memberRef);
 			if (def is TypeDef)
 				return IsAccessible((TypeDef)def);
 
 			var md = def as IMemberDef;
-			if (md == null)
+			if (md is null)
 				return false;
 			if (!IsAccessible(md.DeclaringType))
 				return false;
 
-			var method = def as MethodDef;
-			if (method != null)
+			if (def is MethodDef method)
 				return IsAccessible(method);
 
-			var field = def as FieldDef;
-			if (field != null)
+			if (def is FieldDef field)
 				return IsAccessible(field);
 
-			var prop = def as PropertyDef;
-			if (prop != null)
+			if (def is PropertyDef prop)
 				return IsAccessible(prop);
 
-			var evt = def as EventDef;
-			if (evt != null)
+			if (def is EventDef evt)
 				return IsAccessible(evt);
 
 			return false;
 		}
 
 		static bool IsAccessible(TypeDef type) {
-			if (type == null)
+			if (type is null)
 				return false;
 			while (true) {
-				if (type.DeclaringType == null)
+				if (type.DeclaringType is null)
 					break;
 				switch (type.Visibility) {
 				case TypeAttributes.NotPublic:
@@ -200,61 +193,65 @@ namespace dnSpy.Documents.Tabs {
 		}
 
 		static bool IsAccessible(MethodDef method) =>
-			method != null && (method.IsPublic || method.IsFamily || method.IsFamilyOrAssembly);
+			method is not null && (method.IsPublic || method.IsFamily || method.IsFamilyOrAssembly);
 
 		static bool IsAccessible(FieldDef field) =>
-			field != null && (field.IsPublic || field.IsFamily || field.IsFamilyOrAssembly);
+			field is not null && (field.IsPublic || field.IsFamily || field.IsFamilyOrAssembly);
 
-		static bool IsAccessible(PropertyDef prop) => prop.GetMethods.Any(m => IsAccessible(m)) ||
-	prop.SetMethods.Any(m => IsAccessible(m)) ||
-	prop.OtherMethods.Any(m => IsAccessible(m));
+		static bool IsAccessible(PropertyDef prop) =>
+			prop.GetMethods.Any(m => IsAccessible(m)) ||
+			prop.SetMethods.Any(m => IsAccessible(m)) ||
+			prop.OtherMethods.Any(m => IsAccessible(m));
 
-		static bool IsAccessible(EventDef evt) => IsAccessible(evt.AddMethod) ||
-	IsAccessible(evt.InvokeMethod) ||
-	IsAccessible(evt.RemoveMethod) ||
-	evt.OtherMethods.Any(m => IsAccessible(m));
+		static bool IsAccessible(EventDef evt) =>
+			IsAccessible(evt.AddMethod) ||
+			IsAccessible(evt.InvokeMethod) ||
+			IsAccessible(evt.RemoveMethod) ||
+			evt.OtherMethods.Any(m => IsAccessible(m));
 
 		static string GetAddress(IMemberRef memberRef) {
 			var member = Resolve(memberRef);
-			if (member == null)
+			if (member is null)
 				return string.Empty;
 
-			if (member.DeclaringType != null && member.DeclaringType.IsEnum && member is FieldDef && ((FieldDef)member).IsLiteral)
+			if (member.DeclaringType is not null && member.DeclaringType.IsEnum && member is FieldDef && ((FieldDef)member).IsLiteral)
 				member = member.DeclaringType;
 
 			string memberName;
-			if (member.DeclaringType == null)
+			if (member.DeclaringType is null)
 				memberName = member.FullName;
 			else
-				memberName = string.Format("{0}.{1}", member.DeclaringType.FullName, member.Name.Replace('.', '-'));
+				memberName = $"{member.DeclaringType.FullName}.{member.Name.Replace('.', '-')}";
 
 			return string.Format(searchUrl, memberName.Replace('/', '.').Replace('`', '-'));
 		}
 
 		static void ExecuteInternal(IEnumerable<TreeNodeData> nodes) {
 			foreach (var node in nodes) {
-				var nsNode = node as NamespaceNode;
-				if (nsNode != null) {
+				if (node is NamespaceNode nsNode) {
 					SearchMsdn(string.Format(searchUrl, nsNode.Name));
 					continue;
 				}
 
-				var mrNode = node as IMDTokenNode;
-				if (mrNode != null) {
+				if (node is IMDTokenNode mrNode) {
 					SearchMsdn(mrNode.Reference as IMemberRef);
 					continue;
 				}
 			}
 		}
 
-		public static void SearchMsdn(IMemberRef memberRef) {
-			if (memberRef != null)
+		public static void SearchMsdn(IMemberRef? memberRef) {
+			if (memberRef is not null)
 				SearchMsdn(GetAddress(memberRef));
 		}
 
 		static void SearchMsdn(string address) {
-			if (!string.IsNullOrEmpty(address))
-				Process.Start(address);
+			if (!string.IsNullOrEmpty(address)) {
+				try {
+					Process.Start(new ProcessStartInfo(address) { UseShellExecute = true });
+				}
+				catch { }
+			}
 		}
 	}
 }

@@ -1,4 +1,4 @@
-﻿/*
+/*
 	Copyright (c) 2015 Ki
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -115,14 +115,14 @@ namespace dnSpy.BamlDecompiler.Baml {
 						Header = document[i]
 					};
 
-					if (prev != null) {
+					if (prev is not null) {
 						prev.Children.Add(current);
 						current.Parent = prev;
 						stack.Push(prev);
 					}
 				}
 				else if (IsFooter(document[i])) {
-					if (current == null)
+					if (current is null)
 						throw new Exception("Unexpected footer.");
 
 					while (!IsMatch(current.Header, document[i])) {
@@ -148,9 +148,7 @@ namespace dnSpy.BamlDecompiler.Baml {
 		public override BamlRecord Record => record;
 		public override BamlRecordType Type => Record.Type;
 
-		public BamlRecordNode(BamlRecord record) {
-			this.record = record;
-		}
+		public BamlRecordNode(BamlRecord record) => this.record = record;
 	}
 
 	internal class BamlBlockNode : BamlNode {
@@ -161,8 +159,6 @@ namespace dnSpy.BamlDecompiler.Baml {
 		public override BamlRecord Record => Header;
 		public override BamlRecordType Type => Header.Type;
 
-		public BamlBlockNode() {
-			Children = new List<BamlNode>();
-		}
+		public BamlBlockNode() => Children = new List<BamlNode>();
 	}
 }

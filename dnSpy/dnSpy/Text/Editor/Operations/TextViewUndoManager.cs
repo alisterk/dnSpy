@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -34,22 +34,16 @@ namespace dnSpy.Text.Editor.Operations {
 		readonly UndoRedoCommandTargetFilter undoRedoCommandTargetFilter;
 
 		public TextViewUndoManager(IDsWpfTextView textView, ITextViewUndoManagerProvider textViewUndoManagerProvider, ITextBufferUndoManagerProvider textBufferUndoManagerProvider) {
-			if (textView == null)
-				throw new ArgumentNullException(nameof(textView));
-			if (textViewUndoManagerProvider == null)
-				throw new ArgumentNullException(nameof(textViewUndoManagerProvider));
-			if (textBufferUndoManagerProvider == null)
-				throw new ArgumentNullException(nameof(textBufferUndoManagerProvider));
-			TextView = textView;
-			this.textViewUndoManagerProvider = textViewUndoManagerProvider;
-			this.textBufferUndoManagerProvider = textBufferUndoManagerProvider;
+			TextView = textView ?? throw new ArgumentNullException(nameof(textView));
+			this.textViewUndoManagerProvider = textViewUndoManagerProvider ?? throw new ArgumentNullException(nameof(textViewUndoManagerProvider));
+			this.textBufferUndoManagerProvider = textBufferUndoManagerProvider ?? throw new ArgumentNullException(nameof(textBufferUndoManagerProvider));
 			textBufferUndoManager = textBufferUndoManagerProvider.GetTextBufferUndoManager(TextView.TextBuffer);
 			undoRedoCommandTargetFilter = new UndoRedoCommandTargetFilter(this);
 			TextView.CommandTarget.AddFilter(undoRedoCommandTargetFilter, CommandTargetFilterOrder.UndoRedo);
 			TextView.Closed += TextView_Closed;
 		}
 
-		void TextView_Closed(object sender, EventArgs e) => textViewUndoManagerProvider.RemoveTextViewUndoManager(TextView);
+		void TextView_Closed(object? sender, EventArgs e) => textViewUndoManagerProvider.RemoveTextViewUndoManager(TextView);
 
 		public void ClearUndoHistory() {
 			textBufferUndoManager.UnregisterUndoHistory();

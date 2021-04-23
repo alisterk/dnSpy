@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -23,6 +23,7 @@ using System.ComponentModel.Composition;
 using System.Linq;
 using dnlib.DotNet;
 using dnlib.DotNet.Resources;
+using dnSpy.Contracts.Documents.TreeView;
 using dnSpy.Contracts.Documents.TreeView.Resources;
 using dnSpy.Contracts.TreeView;
 
@@ -32,21 +33,25 @@ namespace dnSpy.Documents.TreeView.Resources {
 		readonly Lazy<IResourceNodeProvider, IResourceNodeProviderMetadata>[] resourceNodeProviders;
 
 		[ImportingConstructor]
-		public ResourceNodeFactory([ImportMany] IEnumerable<Lazy<IResourceNodeProvider, IResourceNodeProviderMetadata>> resourceNodeProviders) {
-			this.resourceNodeProviders = resourceNodeProviders.OrderBy(a => a.Metadata.Order).ToArray();
+		public ResourceNodeFactory([ImportMany] IEnumerable<Lazy<IResourceNodeProvider, IResourceNodeProviderMetadata>> resourceNodeProviders) => this.resourceNodeProviders = resourceNodeProviders.OrderBy(a => a.Metadata.Order).ToArray();
+
+		public DocumentTreeNodeData Create(ModuleDef module, Resource resource, ITreeNodeGroup treeNodeGroup) {
+			if (module is null)
+				throw new ArgumentNullException(nameof(module));
+			if (resource is null)
+				throw new ArgumentNullException(nameof(resource));
+			if (treeNodeGroup is null)
+				throw new ArgumentNullException(nameof(treeNodeGroup));
+			var node = CreateNode(module, resource, treeNodeGroup);
+			ResourceNode.AddResource(node, resource);
+			return node;
 		}
 
-		public ResourceNode Create(ModuleDef module, Resource resource, ITreeNodeGroup treeNodeGroup) {
-			if (module == null)
-				throw new ArgumentNullException(nameof(module));
-			if (resource == null)
-				throw new ArgumentNullException(nameof(resource));
-			if (treeNodeGroup == null)
-				throw new ArgumentNullException(nameof(treeNodeGroup));
+		DocumentTreeNodeData CreateNode(ModuleDef module, Resource resource, ITreeNodeGroup treeNodeGroup) {
 			foreach (var provider in resourceNodeProviders) {
 				try {
 					var node = provider.Value.Create(module, resource, treeNodeGroup);
-					if (node != null)
+					if (node is not null)
 						return node;
 				}
 				catch {
@@ -55,17 +60,23 @@ namespace dnSpy.Documents.TreeView.Resources {
 			return new UnknownResourceNodeImpl(treeNodeGroup, resource);
 		}
 
-		public ResourceElementNode Create(ModuleDef module, ResourceElement resourceElement, ITreeNodeGroup treeNodeGroup) {
-			if (module == null)
+		public DocumentTreeNodeData Create(ModuleDef module, ResourceElement resourceElement, ITreeNodeGroup treeNodeGroup) {
+			if (module is null)
 				throw new ArgumentNullException(nameof(module));
-			if (resourceElement == null)
+			if (resourceElement is null)
 				throw new ArgumentNullException(nameof(resourceElement));
-			if (treeNodeGroup == null)
+			if (treeNodeGroup is null)
 				throw new ArgumentNullException(nameof(treeNodeGroup));
+			var node = CreateNode(module, resourceElement, treeNodeGroup);
+			ResourceElementNode.AddResourceElement(node, resourceElement);
+			return node;
+		}
+
+		DocumentTreeNodeData CreateNode(ModuleDef module, ResourceElement resourceElement, ITreeNodeGroup treeNodeGroup) {
 			foreach (var provider in resourceNodeProviders) {
 				try {
 					var node = provider.Value.Create(module, resourceElement, treeNodeGroup);
-					if (node != null)
+					if (node is not null)
 						return node;
 				}
 				catch {

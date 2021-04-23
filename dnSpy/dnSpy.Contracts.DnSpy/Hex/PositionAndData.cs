@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -23,11 +23,11 @@ namespace dnSpy.Contracts.Hex {
 	/// <summary>
 	/// Position and data
 	/// </summary>
-	public struct PositionAndData {
+	public readonly struct PositionAndData {
 		/// <summary>
 		/// true if this is a default instance that hasn't been initialized
 		/// </summary>
-		public bool IsDefault => Data == null;
+		public bool IsDefault => Data is null;
 
 		/// <summary>
 		/// Gets the position
@@ -47,10 +47,8 @@ namespace dnSpy.Contracts.Hex {
 		public PositionAndData(HexBufferPoint position, byte[] data) {
 			if (position.IsDefault)
 				throw new ArgumentException();
-			if (data == null)
-				throw new ArgumentNullException(nameof(data));
 			Position = position;
-			Data = data;
+			Data = data ?? throw new ArgumentNullException(nameof(data));
 		}
 	}
 }

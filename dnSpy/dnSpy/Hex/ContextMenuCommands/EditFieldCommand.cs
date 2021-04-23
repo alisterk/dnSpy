@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -33,15 +33,9 @@ namespace dnSpy.Hex.ContextMenuCommands {
 		public ComplexData Structure { get; }
 		public SimpleData Field { get; }
 		public EditFieldCommandContext(HexView hexView, ComplexData structure, SimpleData field) {
-			if (hexView == null)
-				throw new ArgumentNullException(nameof(hexView));
-			if (structure == null)
-				throw new ArgumentNullException(nameof(structure));
-			if (field == null)
-				throw new ArgumentNullException(nameof(field));
-			HexView = hexView;
-			Structure = structure;
-			Field = field;
+			HexView = hexView ?? throw new ArgumentNullException(nameof(hexView));
+			Structure = structure ?? throw new ArgumentNullException(nameof(structure));
+			Field = field ?? throw new ArgumentNullException(nameof(field));
 		}
 	}
 
@@ -51,23 +45,19 @@ namespace dnSpy.Hex.ContextMenuCommands {
 
 		protected readonly Lazy<HexBufferFileServiceFactory> hexBufferFileServiceFactory;
 
-		protected EditFieldCommandTargetMenuItemBase(Lazy<HexBufferFileServiceFactory> hexBufferFileServiceFactory) {
-			if (hexBufferFileServiceFactory == null)
-				throw new ArgumentNullException(nameof(hexBufferFileServiceFactory));
-			this.hexBufferFileServiceFactory = hexBufferFileServiceFactory;
-		}
+		protected EditFieldCommandTargetMenuItemBase(Lazy<HexBufferFileServiceFactory> hexBufferFileServiceFactory) => this.hexBufferFileServiceFactory = hexBufferFileServiceFactory ?? throw new ArgumentNullException(nameof(hexBufferFileServiceFactory));
 
-		protected override EditFieldCommandContext CreateContext(IMenuItemContext context) {
+		protected override EditFieldCommandContext? CreateContext(IMenuItemContext context) {
 			var hexView = context.Find<HexView>();
-			if (hexView == null)
+			if (hexView is null)
 				return null;
 			var hexBufferFileService = hexBufferFileServiceFactory.Value.Create(hexView.Buffer);
 			var pos = hexView.Caret.Position.Position.ActivePosition.BufferPosition.Position;
 			var info = hexBufferFileService.GetFileAndStructure(pos);
-			if (info == null)
+			if (info is null)
 				return null;
 			var field = info.Value.Structure.GetSimpleField(pos)?.Data as SimpleData;
-			if (field == null)
+			if (field is null)
 				return null;
 			if (!(field is FlagsData || field is EnumData))
 				return null;
@@ -103,11 +93,10 @@ namespace dnSpy.Hex.ContextMenuCommands {
 
 		IEnumerable<CreatedMenuItem> IMenuItemProvider.Create(IMenuItemContext context) {
 			var ctx = CreateContext(context);
-			if (ctx == null)
+			if (ctx is null)
 				yield break;
 
-			if (ctx.Field is FlagsData) {
-				var flagsData = (FlagsData)ctx.Field;
+			if (ctx.Field is FlagsData flagsData) {
 				var isEnum = new HashSet<ulong>();
 				foreach (var info in flagsData.FlagInfos) {
 					if (info.IsEnumName)
@@ -122,8 +111,7 @@ namespace dnSpy.Hex.ContextMenuCommands {
 					yield return new CreatedMenuItem(attr, new EditFlagsFieldCommand(hexBufferFileServiceFactory, info, !isEnum.Contains(info.Mask)));
 				}
 			}
-			else if (ctx.Field is EnumData) {
-				var enumData = (EnumData)ctx.Field;
+			else if (ctx.Field is EnumData enumData) {
 				foreach (var info in enumData.EnumFieldInfos) {
 					var attr = new ExportMenuItemAttribute {
 						Header = UIUtilities.EscapeMenuItemHeader(info.Name),
@@ -232,9 +220,7 @@ namespace dnSpy.Hex.ContextMenuCommands {
 		readonly EnumFieldInfo enumFieldInfo;
 
 		public EditEnumFieldCommand(Lazy<HexBufferFileServiceFactory> hexBufferFileServiceFactory, EnumFieldInfo enumFieldInfo)
-			: base(hexBufferFileServiceFactory) {
-			this.enumFieldInfo = enumFieldInfo;
-		}
+			: base(hexBufferFileServiceFactory) => this.enumFieldInfo = enumFieldInfo;
 
 		public override bool IsChecked(EditFieldCommandContext context) {
 			var enumData = (EnumData)context.Field;

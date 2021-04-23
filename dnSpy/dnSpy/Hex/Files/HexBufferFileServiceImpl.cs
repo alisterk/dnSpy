@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -26,8 +26,8 @@ using VSUTIL = Microsoft.VisualStudio.Utilities;
 
 namespace dnSpy.Hex.Files {
 	sealed class HexBufferFileServiceImpl : HexBufferFileService {
-		public override event EventHandler<BufferFilesAddedEventArgs> BufferFilesAdded;
-		public override event EventHandler<BufferFilesRemovedEventArgs> BufferFilesRemoved;
+		public override event EventHandler<BufferFilesAddedEventArgs>? BufferFilesAdded;
+		public override event EventHandler<BufferFilesRemovedEventArgs>? BufferFilesRemoved;
 		public override HexBuffer Buffer => buffer;
 
 		public override IEnumerable<HexBufferFile> Files {
@@ -48,20 +48,14 @@ namespace dnSpy.Hex.Files {
 		readonly SpanDataCollection<HexBufferFileImpl> files;
 
 		public HexBufferFileServiceImpl(HexBuffer buffer, Lazy<StructureProviderFactory, VSUTIL.IOrderable>[] structureProviderFactories, Lazy<BufferFileHeadersProviderFactory>[] bufferFileHeadersProviderFactories) {
-			if (buffer == null)
-				throw new ArgumentNullException(nameof(buffer));
-			if (structureProviderFactories == null)
-				throw new ArgumentNullException(nameof(structureProviderFactories));
-			if (bufferFileHeadersProviderFactories == null)
-				throw new ArgumentNullException(nameof(bufferFileHeadersProviderFactories));
-			this.buffer = buffer;
-			this.structureProviderFactories = structureProviderFactories;
-			this.bufferFileHeadersProviderFactories = bufferFileHeadersProviderFactories;
+			this.buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
+			this.structureProviderFactories = structureProviderFactories ?? throw new ArgumentNullException(nameof(structureProviderFactories));
+			this.bufferFileHeadersProviderFactories = bufferFileHeadersProviderFactories ?? throw new ArgumentNullException(nameof(bufferFileHeadersProviderFactories));
 			files = new SpanDataCollection<HexBufferFileImpl>();
 		}
 
 		public override HexBufferFile[] CreateFiles(BufferFileOptions[] options) {
-			if (options == null)
+			if (options is null)
 				throw new ArgumentNullException(nameof(options));
 			var newFiles = new HexBufferFileImpl[options.Length];
 			for (int i = 0; i < newFiles.Length; i++) {
@@ -78,13 +72,13 @@ namespace dnSpy.Hex.Files {
 		public override void RemoveFiles(HexSpan span) => RaiseRemovedFiles(files.Remove(new[] { span }));
 
 		public override void RemoveFile(HexBufferFile file) {
-			if (file == null)
+			if (file is null)
 				throw new ArgumentNullException(nameof(file));
 			RaiseRemovedFiles(files.Remove(new[] { file.Span }).ToArray());
 		}
 
 		public override void RemoveFiles(IEnumerable<HexBufferFile> files) {
-			if (files == null)
+			if (files is null)
 				throw new ArgumentNullException(nameof(files));
 			RaiseRemovedFiles(this.files.Remove(files.Select(a => a.Span).ToArray()));
 		}
@@ -97,9 +91,9 @@ namespace dnSpy.Hex.Files {
 			BufferFilesRemoved?.Invoke(this, new BufferFilesRemovedEventArgs(files.Select(a => a.Data).ToArray()));
 		}
 
-		public override HexBufferFile GetFile(HexPosition position, bool checkNestedFiles) {
+		public override HexBufferFile? GetFile(HexPosition position, bool checkNestedFiles) {
 			var file = files.FindData(position);
-			if (file == null || !checkNestedFiles)
+			if (file is null || !checkNestedFiles)
 				return file;
 			return file.GetFile(position, checkNestedFiles) ?? file;
 		}

@@ -1,4 +1,4 @@
-﻿/*
+/*
 	Copyright (c) 2015 Ki
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -94,9 +94,7 @@ namespace dnSpy.BamlDecompiler {
 			InitRecordHandlers();
 		}
 
-		void WriteText(string value) {
-			output.Write(value, BoxedTextColor.Text);
-		}
+		void WriteText(string value) => output.Write(value, BoxedTextColor.Text);
 
 		void WriteString(string value) {
 			string str = SimpleTypeConverter.ToString(value, true);
@@ -118,9 +116,7 @@ namespace dnSpy.BamlDecompiler {
 			output.Write(num.ToString("x8", CultureInfo.InvariantCulture), BoxedTextColor.Number);
 		}
 
-		void WriteBool(bool value) {
-			output.Write(value ? "true" : "false", BoxedTextColor.Keyword);
-		}
+		void WriteBool(bool value) => output.Write(value ? "true" : "false", BoxedTextColor.Keyword);
 
 		void WriteVersion(BamlDocument.BamlVersion value) {
 			output.Write("[", BoxedTextColor.Text);
@@ -150,7 +146,7 @@ namespace dnSpy.BamlDecompiler {
 			else
 				reference = null;
 
-			if (reference != null)
+			if (reference is not null)
 				reference = IdentifierEscaper.Escape(reference);
 
 			output.Write($"0x{id:x4}", BamlToolTipReference.Create(reference), DecompilerReferenceFlags.Local, BoxedTextColor.Number);
@@ -178,7 +174,7 @@ namespace dnSpy.BamlDecompiler {
 				declType = name = null;
 
 			string reference = null;
-			if (declType != null && name != null)
+			if (declType is not null && name is not null)
 				reference = $"{IdentifierEscaper.Escape(declType)}::{IdentifierEscaper.Escape(name)}";
 			output.Write($"0x{id:x4}", BamlToolTipReference.Create(reference), DecompilerReferenceFlags.Local, BoxedTextColor.Number);
 		}
@@ -192,7 +188,7 @@ namespace dnSpy.BamlDecompiler {
 			else
 				str = null;
 			string reference = null;
-			if (str != null)
+			if (str is not null)
 				reference = SimpleTypeConverter.ToString(str, true);
 			output.Write($"0x{id:x4}", BamlToolTipReference.Create(reference), DecompilerReferenceFlags.Local, BoxedTextColor.Number);
 		}
@@ -202,9 +198,7 @@ namespace dnSpy.BamlDecompiler {
 			output.Write(str, BamlToolTipReference.Create(def ?? IdentifierEscaper.Escape(value)), DecompilerReferenceFlags.Local | DecompilerReferenceFlags.Definition, BoxedTextColor.String);
 		}
 
-		void WriteRecordRef(BamlRecord record) {
-			output.Write(record.Type.ToString(), BamlToolTipReference.Create(GetRecordReference(record)), DecompilerReferenceFlags.Local, BoxedTextColor.Keyword);
-		}
+		void WriteRecordRef(BamlRecord record) => output.Write(record.Type.ToString(), BamlToolTipReference.Create(GetRecordReference(record)), DecompilerReferenceFlags.Local, BoxedTextColor.Keyword);
 
 		public void Disassemble(ModuleDef module, BamlDocument document) {
 			WriteText("Signature:      \t");
@@ -255,8 +249,7 @@ namespace dnSpy.BamlDecompiler {
 
 			output.Write(record.Type.ToString(), BamlToolTipReference.Create(GetRecordReference(record)), DecompilerReferenceFlags.Local | DecompilerReferenceFlags.Definition, BoxedTextColor.Keyword);
 
-			Action<BamlContext, BamlRecord> handler;
-			if (handlerMap.TryGetValue(record.Type, out handler)) {
+			if (handlerMap.TryGetValue(record.Type, out var handler)) {
 				output.Write(" [", BoxedTextColor.Text);
 				handler(ctx, record);
 				output.Write("]", BoxedTextColor.Text);

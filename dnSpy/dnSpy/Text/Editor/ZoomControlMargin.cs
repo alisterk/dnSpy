@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -41,11 +41,9 @@ namespace dnSpy.Text.Editor {
 		readonly IEditorOperationsFactoryService editorOperationsFactoryService;
 
 		[ImportingConstructor]
-		ZoomControlMarginProvider(IEditorOperationsFactoryService editorOperationsFactoryService) {
-			this.editorOperationsFactoryService = editorOperationsFactoryService;
-		}
+		ZoomControlMarginProvider(IEditorOperationsFactoryService editorOperationsFactoryService) => this.editorOperationsFactoryService = editorOperationsFactoryService;
 
-		public IWpfTextViewMargin CreateMargin(IWpfTextViewHost wpfTextViewHost, IWpfTextViewMargin marginContainer) =>
+		public IWpfTextViewMargin? CreateMargin(IWpfTextViewHost wpfTextViewHost, IWpfTextViewMargin marginContainer) =>
 			new ZoomControlMargin(wpfTextViewHost, editorOperationsFactoryService.GetEditorOperations(wpfTextViewHost.TextView));
 	}
 
@@ -58,12 +56,8 @@ namespace dnSpy.Text.Editor {
 		readonly IEditorOperations editorOperations;
 
 		public ZoomControlMargin(IWpfTextViewHost wpfTextViewHost, IEditorOperations editorOperations) {
-			if (wpfTextViewHost == null)
-				throw new ArgumentNullException(nameof(wpfTextViewHost));
-			if (editorOperations == null)
-				throw new ArgumentNullException(nameof(editorOperations));
-			this.wpfTextViewHost = wpfTextViewHost;
-			this.editorOperations = editorOperations;
+			this.wpfTextViewHost = wpfTextViewHost ?? throw new ArgumentNullException(nameof(wpfTextViewHost));
+			this.editorOperations = editorOperations ?? throw new ArgumentNullException(nameof(editorOperations));
 
 			IsVisibleChanged += ZoomControlMargin_IsVisibleChanged;
 			wpfTextViewHost.TextView.Options.OptionChanged += Options_OptionChanged;
@@ -79,10 +73,10 @@ namespace dnSpy.Text.Editor {
 
 		void UpdateVisibility() => Visibility = Enabled ? Visibility.Visible : Visibility.Collapsed;
 
-		public ITextViewMargin GetTextViewMargin(string marginName) =>
+		public ITextViewMargin? GetTextViewMargin(string marginName) =>
 			StringComparer.OrdinalIgnoreCase.Equals(PredefinedMarginNames.ZoomControl, marginName) ? this : null;
 
-		void Options_OptionChanged(object sender, EditorOptionChangedEventArgs e) {
+		void Options_OptionChanged(object? sender, EditorOptionChangedEventArgs e) {
 			if (e.OptionId == DefaultTextViewHostOptions.ZoomControlName || e.OptionId == DefaultTextViewHostOptions.HorizontalScrollBarName)
 				UpdateVisibility();
 			else if (!Enabled) {
@@ -93,7 +87,7 @@ namespace dnSpy.Text.Editor {
 		}
 
 		double TextViewZoomLevel {
-			get { return wpfTextViewHost.TextView.ZoomLevel; }
+			get => wpfTextViewHost.TextView.ZoomLevel;
 			set {
 				if (wpfTextViewHost.TextView.Options.IsOptionDefined(DefaultWpfViewOptions.ZoomLevelId, true))
 					wpfTextViewHost.TextView.Options.SetOptionValue(DefaultWpfViewOptions.ZoomLevelId, value);
@@ -123,8 +117,8 @@ namespace dnSpy.Text.Editor {
 					return;
 				}
 				if (Keyboard.Modifiers == ModifierKeys.None && e.Key == Key.Escape) {
-					Debug.Assert(originalZoomLevel != null);
-					if (originalZoomLevel != null)
+					Debug2.Assert(originalZoomLevel is not null);
+					if (originalZoomLevel is not null)
 						TextViewZoomLevel = originalZoomLevel.Value;
 					UpdateTextWithZoomLevel();
 					wpfTextViewHost.TextView.VisualElement.Focus();
@@ -142,31 +136,31 @@ namespace dnSpy.Text.Editor {
 		}
 		static readonly ZoomLevelConverter zoomLevelConverter = new ZoomLevelConverter();
 
-		void ZoomControlMargin_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e) {
+		void ZoomControlMargin_IsVisibleChanged(object? sender, DependencyPropertyChangedEventArgs e) {
 			if (Visibility == Visibility.Visible) {
 				originalZoomLevel = null;
 				RegisterEvents();
 				UpdateTextWithZoomLevel();
 
 				// The combobox is too tall, but I want to use the style from the UI.Wpf dll
-				if (horizontalScrollBarMargin == null) {
+				if (horizontalScrollBarMargin is null) {
 					horizontalScrollBarMargin = wpfTextViewHost.GetTextViewMargin(PredefinedMarginNames.HorizontalScrollBar);
-					Debug.Assert(horizontalScrollBarMargin != null);
-					if (horizontalScrollBarMargin != null)
+					Debug2.Assert(horizontalScrollBarMargin is not null);
+					if (horizontalScrollBarMargin is not null)
 						horizontalScrollBarMargin.VisualElement.SizeChanged += VisualElement_SizeChanged;
 				}
-				if (horizontalScrollBarMargin != null)
+				if (horizontalScrollBarMargin is not null)
 					Height = horizontalScrollBarMargin.VisualElement.Height;
 			}
 			else
 				UnregisterEvents();
 		}
-		IWpfTextViewMargin horizontalScrollBarMargin;
+		IWpfTextViewMargin? horizontalScrollBarMargin;
 
-		void VisualElement_SizeChanged(object sender, SizeChangedEventArgs e) =>
+		void VisualElement_SizeChanged(object? sender, SizeChangedEventArgs e) =>
 			Height = e.NewSize.Height;
 
-		void TextView_ZoomLevelChanged(object sender, ZoomLevelChangedEventArgs e) => UpdateTextWithZoomLevel();
+		void TextView_ZoomLevelChanged(object? sender, ZoomLevelChangedEventArgs e) => UpdateTextWithZoomLevel();
 		void UpdateTextWithZoomLevel() {
 			var s = zoomLevelConverter.Convert(TextViewZoomLevel, typeof(string), null, CultureInfo.CurrentUICulture) as string;
 			Text = s ?? TextViewZoomLevel.ToString("F0");
@@ -174,7 +168,7 @@ namespace dnSpy.Text.Editor {
 
 		bool TryUpdateZoomLevel() {
 			double? newValue = zoomLevelConverter.ConvertBack(Text, typeof(double), null, CultureInfo.CurrentUICulture) as double?;
-			if (newValue == null || newValue.Value < ZoomConstants.MinZoom || newValue.Value > ZoomConstants.MaxZoom)
+			if (newValue is null || newValue.Value < ZoomConstants.MinZoom || newValue.Value > ZoomConstants.MaxZoom)
 				return false;
 			TextViewZoomLevel = newValue.Value;
 			return true;
@@ -198,7 +192,7 @@ namespace dnSpy.Text.Editor {
 		public void Dispose() {
 			IsVisibleChanged -= ZoomControlMargin_IsVisibleChanged;
 			wpfTextViewHost.TextView.Options.OptionChanged -= Options_OptionChanged;
-			if (horizontalScrollBarMargin != null)
+			if (horizontalScrollBarMargin is not null)
 				horizontalScrollBarMargin.VisualElement.SizeChanged -= VisualElement_SizeChanged;
 			UnregisterEvents();
 		}

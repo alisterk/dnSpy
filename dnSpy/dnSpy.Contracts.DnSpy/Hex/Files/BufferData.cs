@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -82,11 +82,7 @@ namespace dnSpy.Contracts.Hex.Files {
 		/// <param name="name">Name</param>
 		/// <param name="span">Span</param>
 		protected ComplexData(string name, HexBufferSpan span)
-			: base(span) {
-			if (name == null)
-				throw new ArgumentNullException(nameof(name));
-			Name = name;
-		}
+			: base(span) => Name = name ?? throw new ArgumentNullException(nameof(name));
 
 		/// <summary>
 		/// Gets a field
@@ -100,7 +96,7 @@ namespace dnSpy.Contracts.Hex.Files {
 		/// </summary>
 		/// <param name="name">Name</param>
 		/// <returns></returns>
-		public BufferField this[string name] => GetFieldByName(name);
+		public BufferField? this[string name] => GetFieldByName(name);
 
 		/// <summary>
 		/// Gets the field count
@@ -119,14 +115,14 @@ namespace dnSpy.Contracts.Hex.Files {
 		/// </summary>
 		/// <param name="position">Position</param>
 		/// <returns></returns>
-		public abstract BufferField GetFieldByPosition(HexPosition position);
+		public abstract BufferField? GetFieldByPosition(HexPosition position);
 
 		/// <summary>
 		/// Gets a field
 		/// </summary>
 		/// <param name="name">Name of field</param>
 		/// <returns></returns>
-		public abstract BufferField GetFieldByName(string name);
+		public abstract BufferField? GetFieldByName(string name);
 
 		/// <summary>
 		/// Writes the name
@@ -140,14 +136,14 @@ namespace dnSpy.Contracts.Hex.Files {
 		/// </summary>
 		/// <param name="position">Position</param>
 		/// <returns></returns>
-		public BufferField GetSimpleField(HexPosition position) {
-			var structure = this;
+		public BufferField? GetSimpleField(HexPosition position) {
+			ComplexData? structure = this;
 			for (;;) {
 				var field = structure.GetFieldByPosition(position);
-				if (field == null)
+				if (field is null)
 					return null;
 				structure = field.Data as ComplexData;
-				if (structure == null) {
+				if (structure is null) {
 					Debug.Assert(field.Data is SimpleData);
 					return field.Data is SimpleData ? field : null;
 				}
@@ -190,7 +186,7 @@ namespace dnSpy.Contracts.Hex.Files {
 		/// </summary>
 		/// <param name="position">Position</param>
 		/// <returns></returns>
-		public sealed override BufferField GetFieldByPosition(HexPosition position) {
+		public sealed override BufferField? GetFieldByPosition(HexPosition position) {
 			foreach (var field in Fields) {
 				if (field.Data.Span.Span.Contains(position))
 					return field;
@@ -203,8 +199,8 @@ namespace dnSpy.Contracts.Hex.Files {
 		/// </summary>
 		/// <param name="name">Name of field</param>
 		/// <returns></returns>
-		public override BufferField GetFieldByName(string name) {
-			if (name == null)
+		public override BufferField? GetFieldByName(string name) {
+			if (name is null)
 				throw new ArgumentNullException(nameof(name));
 			foreach (var field in Fields) {
 				if (field.Name == name)
@@ -239,7 +235,7 @@ namespace dnSpy.Contracts.Hex.Files {
 		/// <param name="span">Span</param>
 		/// <param name="name">Array name or null</param>
 		/// <returns></returns>
-		public static VirtualArrayData<ByteData> CreateVirtualByteArray(HexBufferSpan span, string name = null) =>
+		public static VirtualArrayData<ByteData> CreateVirtualByteArray(HexBufferSpan span, string? name = null) =>
 			new VirtualArrayData<ByteData>(name ?? string.Empty, span, 1, createByteData);
 		static readonly Func<HexBufferPoint, ByteData> createByteData = p => new ByteData(p.Buffer, p.Position);
 
@@ -249,7 +245,7 @@ namespace dnSpy.Contracts.Hex.Files {
 		/// <param name="span">Span</param>
 		/// <param name="name">Array name or null</param>
 		/// <returns></returns>
-		public static VirtualArrayData<UInt16Data> CreateVirtualUInt16Array(HexBufferSpan span, string name = null) {
+		public static VirtualArrayData<UInt16Data> CreateVirtualUInt16Array(HexBufferSpan span, string? name = null) {
 			if ((span.Length.ToUInt64() & 1) != 0)
 				throw new ArgumentOutOfRangeException(nameof(span));
 			return new VirtualArrayData<UInt16Data>(name ?? string.Empty, span, 2, createUInt16Data);
@@ -262,7 +258,7 @@ namespace dnSpy.Contracts.Hex.Files {
 		/// <param name="span">Span</param>
 		/// <param name="name">Array name or null</param>
 		/// <returns></returns>
-		public static VirtualArrayData<UInt32Data> CreateVirtualUInt32Array(HexBufferSpan span, string name = null) {
+		public static VirtualArrayData<UInt32Data> CreateVirtualUInt32Array(HexBufferSpan span, string? name = null) {
 			if ((span.Length.ToUInt64() & 3) != 0)
 				throw new ArgumentOutOfRangeException(nameof(span));
 			return new VirtualArrayData<UInt32Data>(name ?? string.Empty, span, 4, createUInt32Data);
@@ -277,7 +273,7 @@ namespace dnSpy.Contracts.Hex.Files {
 		/// <param name="elements">Number of elements</param>
 		/// <param name="name">Array name or null</param>
 		/// <returns></returns>
-		public static ArrayData<ByteData> CreateByteArray(HexBuffer buffer, HexPosition position, int elements, string name = null) {
+		public static ArrayData<ByteData> CreateByteArray(HexBuffer buffer, HexPosition position, int elements, string? name = null) {
 			var fields = new ArrayField<ByteData>[elements];
 			var currPos = position;
 			for (int i = 0; i < fields.Length; i++) {
@@ -296,7 +292,7 @@ namespace dnSpy.Contracts.Hex.Files {
 		/// <param name="elements">Number of elements</param>
 		/// <param name="name">Array name or null</param>
 		/// <returns></returns>
-		public static ArrayData<UInt16Data> CreateUInt16Array(HexBuffer buffer, HexPosition position, int elements, string name = null) {
+		public static ArrayData<UInt16Data> CreateUInt16Array(HexBuffer buffer, HexPosition position, int elements, string? name = null) {
 			var fields = new ArrayField<UInt16Data>[elements];
 			var currPos = position;
 			for (int i = 0; i < fields.Length; i++) {
@@ -315,7 +311,7 @@ namespace dnSpy.Contracts.Hex.Files {
 		/// <param name="elements">Number of elements</param>
 		/// <param name="name">Array name or null</param>
 		/// <returns></returns>
-		public static ArrayData<UInt32Data> CreateUInt32Array(HexBuffer buffer, HexPosition position, int elements, string name = null) {
+		public static ArrayData<UInt32Data> CreateUInt32Array(HexBuffer buffer, HexPosition position, int elements, string? name = null) {
 			var fields = new ArrayField<UInt32Data>[elements];
 			var currPos = position;
 			for (int i = 0; i < fields.Length; i++) {
@@ -334,7 +330,7 @@ namespace dnSpy.Contracts.Hex.Files {
 		/// <param name="elements">Number of elements</param>
 		/// <param name="name">Array name or null</param>
 		/// <returns></returns>
-		public static ArrayData<UInt64Data> CreateUInt64Array(HexBuffer buffer, HexPosition position, int elements, string name = null) {
+		public static ArrayData<UInt64Data> CreateUInt64Array(HexBuffer buffer, HexPosition position, int elements, string? name = null) {
 			var fields = new ArrayField<UInt64Data>[elements];
 			var currPos = position;
 			for (int i = 0; i < fields.Length; i++) {
@@ -353,7 +349,7 @@ namespace dnSpy.Contracts.Hex.Files {
 		/// <param name="elements">Number of elements</param>
 		/// <param name="name">Array name or null</param>
 		/// <returns></returns>
-		public static ArrayData<SByteData> CreateSByteArray(HexBuffer buffer, HexPosition position, int elements, string name = null) {
+		public static ArrayData<SByteData> CreateSByteArray(HexBuffer buffer, HexPosition position, int elements, string? name = null) {
 			var fields = new ArrayField<SByteData>[elements];
 			var currPos = position;
 			for (int i = 0; i < fields.Length; i++) {
@@ -372,7 +368,7 @@ namespace dnSpy.Contracts.Hex.Files {
 		/// <param name="elements">Number of elements</param>
 		/// <param name="name">Array name or null</param>
 		/// <returns></returns>
-		public static ArrayData<Int16Data> CreateInt16Array(HexBuffer buffer, HexPosition position, int elements, string name = null) {
+		public static ArrayData<Int16Data> CreateInt16Array(HexBuffer buffer, HexPosition position, int elements, string? name = null) {
 			var fields = new ArrayField<Int16Data>[elements];
 			var currPos = position;
 			for (int i = 0; i < fields.Length; i++) {
@@ -391,7 +387,7 @@ namespace dnSpy.Contracts.Hex.Files {
 		/// <param name="elements">Number of elements</param>
 		/// <param name="name">Array name or null</param>
 		/// <returns></returns>
-		public static ArrayData<Int32Data> CreateInt32Array(HexBuffer buffer, HexPosition position, int elements, string name = null) {
+		public static ArrayData<Int32Data> CreateInt32Array(HexBuffer buffer, HexPosition position, int elements, string? name = null) {
 			var fields = new ArrayField<Int32Data>[elements];
 			var currPos = position;
 			for (int i = 0; i < fields.Length; i++) {
@@ -410,7 +406,7 @@ namespace dnSpy.Contracts.Hex.Files {
 		/// <param name="elements">Number of elements</param>
 		/// <param name="name">Array name or null</param>
 		/// <returns></returns>
-		public static ArrayData<Int64Data> CreateInt64Array(HexBuffer buffer, HexPosition position, int elements, string name = null) {
+		public static ArrayData<Int64Data> CreateInt64Array(HexBuffer buffer, HexPosition position, int elements, string? name = null) {
 			var fields = new ArrayField<Int64Data>[elements];
 			var currPos = position;
 			for (int i = 0; i < fields.Length; i++) {
@@ -426,11 +422,10 @@ namespace dnSpy.Contracts.Hex.Files {
 		/// </summary>
 		/// <param name="name">Name of field</param>
 		/// <returns></returns>
-		public override BufferField GetFieldByName(string name) {
-			if (name == null)
+		public override BufferField? GetFieldByName(string name) {
+			if (name is null)
 				throw new ArgumentNullException(nameof(name));
-			int index;
-			if (!int.TryParse(name, out index))
+			if (!int.TryParse(name, out int index))
 				return null;
 			// Don't throw if it's outside the range, it's a look up by name that should return null if the name doesn't exist
 			if ((uint)index >= (uint)FieldCount)
@@ -472,7 +467,7 @@ namespace dnSpy.Contracts.Hex.Files {
 		/// <param name="fields">Array elements</param>
 		public ArrayData(string name, HexBufferSpan span, ArrayField<TData>[] fields)
 			: base(name, span) {
-			if (fields == null)
+			if (fields is null)
 				throw new ArgumentNullException(nameof(fields));
 #if DEBUG
 			for (int i = 1; i < fields.Length; i++) {
@@ -501,7 +496,7 @@ namespace dnSpy.Contracts.Hex.Files {
 		/// </summary>
 		/// <param name="position">Position</param>
 		/// <returns></returns>
-		public override BufferField GetFieldByPosition(HexPosition position) {
+		public override BufferField? GetFieldByPosition(HexPosition position) {
 			if (!Span.Contains(position))
 				return null;
 			int index = (int)((position - Span.Start).ToUInt64() / fields[0].Data.Span.Length.ToUInt64());
@@ -535,11 +530,7 @@ namespace dnSpy.Contracts.Hex.Files {
 		/// <param name="span">Array span</param>
 		/// <param name="fields">Array elements</param>
 		public VariableLengthArrayData(string name, HexBufferSpan span, ArrayField<TData>[] fields)
-			: base(name, span) {
-			if (fields == null)
-				throw new ArgumentNullException(nameof(fields));
-			this.fields = fields;
-		}
+			: base(name, span) => this.fields = fields ?? throw new ArgumentNullException(nameof(fields));
 
 		/// <summary>
 		/// Gets a field by index
@@ -553,7 +544,7 @@ namespace dnSpy.Contracts.Hex.Files {
 		/// </summary>
 		/// <param name="position">Position</param>
 		/// <returns></returns>
-		public override BufferField GetFieldByPosition(HexPosition position) {
+		public override BufferField? GetFieldByPosition(HexPosition position) {
 			if (!Span.Contains(position))
 				return null;
 			foreach (var field in fields) {
@@ -603,10 +594,8 @@ namespace dnSpy.Contracts.Hex.Files {
 			: base(name, span) {
 			if (elementLength == 0)
 				throw new ArgumentOutOfRangeException(nameof(elementLength));
-			if (createElement == null)
-				throw new ArgumentNullException(nameof(createElement));
 			this.elementLength = elementLength;
-			this.createElement = createElement;
+			this.createElement = createElement ?? throw new ArgumentNullException(nameof(createElement));
 			ulong fieldCount = span.Length.ToUInt64() / elementLength;
 			if (fieldCount * elementLength != span.Length)
 				throw new ArgumentOutOfRangeException(nameof(span));
@@ -627,7 +616,7 @@ namespace dnSpy.Contracts.Hex.Files {
 		/// </summary>
 		/// <param name="position">Position</param>
 		/// <returns></returns>
-		public override BufferField GetFieldByPosition(HexPosition position) {
+		public override BufferField? GetFieldByPosition(HexPosition position) {
 			if (!Span.Contains(position))
 				return null;
 			int index = (int)((position - Span.Start).ToUInt64() / elementLength);

@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -32,7 +32,7 @@ using dnSpy.Contracts.Menus;
 namespace dnSpy.AsmEditor.Compiler {
 	[DebuggerDisplay("{Description}")]
 	sealed class AddClassCommand : EditCodeCommandBase {
-		[ExportMenuItem(Group = MenuConstants.GROUP_CTX_DOCUMENTS_ASMED_ILED, Order = 13)]
+		[ExportMenuItem(Group = MenuConstants.GROUP_CTX_DOCUMENTS_ASMED_ILED, Order = 14)]
 		sealed class DocumentsCommand : DocumentsContextMenuHandler {
 			readonly Lazy<IUndoCommandService> undoCommandService;
 			readonly Lazy<IAddUpdatedNodesHelperProvider> addUpdatedNodesHelperProvider;
@@ -48,12 +48,12 @@ namespace dnSpy.AsmEditor.Compiler {
 			}
 
 			public override ImageReference? GetIcon(AsmEditorContext context) => editCodeVMCreator.GetIcon(CompilationKind.AddClass);
-			public override string GetHeader(AsmEditorContext context) => editCodeVMCreator.GetHeader(CompilationKind.AddClass);
+			public override string? GetHeader(AsmEditorContext context) => editCodeVMCreator.GetHeader(CompilationKind.AddClass);
 			public override bool IsVisible(AsmEditorContext context) => AddClassCommand.CanExecute(editCodeVMCreator, context.Nodes);
 			public override void Execute(AsmEditorContext context) => AddClassCommand.Execute(editCodeVMCreator, addUpdatedNodesHelperProvider, undoCommandService, appService, context.Nodes);
 		}
 
-		[ExportMenuItem(OwnerGuid = MenuConstants.APP_MENU_EDIT_GUID, Group = MenuConstants.GROUP_APP_MENU_EDIT_ASMED_SETTINGS, Order = 43)]
+		[ExportMenuItem(OwnerGuid = MenuConstants.APP_MENU_EDIT_GUID, Group = MenuConstants.GROUP_APP_MENU_EDIT_ASMED_SETTINGS, Order = 44)]
 		sealed class EditMenuCommand : EditMenuHandler {
 			readonly Lazy<IUndoCommandService> undoCommandService;
 			readonly Lazy<IAddUpdatedNodesHelperProvider> addUpdatedNodesHelperProvider;
@@ -70,12 +70,12 @@ namespace dnSpy.AsmEditor.Compiler {
 			}
 
 			public override ImageReference? GetIcon(AsmEditorContext context) => editCodeVMCreator.GetIcon(CompilationKind.AddClass);
-			public override string GetHeader(AsmEditorContext context) => editCodeVMCreator.GetHeader(CompilationKind.AddClass);
+			public override string? GetHeader(AsmEditorContext context) => editCodeVMCreator.GetHeader(CompilationKind.AddClass);
 			public override bool IsVisible(AsmEditorContext context) => AddClassCommand.CanExecute(editCodeVMCreator, context.Nodes);
 			public override void Execute(AsmEditorContext context) => AddClassCommand.Execute(editCodeVMCreator, addUpdatedNodesHelperProvider, undoCommandService, appService, context.Nodes);
 		}
 
-		[ExportMenuItem(Group = MenuConstants.GROUP_CTX_DOCVIEWER_ASMED_ILED, Order = 13)]
+		[ExportMenuItem(Group = MenuConstants.GROUP_CTX_DOCVIEWER_ASMED_ILED, Order = 14)]
 		sealed class CodeCommand : NodesCodeContextMenuHandler {
 			readonly Lazy<IUndoCommandService> undoCommandService;
 			readonly Lazy<IAddUpdatedNodesHelperProvider> addUpdatedNodesHelperProvider;
@@ -92,34 +92,37 @@ namespace dnSpy.AsmEditor.Compiler {
 			}
 
 			public override ImageReference? GetIcon(CodeContext context) => editCodeVMCreator.GetIcon(CompilationKind.AddClass);
-			public override string GetHeader(CodeContext context) => editCodeVMCreator.GetHeader(CompilationKind.AddClass);
+			public override string? GetHeader(CodeContext context) => editCodeVMCreator.GetHeader(CompilationKind.AddClass);
 			public override bool IsEnabled(CodeContext context) => AddClassCommand.CanExecute(editCodeVMCreator, context.Nodes);
 			public override void Execute(CodeContext context) => AddClassCommand.Execute(editCodeVMCreator, addUpdatedNodesHelperProvider, undoCommandService, appService, context.Nodes);
 		}
 
 		static bool CanExecute(EditCodeVMCreator editCodeVMCreator, DocumentTreeNodeData[] nodes) =>
-			editCodeVMCreator.CanCreate(CompilationKind.AddClass) && nodes.Length == 1;
+			editCodeVMCreator.CanCreate(CompilationKind.AddClass) && nodes.Length == 1 && GetModuleNode(nodes[0]) is not null;
+
+		static ModuleDocumentNode? GetModuleNode(DocumentTreeNodeData node) {
+			if (node is AssemblyDocumentNode asmNode) {
+				asmNode.TreeNode.EnsureChildrenLoaded();
+				return asmNode.TreeNode.DataChildren.FirstOrDefault() as ModuleDocumentNode;
+			}
+			else
+				return node.GetModuleNode();
+		}
 
 		static void Execute(EditCodeVMCreator editCodeVMCreator, Lazy<IAddUpdatedNodesHelperProvider> addUpdatedNodesHelperProvider, Lazy<IUndoCommandService> undoCommandService, IAppService appService, DocumentTreeNodeData[] nodes) {
 			if (!CanExecute(editCodeVMCreator, nodes))
 				return;
 
-			var asmNode = nodes[0] as AssemblyDocumentNode;
-			ModuleDocumentNode modNode;
-			if (asmNode != null) {
-				asmNode.TreeNode.EnsureChildrenLoaded();
-				modNode = asmNode.TreeNode.DataChildren.FirstOrDefault() as ModuleDocumentNode;
-			}
-			else
-				modNode = nodes[0].GetModuleNode();
-			Debug.Assert(modNode != null);
-			if (modNode == null)
+			var modNode = GetModuleNode(nodes[0]);
+			Debug2.Assert(modNode is not null);
+			if (modNode is null)
 				return;
 			var module = modNode.Document.ModuleDef;
-			Debug.Assert(module != null);
-			if (module == null)
+			Debug2.Assert(module is not null);
+			if (module is null)
 				throw new InvalidOperationException();
 
+			AssemblyDocumentNode? asmNode;
 			if (module.IsManifestModule)
 				asmNode = modNode.TreeNode.Parent?.Data as AssemblyDocumentNode;
 			else
@@ -129,13 +132,13 @@ namespace dnSpy.AsmEditor.Compiler {
 			var win = new EditCodeDlg();
 			win.DataContext = vm;
 			win.Owner = appService.MainWindow;
-			win.Title = string.Format("{0} - {1}", dnSpy_AsmEditor_Resources.EditCodeAddClass, asmNode?.ToString() ?? modNode.ToString());
+			win.Title = $"{dnSpy_AsmEditor_Resources.EditCodeAddClass} - {asmNode?.ToString() ?? modNode.ToString()}";
 
 			if (win.ShowDialog() != true) {
 				vm.Dispose();
 				return;
 			}
-			Debug.Assert(vm.Result != null);
+			Debug2.Assert(vm.Result is not null);
 
 			undoCommandService.Value.Add(new AddClassCommand(addUpdatedNodesHelperProvider, modNode, vm.Result));
 			vm.Dispose();

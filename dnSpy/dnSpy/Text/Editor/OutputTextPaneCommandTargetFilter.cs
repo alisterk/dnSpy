@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -27,16 +27,13 @@ namespace dnSpy.Text.Editor {
 	sealed class OutputTextPaneCommandTargetFilter : ICommandTargetFilter {
 		readonly ITextView textView;
 
-		public OutputTextPaneCommandTargetFilter(ITextView textView) {
-			this.textView = textView;
-		}
+		public OutputTextPaneCommandTargetFilter(ITextView textView) => this.textView = textView;
 
-		IOutputTextPane TryGetInstance() =>
-			__outputTextPane ?? (__outputTextPane = OutputTextPaneUtils.TryGetInstance(textView));
-		IOutputTextPane __outputTextPane;
+		IOutputTextPane TryGetInstance() => __outputTextPane ??= OutputTextPaneUtils.TryGetInstance(textView);
+		IOutputTextPane? __outputTextPane;
 
 		public CommandTargetStatus CanExecute(Guid group, int cmdId) {
-			if (TryGetInstance() == null)
+			if (TryGetInstance() is null)
 				return CommandTargetStatus.NotHandled;
 
 			if (group == CommandConstants.OutputTextPaneGroup) {
@@ -52,14 +49,14 @@ namespace dnSpy.Text.Editor {
 			return CommandTargetStatus.NotHandled;
 		}
 
-		public CommandTargetStatus Execute(Guid group, int cmdId, object args = null) {
-			object result = null;
+		public CommandTargetStatus Execute(Guid group, int cmdId, object? args = null) {
+			object? result = null;
 			return Execute(group, cmdId, args, ref result);
 		}
 
-		public CommandTargetStatus Execute(Guid group, int cmdId, object args, ref object result) {
+		public CommandTargetStatus Execute(Guid group, int cmdId, object? args, ref object? result) {
 			var textPane = TryGetInstance();
-			if (textPane == null)
+			if (textPane is null)
 				return CommandTargetStatus.NotHandled;
 
 			if (group == CommandConstants.OutputTextPaneGroup) {

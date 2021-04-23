@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -43,9 +44,7 @@ namespace dnSpy.Hex.Editor {
 		readonly ActiveColumnHighlighterServiceProvider activeColumnHighlighterServiceProvider;
 
 		[ImportingConstructor]
-		ActiveColumnHighlighterWpfHexViewCreationListener(ActiveColumnHighlighterServiceProvider activeColumnHighlighterServiceProvider) {
-			this.activeColumnHighlighterServiceProvider = activeColumnHighlighterServiceProvider;
-		}
+		ActiveColumnHighlighterWpfHexViewCreationListener(ActiveColumnHighlighterServiceProvider activeColumnHighlighterServiceProvider) => this.activeColumnHighlighterServiceProvider = activeColumnHighlighterServiceProvider;
 
 		public override void HexViewCreated(WpfHexView wpfHexView) =>
 			activeColumnHighlighterServiceProvider.InstallService(wpfHexView);
@@ -60,12 +59,10 @@ namespace dnSpy.Hex.Editor {
 		readonly HexEditorFormatMapService editorFormatMapService;
 
 		[ImportingConstructor]
-		ActiveColumnHighlighterServiceProviderImpl(HexEditorFormatMapService editorFormatMapService) {
-			this.editorFormatMapService = editorFormatMapService;
-		}
+		ActiveColumnHighlighterServiceProviderImpl(HexEditorFormatMapService editorFormatMapService) => this.editorFormatMapService = editorFormatMapService;
 
 		public override void InstallService(WpfHexView wpfHexView) {
-			if (wpfHexView == null)
+			if (wpfHexView is null)
 				throw new ArgumentNullException(nameof(wpfHexView));
 			wpfHexView.Properties.GetOrCreateSingletonProperty(typeof(ActiveColumnHighlighterService), () => new ActiveColumnHighlighterService(wpfHexView, editorFormatMapService));
 		}
@@ -74,7 +71,7 @@ namespace dnSpy.Hex.Editor {
 	sealed class ActiveColumnHighlighterService {
 		readonly WpfHexView wpfHexView;
 		readonly VSTC.IEditorFormatMap editorFormatMap;
-		HexAdornmentLayer adornmentLayer;
+		HexAdornmentLayer? adornmentLayer;
 		bool enabled;
 		readonly List<RectangleElement> rectangleElements;
 
@@ -82,9 +79,9 @@ namespace dnSpy.Hex.Editor {
 			public HexColumnType Column { get; }
 			readonly Rect rect;
 			readonly Brush brush;
-			readonly Pen pen;
+			readonly Pen? pen;
 
-			public RectangleElement(HexColumnType column, Rect rect, Brush brush, Pen pen) {
+			public RectangleElement(HexColumnType column, Rect rect, Brush brush, Pen? pen) {
 				Canvas.SetTop(this, 0);
 				Column = column;
 				this.rect = rect;
@@ -98,21 +95,19 @@ namespace dnSpy.Hex.Editor {
 			}
 		}
 
-#pragma warning disable 0169
+#pragma warning disable CS0169
 		[Export(typeof(HexAdornmentLayerDefinition))]
 		[VSUTIL.Name(PredefinedHexAdornmentLayers.ActiveColumnHighlighter)]
 		[VSUTIL.Order(Before = PredefinedHexAdornmentLayers.BottomLayer)]
 		[VSUTIL.Order(Before = PredefinedHexAdornmentLayers.TopLayer)]
-		static HexAdornmentLayerDefinition theAdornmentLayerDefinition;
-#pragma warning restore 0169
+		static HexAdornmentLayerDefinition? theAdornmentLayerDefinition;
+#pragma warning restore CS0169
 
 		public ActiveColumnHighlighterService(WpfHexView wpfHexView, HexEditorFormatMapService editorFormatMapService) {
-			if (wpfHexView == null)
-				throw new ArgumentNullException(nameof(wpfHexView));
-			if (editorFormatMapService == null)
+			if (editorFormatMapService is null)
 				throw new ArgumentNullException(nameof(editorFormatMapService));
 			rectangleElements = new List<RectangleElement>();
-			this.wpfHexView = wpfHexView;
+			this.wpfHexView = wpfHexView ?? throw new ArgumentNullException(nameof(wpfHexView));
 			editorFormatMap = editorFormatMapService.GetEditorFormatMap(wpfHexView);
 			wpfHexView.Closed += WpfHexView_Closed;
 			wpfHexView.Options.OptionChanged += Options_OptionChanged;
@@ -126,7 +121,7 @@ namespace dnSpy.Hex.Editor {
 			enabled = newEnabled;
 
 			if (enabled) {
-				if (adornmentLayer == null)
+				if (adornmentLayer is null)
 					adornmentLayer = wpfHexView.GetAdornmentLayer(PredefinedHexAdornmentLayers.ActiveColumnHighlighter);
 				HookEnabledEvents();
 			}
@@ -148,12 +143,12 @@ namespace dnSpy.Hex.Editor {
 			wpfHexView.Caret.PositionChanged -= Caret_PositionChanged;
 		}
 
-		void Caret_PositionChanged(object sender, HexCaretPositionChangedEventArgs e) {
+		void Caret_PositionChanged(object? sender, HexCaretPositionChangedEventArgs e) {
 			if (e.OldPosition.Position.ActiveColumn != e.NewPosition.Position.ActiveColumn)
 				RecreateRectangles();
 		}
 
-		void Options_OptionChanged(object sender, VSTE.EditorOptionChangedEventArgs e) {
+		void Options_OptionChanged(object? sender, VSTE.EditorOptionChangedEventArgs e) {
 			switch (e.OptionId) {
 			case DefaultHexViewOptions.HighlightActiveColumnName:
 				UpdateEnabled();
@@ -161,7 +156,7 @@ namespace dnSpy.Hex.Editor {
 			}
 		}
 
-		void WpfHexView_LayoutChanged(object sender, HexViewLayoutChangedEventArgs e) {
+		void WpfHexView_LayoutChanged(object? sender, HexViewLayoutChangedEventArgs e) {
 			bool recreate = false;
 			if (latestBufferLines != wpfHexView.BufferLines)
 				recreate = true;
@@ -172,7 +167,7 @@ namespace dnSpy.Hex.Editor {
 			else
 				UpdateRectanglesPositions(e);
 		}
-		HexBufferLineFormatter latestBufferLines;
+		HexBufferLineFormatter? latestBufferLines;
 
 		void UpdateRectanglesPositions(HexViewLayoutChangedEventArgs e) {
 			var d = e.NewViewState.ViewportTop - e.OldViewState.ViewportTop;
@@ -182,7 +177,7 @@ namespace dnSpy.Hex.Editor {
 				Canvas.SetTop(rectElem, Canvas.GetTop(rectElem) + d);
 		}
 
-		void EditorFormatMap_FormatMappingChanged(object sender, VSTC.FormatItemsEventArgs e) {
+		void EditorFormatMap_FormatMappingChanged(object? sender, VSTC.FormatItemsEventArgs e) {
 			if (wpfHexView.IsClosed)
 				return;
 			bool refresh = e.ChangedItems.Contains(CTC.ThemeClassificationTypeNameKeys.HexHighlightedValuesColumn) ||
@@ -206,6 +201,7 @@ namespace dnSpy.Hex.Editor {
 			RemoveAllRectangles();
 			if (!enabled)
 				return;
+			Debug2.Assert(adornmentLayer is not null);
 
 			if (wpfHexView.ViewportHeight == 0)
 				return;
@@ -214,11 +210,11 @@ namespace dnSpy.Hex.Editor {
 			var top = wpfHexView.ViewportTop;
 			var bottom = wpfHexView.ViewportBottom;
 			foreach (var info in GetRectanglePositions(line)) {
-				var props = editorFormatMap.GetProperties(GetClassificationTypeName(info.Key));
+				var props = editorFormatMap.GetProperties(GetClassificationTypeName(info.type));
 				var bgBrush = GetBackgroundBrush(props);
-				if (bgBrush == null || TWPF.BrushComparer.Equals(bgBrush, Brushes.Transparent))
+				if (bgBrush is null || TWPF.BrushComparer.Equals(bgBrush, Brushes.Transparent))
 					continue;
-				var lineElem = new RectangleElement(info.Key, info.Value, bgBrush, null);
+				var lineElem = new RectangleElement(info.type, info.rect, bgBrush, null);
 				bool added = adornmentLayer.AddAdornment(VSTE.AdornmentPositioningBehavior.OwnerControlled, (HexBufferSpan?)null, null, lineElem, null);
 				if (added)
 					rectangleElements.Add(lineElem);
@@ -237,24 +233,20 @@ namespace dnSpy.Hex.Editor {
 			}
 		}
 
-		Brush GetBackgroundBrush(ResourceDictionary props) {
-			Color? color;
-			SolidColorBrush scBrush;
-			Brush fillBrush;
-
+		Brush? GetBackgroundBrush(ResourceDictionary props) {
 			const double BG_BRUSH_OPACITY = 0.4;
 			Brush newBrush;
-			if ((color = props[VSTC.EditorFormatDefinition.BackgroundColorId] as Color?) != null) {
-				newBrush = new SolidColorBrush(color.Value);
+			if (props[VSTC.EditorFormatDefinition.BackgroundColorId] is Color color) {
+				newBrush = new SolidColorBrush(color);
 				newBrush.Opacity = BG_BRUSH_OPACITY;
 				newBrush.Freeze();
 			}
-			else if ((scBrush = props[VSTC.EditorFormatDefinition.BackgroundBrushId] as SolidColorBrush) != null) {
+			else if (props[VSTC.EditorFormatDefinition.BackgroundBrushId] is SolidColorBrush scBrush) {
 				newBrush = new SolidColorBrush(scBrush.Color);
 				newBrush.Opacity = BG_BRUSH_OPACITY;
 				newBrush.Freeze();
 			}
-			else if ((fillBrush = props[VSTC.MarkerFormatDefinition.FillId] as Brush) != null) {
+			else if (props[VSTC.MarkerFormatDefinition.FillId] is Brush fillBrush) {
 				newBrush = fillBrush;
 				if (newBrush.CanFreeze)
 					newBrush.Freeze();
@@ -285,15 +277,15 @@ namespace dnSpy.Hex.Editor {
 			return new Rect(left, top, right - left, bottom - top);
 		}
 
-		IEnumerable<KeyValuePair<HexColumnType, Rect>> GetRectanglePositions(HexViewLine line) {
+		IEnumerable<(HexColumnType type, Rect rect)> GetRectanglePositions(HexViewLine line) {
 			var column = wpfHexView.Caret.Position.Position.ActiveColumn;
 			if (!line.BufferLine.IsColumnPresent(column))
 				yield break;
 			var span = line.BufferLine.GetSpan(column, onlyVisibleCells: false);
 			var rect = GetBounds(line.GetNormalizedTextBounds(span));
-			if (rect == null || rect.Value.Width <= 0)
+			if (rect is null || rect.Value.Width <= 0)
 				yield break;
-			yield return new KeyValuePair<HexColumnType, Rect>(column, new Rect(rect.Value.X, wpfHexView.ViewportTop, rect.Value.Width, wpfHexView.ViewportHeight));
+			yield return (column, new Rect(rect.Value.X, wpfHexView.ViewportTop, rect.Value.Width, wpfHexView.ViewportHeight));
 		}
 
 		void RemoveAllRectangles() {
@@ -301,7 +293,7 @@ namespace dnSpy.Hex.Editor {
 			rectangleElements.Clear();
 		}
 
-		void WpfHexView_Closed(object sender, EventArgs e) {
+		void WpfHexView_Closed(object? sender, EventArgs e) {
 			RemoveAllRectangles();
 			latestBufferLines = null;
 			wpfHexView.Closed -= WpfHexView_Closed;

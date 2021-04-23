@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -23,7 +23,7 @@ namespace dnSpy.Contracts.Hex.Editor {
 	/// <summary>
 	/// Caret position
 	/// </summary>
-	public struct HexCaretPosition : IEquatable<HexCaretPosition> {
+	public readonly struct HexCaretPosition : IEquatable<HexCaretPosition> {
 		/// <summary>
 		/// true if this is a default instance that hasn't been initialized
 		/// </summary>
@@ -71,7 +71,7 @@ namespace dnSpy.Contracts.Hex.Editor {
 		/// </summary>
 		/// <param name="obj">Object</param>
 		/// <returns></returns>
-		public override bool Equals(object obj) => obj is HexCaretPosition && Equals((HexCaretPosition)obj);
+		public override bool Equals(object? obj) => obj is HexCaretPosition && Equals((HexCaretPosition)obj);
 
 		/// <summary>
 		/// GetHashCode()

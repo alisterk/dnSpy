@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -29,9 +29,7 @@ namespace dnSpy.ToolWindows {
 	sealed class ToolWindowService : IToolWindowService {
 		readonly ITabService tabService;
 
-		public ToolWindowService(ITabService tabService) {
-			this.tabService = tabService;
-		}
+		public ToolWindowService(ITabService tabService) => this.tabService = tabService;
 
 		public IToolWindowGroupService Create(ToolWindowGroupServiceOptions options) {
 			var newOptions = Convert(options);
@@ -44,7 +42,7 @@ namespace dnSpy.ToolWindows {
 		}
 
 		TabGroupServiceOptions Convert(ToolWindowGroupServiceOptions options) {
-			if (options == null)
+			if (options is null)
 				options = new ToolWindowGroupServiceOptions();
 			return new TabGroupServiceOptions {
 				TabControlStyle = options.TabControlStyle ?? "ToolWindowGroupTabControlStyle",
@@ -56,11 +54,9 @@ namespace dnSpy.ToolWindows {
 		sealed class InitializeContextMenuHelper {
 			readonly Guid tabGroupGuid;
 
-			public ToolWindowGroupService ToolWindowGroupService { get; set; }
+			public ToolWindowGroupService? ToolWindowGroupService { get; set; }
 
-			public InitializeContextMenuHelper(Guid tabGroupGuid) {
-				this.tabGroupGuid = tabGroupGuid;
-			}
+			public InitializeContextMenuHelper(Guid tabGroupGuid) => this.tabGroupGuid = tabGroupGuid;
 
 			public IContextMenuProvider InitializeContextMenu(IMenuService menuService, ITabGroup tabGroup, FrameworkElement elem) => menuService.InitializeContextMenu(elem, tabGroupGuid, new GuidObjectsProvider(this, tabGroup));
 
@@ -74,11 +70,11 @@ namespace dnSpy.ToolWindows {
 				}
 
 				public IEnumerable<GuidObject> GetGuidObjects(GuidObjectsProviderArgs args) {
-					Debug.Assert(owner.ToolWindowGroupService != null);
-					if (owner.ToolWindowGroupService != null) {
+					Debug2.Assert(owner.ToolWindowGroupService is not null);
+					if (owner.ToolWindowGroupService is not null) {
 						var twg = owner.ToolWindowGroupService.GetToolWindowGroup(tabGroup);
-						Debug.Assert(twg != null);
-						if (twg != null)
+						Debug2.Assert(twg is not null);
+						if (twg is not null)
 							yield return new GuidObject(MenuConstants.GUIDOBJ_TOOLWINDOWGROUP_GUID, twg);
 					}
 				}

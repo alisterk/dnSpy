@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -28,12 +28,12 @@ namespace dnSpy.Decompiler.MSBuild {
 		/// <summary>
 		/// The logger or null
 		/// </summary>
-		public IMSBuildProjectWriterLogger Logger { get; set; }
+		public IMSBuildProjectWriterLogger? Logger { get; set; }
 
 		/// <summary>
 		/// Gets notified when the progress gets updated
 		/// </summary>
-		public IMSBuildProgressListener ProgressListener { get; set; }
+		public IMSBuildProgressListener? ProgressListener { get; set; }
 
 		/// <summary>
 		/// All modules that should be decompiled
@@ -60,7 +60,7 @@ namespace dnSpy.Decompiler.MSBuild {
 		/// Filename relative to <see cref="Directory"/>. Use null if no solution file should be
 		/// written.
 		/// </summary>
-		public string SolutionFilename { get; set; }
+		public string? SolutionFilename { get; set; }
 
 		/// <summary>
 		/// User GAC paths. All files stored in any of these directories are considered GAC files.
@@ -83,9 +83,7 @@ namespace dnSpy.Decompiler.MSBuild {
 		/// <param name="directory">Base directory</param>
 		/// <param name="cancellationToken">Cancellation token</param>
 		public ProjectCreatorOptions(string directory, CancellationToken cancellationToken) {
-			if (directory == null)
-				throw new ArgumentNullException(nameof(directory));
-			Directory = directory;
+			Directory = directory ?? throw new ArgumentNullException(nameof(directory));
 			CancellationToken = cancellationToken;
 			ProjectModules = new List<ProjectModuleOptions>();
 			UserGACPaths = new List<string>();

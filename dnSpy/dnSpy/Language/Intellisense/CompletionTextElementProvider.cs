@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -38,29 +38,22 @@ namespace dnSpy.Language.Intellisense {
 		readonly Dictionary<IContentType, ITextClassifier> toClassifier;
 
 		public CompletionTextElementProvider(ITextClassifierAggregatorService textClassifierAggregatorService, IClassificationFormatMap classificationFormatMap, IContentTypeRegistryService contentTypeRegistryService) {
-			if (textClassifierAggregatorService == null)
-				throw new ArgumentNullException(nameof(textClassifierAggregatorService));
-			if (classificationFormatMap == null)
-				throw new ArgumentNullException(nameof(classificationFormatMap));
-			if (contentTypeRegistryService == null)
-				throw new ArgumentNullException(nameof(contentTypeRegistryService));
-			this.textClassifierAggregatorService = textClassifierAggregatorService;
-			this.classificationFormatMap = classificationFormatMap;
-			this.contentTypeRegistryService = contentTypeRegistryService;
+			this.textClassifierAggregatorService = textClassifierAggregatorService ?? throw new ArgumentNullException(nameof(textClassifierAggregatorService));
+			this.classificationFormatMap = classificationFormatMap ?? throw new ArgumentNullException(nameof(classificationFormatMap));
+			this.contentTypeRegistryService = contentTypeRegistryService ?? throw new ArgumentNullException(nameof(contentTypeRegistryService));
 			toClassifier = new Dictionary<IContentType, ITextClassifier>();
 		}
 
 		ITextClassifier GetTextClassifier(IContentType contentType) {
-			ITextClassifier completionClassifier;
-			if (!toClassifier.TryGetValue(contentType, out completionClassifier))
+			if (!toClassifier.TryGetValue(contentType, out var completionClassifier))
 				toClassifier.Add(contentType, completionClassifier = textClassifierAggregatorService.Create(contentType));
 			return completionClassifier;
 		}
 
 		public FrameworkElement Create(CompletionSet completionSet, Completion completion, CompletionClassifierKind kind, bool colorize) {
-			if (completionSet == null)
+			if (completionSet is null)
 				throw new ArgumentNullException(nameof(completionSet));
-			if (completion == null)
+			if (completion is null)
 				throw new ArgumentNullException(nameof(completion));
 			Debug.Assert(completionSet.Completions.Contains(completion));
 
@@ -74,7 +67,7 @@ namespace dnSpy.Language.Intellisense {
 				break;
 
 			case CompletionClassifierKind.Suffix:
-				var suffix = (completion as Completion4)?.Suffix ?? string.Empty;
+				var suffix = (completion as DsCompletion)?.Suffix ?? string.Empty;
 				context = new CompletionSuffixClassifierContext(completionSet, completion, suffix, colorize);
 				defaultContentType = ContentTypes.CompletionSuffix;
 				break;
@@ -84,7 +77,7 @@ namespace dnSpy.Language.Intellisense {
 			}
 
 			var contentType = (completionSet as ICompletionSetContentTypeProvider)?.GetContentType(contentTypeRegistryService, kind);
-			if (contentType == null)
+			if (contentType is null)
 				contentType = contentTypeRegistryService.GetContentType(defaultContentType);
 			var classifier = GetTextClassifier(contentType);
 			return TextBlockFactory.Create(context.Text, classificationFormatMap.DefaultTextProperties,

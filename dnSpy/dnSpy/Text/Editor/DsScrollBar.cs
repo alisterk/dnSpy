@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -23,11 +23,9 @@ using System.Windows.Input;
 
 namespace dnSpy.Text.Editor {
 	abstract class DsScrollBar : ScrollBar {
-		protected DsScrollBar() {
-			Scroll += DsScrollBar_Scroll;
-		}
+		protected DsScrollBar() => Scroll += DsScrollBar_Scroll;
 
-		void DsScrollBar_Scroll(object sender, ScrollEventArgs e) => OnScroll(e);
+		void DsScrollBar_Scroll(object? sender, ScrollEventArgs e) => OnScroll(e);
 
 		// The ScrollBar class doesn't send a scroll event when the user Shift+Clicks
 		protected override void OnPreviewMouseLeftButtonDown(MouseButtonEventArgs e) {
@@ -55,7 +53,7 @@ namespace dnSpy.Text.Editor {
 			ClearValue(ContextMenuProperty);
 			base.OnContextMenuOpening(e);
 			var ctxMenu = ContextMenu;
-			if (ctxMenu != null) {
+			if (ctxMenu is not null) {
 				if (IsEnabled) {
 					ctxMenu.PlacementTarget = this;
 					ctxMenu.IsOpen = true;

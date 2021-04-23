@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -25,7 +25,7 @@ namespace dnSpy.Text.Operations {
 	sealed class TextUndoPrimitive : ITextUndoPrimitive {
 		public bool CanRedo => !canUndo;
 		public bool CanUndo => canUndo;
-		public ITextUndoTransaction Parent { get; set; }
+		public ITextUndoTransaction? Parent { get; set; }
 
 		readonly ITextBuffer textBuffer;
 		readonly ChangeInfo info;
@@ -33,22 +33,20 @@ namespace dnSpy.Text.Operations {
 		bool canUndo;
 
 		public TextUndoPrimitive(ITextBuffer textBuffer, ChangeInfo info, object editTag) {
-			if (textBuffer == null)
-				throw new ArgumentNullException(nameof(textBuffer));
-			this.textBuffer = textBuffer;
+			this.textBuffer = textBuffer ?? throw new ArgumentNullException(nameof(textBuffer));
 			this.info = info;
 			this.editTag = editTag;
 			canUndo = true;
 		}
 
 		public bool CanMerge(ITextUndoPrimitive older) {
-			if (older == null)
+			if (older is null)
 				throw new ArgumentNullException(nameof(older));
 			return false;//TODO:
 		}
 
 		public ITextUndoPrimitive Merge(ITextUndoPrimitive older) {
-			if (older == null)
+			if (older is null)
 				throw new ArgumentNullException(nameof(older));
 			throw new NotSupportedException();//TODO:
 		}

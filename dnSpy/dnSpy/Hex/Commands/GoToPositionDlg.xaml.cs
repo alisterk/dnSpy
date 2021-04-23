@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -26,8 +26,7 @@ namespace dnSpy.Hex.Commands {
 		public GoToPositionDlg() {
 			InitializeComponent();
 			DataContextChanged += (s, e) => {
-				var vm = DataContext as GoToPositionVM;
-				if (vm != null) {
+				if (DataContext is GoToPositionVM vm) {
 					InputBindings.Add(new KeyBinding(vm.SelectPositionAbsoluteCommand, new KeyGesture(Key.D1, ModifierKeys.Control)));
 					InputBindings.Add(new KeyBinding(vm.SelectPositionFileCommand, new KeyGesture(Key.D2, ModifierKeys.Control)));
 					InputBindings.Add(new KeyBinding(vm.SelectPositionRVACommand, new KeyGesture(Key.D3, ModifierKeys.Control)));
@@ -37,7 +36,7 @@ namespace dnSpy.Hex.Commands {
 			Loaded += OnLoaded;
 		}
 
-		void OnLoaded(object sender, RoutedEventArgs e) {
+		void OnLoaded(object? sender, RoutedEventArgs e) {
 			Loaded -= OnLoaded;
 			offsetTextBox.SelectAll();
 		}

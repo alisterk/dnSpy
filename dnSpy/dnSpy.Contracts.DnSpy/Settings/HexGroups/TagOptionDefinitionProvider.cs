@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -44,7 +44,7 @@ namespace dnSpy.Contracts.Settings.HexGroups {
 		/// </summary>
 		/// <param name="hexView">Hex view</param>
 		/// <returns></returns>
-		public abstract string GetSubGroup(WpfHexView hexView);
+		public abstract string? GetSubGroup(WpfHexView hexView);
 	}
 
 	/// <summary>Metadata</summary>
@@ -65,9 +65,7 @@ namespace dnSpy.Contracts.Settings.HexGroups {
 		/// <param name="order">Order of this instanec</param>
 		public ExportTagOptionDefinitionProviderAttribute(string group, double order = double.MaxValue)
 			: base(typeof(TagOptionDefinitionProvider)) {
-			if (group == null)
-				throw new ArgumentNullException(nameof(group));
-			Group = group;
+			Group = group ?? throw new ArgumentNullException(nameof(group));
 			Order = order;
 		}
 

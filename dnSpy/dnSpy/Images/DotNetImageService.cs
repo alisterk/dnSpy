@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -22,6 +22,7 @@ using System.ComponentModel.Composition;
 using System.Diagnostics;
 using dnlib.DotNet;
 using dnlib.PE;
+using dnSpy.Contracts.Decompiler;
 using dnSpy.Contracts.Images;
 
 namespace dnSpy.Images {
@@ -120,6 +121,22 @@ namespace dnSpy.Images {
 						return DsImages.ExceptionShortcut;
 					}
 				}
+				else if (IsModule(type)) {
+					switch (type.Visibility) {
+					case TypeAttributes.Public:
+					case TypeAttributes.NestedPublic:
+						return DsImages.ModulePublic;
+					case TypeAttributes.NestedPrivate:
+						return DsImages.ModulePrivate;
+					case TypeAttributes.NestedFamily:
+						return DsImages.ModuleProtected;
+					case TypeAttributes.NotPublic:
+					case TypeAttributes.NestedAssembly:
+					case TypeAttributes.NestedFamANDAssem:
+					case TypeAttributes.NestedFamORAssem:
+						return DsImages.ModuleInternal;
+					}
+				}
 				else if (type.GenericParameters.Count > 0) {
 					switch (type.Visibility) {
 					case TypeAttributes.Public:
@@ -156,27 +173,33 @@ namespace dnSpy.Images {
 				}
 			}
 			Debug.Fail("Impossible to get here");
-			return default(ImageReference);
+			return default;
 		}
 
+		static bool IsModule(TypeDef type) =>
+			type is not null && type.DeclaringType is null && type.IsSealed && type.IsDefined(stringMicrosoftVisualBasicCompilerServices, stringStandardModuleAttribute);
+		static readonly UTF8String stringMicrosoftVisualBasicCompilerServices = new UTF8String("Microsoft.VisualBasic.CompilerServices");
+		static readonly UTF8String stringStandardModuleAttribute = new UTF8String("StandardModuleAttribute");
+
 		static bool IsDelegate(TypeDef type) =>
-			type.BaseType != null && type.BaseType.FullName == "System.MulticastDelegate" && type.BaseType.DefinitionAssembly.IsCorLib();
+			type.BaseType is not null && type.BaseType.FullName == "System.MulticastDelegate" && type.BaseType.DefinitionAssembly.IsCorLib();
 
 		static bool IsException(TypeDef type) {
-			if (IsSystemException(type))
+			TypeDef? td = type;
+			if (IsSystemException(td))
 				return true;
-			while (type != null) {
-				if (IsSystemException(type.BaseType))
+			for (int i = 0; i < 1000 && td is not null; i++) {
+				if (IsSystemException(td.BaseType))
 					return true;
-				var bt = type.BaseType;
-				type = bt == null ? null : bt.ScopeType.ResolveTypeDef();
+				var bt = td.BaseType;
+				td = bt?.ScopeType.ResolveTypeDef();
 			}
 			return false;
 		}
 
-		static bool IsSystemException(ITypeDefOrRef type) =>
-			type != null &&
-			type.DeclaringType == null &&
+		static bool IsSystemException(ITypeDefOrRef? type) =>
+			type is not null &&
+			type.DeclaringType is null &&
 			type.Namespace == "System" &&
 			type.Name == "Exception" &&
 			type.DefinitionAssembly.IsCorLib();
@@ -238,7 +261,7 @@ namespace dnSpy.Images {
 			}
 		}
 
-		static bool IsSystemDecimal(TypeSig ts) => ts != null && ts.DefinitionAssembly.IsCorLib() && ts.FullName == "System.Decimal";
+		static bool IsSystemDecimal(TypeSig ts) => ts is not null && ts.DefinitionAssembly.IsCorLib() && ts.FullName == "System.Decimal";
 		static bool IsDecimalConstant(FieldDef field) => IsSystemDecimal(field.FieldType) && field.CustomAttributes.IsDefined("System.Runtime.CompilerServices.DecimalConstantAttribute");
 
 		public ImageReference GetImageReference(MethodDef method) {
@@ -284,7 +307,7 @@ namespace dnSpy.Images {
 
 		public ImageReference GetImageReference(EventDef @event) {
 			var method = @event.AddMethod ?? @event.RemoveMethod;
-			if (method == null)
+			if (method is null)
 				return DsImages.EventPublic;
 
 			switch (method.Access) {
@@ -307,7 +330,7 @@ namespace dnSpy.Images {
 
 		public ImageReference GetImageReference(PropertyDef property) {
 			var method = property.GetMethod ?? property.SetMethod;
-			if (method == null)
+			if (method is null)
 				return DsImages.Property;
 
 			switch (method.Access) {

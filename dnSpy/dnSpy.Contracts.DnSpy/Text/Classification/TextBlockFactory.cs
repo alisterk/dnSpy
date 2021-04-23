@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -23,6 +23,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Markup;
+using dnSpy.Contracts.DnSpy.Text.WPF;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Formatting;
 using DOC = System.Windows.Documents;
@@ -87,24 +88,16 @@ namespace dnSpy.Contracts.Text.Classification {
 		/// <param name="flags">Flags</param>
 		/// <returns></returns>
 		public static TextBlock Create(string text, TextFormattingRunProperties defaultProperties, IEnumerable<TextRunPropertiesAndSpan> orderedPropsAndSpans, Flags flags = Flags.None) {
-			if (text == null)
+			if (text is null)
 				throw new ArgumentNullException(nameof(text));
-			if (defaultProperties == null)
+			if (defaultProperties is null)
 				throw new ArgumentNullException(nameof(defaultProperties));
-			if (orderedPropsAndSpans == null)
+			if (orderedPropsAndSpans is null)
 				throw new ArgumentNullException(nameof(orderedPropsAndSpans));
+			text = WpfUnicodeUtils.ReplaceBadChars(text);
 
 			var textBlock = new TextBlock();
-			int textOffset = 0;
 			bool filterOutNewlines = (flags & Flags.FilterOutNewlines) != 0;
-			foreach (var tag in orderedPropsAndSpans) {
-				if (textOffset < tag.Span.Start)
-					textBlock.Inlines.Add(CreateRun(ToString(text.Substring(textOffset, tag.Span.Start - textOffset), filterOutNewlines), defaultProperties, null, flags));
-				textBlock.Inlines.Add(CreateRun(ToString(text.Substring(tag.Span.Start, tag.Span.Length), filterOutNewlines), defaultProperties, tag.Properties, flags));
-				textOffset = tag.Span.End;
-			}
-			if (textOffset < text.Length)
-				textBlock.Inlines.Add(CreateRun(ToString(text.Substring(textOffset), filterOutNewlines), defaultProperties, null, flags));
 
 			if (!defaultProperties.BackgroundBrushEmpty)
 				textBlock.Background = defaultProperties.BackgroundBrush;
@@ -126,13 +119,63 @@ namespace dnSpy.Contracts.Text.Classification {
 			if ((flags & Flags.DisableWordWrap) == 0)
 				textBlock.TextWrapping = TextWrapping.Wrap;
 
+			propsAndSpansList.Clear();
+			propsAndSpansList.AddRange(orderedPropsAndSpans);
+			if (propsAndSpansList.Count == 0)
+				textBlock.Text = text;
+			else if (CanUseOnlyTextBlock(propsAndSpansList, text)) {
+				var properties = propsAndSpansList[0].Properties;
+				if (!properties.BackgroundBrushEmpty)
+					textBlock.Background = properties.BackgroundBrush;
+				if (!properties.ForegroundBrushEmpty)
+					textBlock.Foreground = properties.ForegroundBrush;
+				if (!properties.BoldEmpty)
+					textBlock.FontWeight = properties.Bold ? FontWeights.Bold : FontWeights.Normal;
+				if (!properties.ItalicEmpty)
+					textBlock.FontStyle = properties.Italic ? FontStyles.Italic : FontStyles.Normal;
+				if (!properties.FontRenderingEmSizeEmpty && (flags & Flags.DisableFontSize) == 0)
+					textBlock.FontSize = properties.FontRenderingEmSize;
+				if (!properties.TextDecorationsEmpty)
+					textBlock.TextDecorations = properties.TextDecorations;
+				if (!properties.TextEffectsEmpty)
+					textBlock.TextEffects = properties.TextEffects;
+				if (!properties.TypefaceEmpty && !IsSameTypeFace(defaultProperties, properties))
+					textBlock.FontFamily = properties.Typeface.FontFamily;
+				textBlock.Text = ToString(text, filterOutNewlines);
+			}
+			else {
+				int textOffset = 0;
+				foreach (var tag in propsAndSpansList) {
+					if (textOffset < tag.Span.Start)
+						textBlock.Inlines.Add(CreateRun(ToString(text.Substring(textOffset, tag.Span.Start - textOffset), filterOutNewlines), defaultProperties, null, flags));
+					textBlock.Inlines.Add(CreateRun(ToString(text.Substring(tag.Span.Start, tag.Span.Length), filterOutNewlines), defaultProperties, tag.Properties, flags));
+					textOffset = tag.Span.End;
+				}
+				if (textOffset < text.Length)
+					textBlock.Inlines.Add(CreateRun(ToString(text.Substring(textOffset), filterOutNewlines), defaultProperties, null, flags));
+			}
+
+			propsAndSpansList.Clear();
 			return textBlock;
 		}
+		static readonly List<TextRunPropertiesAndSpan> propsAndSpansList = new List<TextRunPropertiesAndSpan>();
 
-		static DOC.Run CreateRun(string text, TextFormattingRunProperties defaultProperties, TextFormattingRunProperties properties, Flags flags) {
+		static bool CanUseOnlyTextBlock(List<TextRunPropertiesAndSpan> list, string text) {
+			if (list.Count != 1)
+				return false;
+			var ps = list[0];
+			if (ps.Span != new Span(0, text.Length))
+				return false;
+			var props = ps.Properties;
+			// Don't use just a TextBlock if bg is used since the bg applies to the whole TextBlock,
+			// not the text shown in the TextBlock.
+			return props.BackgroundBrushEmpty;
+		}
+
+		static DOC.Run CreateRun(string text, TextFormattingRunProperties defaultProperties, TextFormattingRunProperties? properties, Flags flags) {
 			var run = new DOC.Run(text);
 
-			if (properties == null)
+			if (properties is null)
 				return run;
 
 			if (!properties.BackgroundBrushEmpty)
@@ -163,11 +206,10 @@ namespace dnSpy.Contracts.Text.Classification {
 			return GetFontName(a) == GetFontName(b);
 		}
 
-		static string GetFontName(TextFormattingRunProperties props) {
+		static string? GetFontName(TextFormattingRunProperties props) {
 			if (props.TypefaceEmpty)
 				return string.Empty;
-			string name;
-			if (!props.Typeface.FontFamily.FamilyNames.TryGetValue(language, out name))
+			if (!props.Typeface.FontFamily.FamilyNames.TryGetValue(language, out string? name))
 				name = null;
 			return name ?? string.Empty;
 		}
@@ -177,7 +219,7 @@ namespace dnSpy.Contracts.Text.Classification {
 	/// <summary>
 	/// Text properties and span
 	/// </summary>
-	internal struct TextRunPropertiesAndSpan {
+	internal readonly struct TextRunPropertiesAndSpan {
 		/// <summary>
 		/// Span
 		/// </summary>
@@ -194,10 +236,8 @@ namespace dnSpy.Contracts.Text.Classification {
 		/// <param name="span">Span</param>
 		/// <param name="properties">Text properties</param>
 		public TextRunPropertiesAndSpan(Span span, TextFormattingRunProperties properties) {
-			if (properties == null)
-				throw new System.ArgumentNullException(nameof(properties));
 			Span = span;
-			Properties = properties;
+			Properties = properties ?? throw new System.ArgumentNullException(nameof(properties));
 		}
 	}
 }

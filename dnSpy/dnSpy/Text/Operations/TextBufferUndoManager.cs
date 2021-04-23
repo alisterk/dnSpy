@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -40,24 +40,20 @@ namespace dnSpy.Text.Operations {
 		readonly List<ChangeInfo> changes;
 
 		public TextBufferUndoManager(ITextBuffer textBuffer, ITextUndoHistoryRegistry textUndoHistoryRegistry) {
-			if (textBuffer == null)
-				throw new ArgumentNullException(nameof(textBuffer));
-			if (textUndoHistoryRegistry == null)
-				throw new ArgumentNullException(nameof(textUndoHistoryRegistry));
 			changes = new List<ChangeInfo>();
-			TextBuffer = textBuffer;
-			this.textUndoHistoryRegistry = textUndoHistoryRegistry;
+			TextBuffer = textBuffer ?? throw new ArgumentNullException(nameof(textBuffer));
+			this.textUndoHistoryRegistry = textUndoHistoryRegistry ?? throw new ArgumentNullException(nameof(textUndoHistoryRegistry));
 			textBufferUndoHistory = textUndoHistoryRegistry.RegisterHistory(TextBuffer);
 			TextBuffer.Changed += TextBuffer_Changed;
 			TextBuffer.PostChanged += TextBuffer_PostChanged;
 		}
 
-		void TextBuffer_Changed(object sender, TextContentChangedEventArgs e) {
+		void TextBuffer_Changed(object? sender, TextContentChangedEventArgs e) {
 			if (e.EditTag != undoRedoEditTag && e.Changes.Count > 0)
 				changes.Add(new ChangeInfo(e.Changes, e.BeforeVersion.VersionNumber, e.AfterVersion.VersionNumber));
 		}
 
-		void TextBuffer_PostChanged(object sender, EventArgs e) {
+		void TextBuffer_PostChanged(object? sender, EventArgs e) {
 			if (changes.Count > 0) {
 				using (var transaction = TextBufferUndoHistory.CreateTransaction("Text Buffer Change")) {
 					foreach (var info in changes)

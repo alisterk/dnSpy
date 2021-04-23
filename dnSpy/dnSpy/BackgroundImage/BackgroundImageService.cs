@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -27,13 +27,10 @@ using dnSpy.Contracts.BackgroundImage;
 namespace dnSpy.BackgroundImage {
 	abstract class BackgroundImageService : IImageSourceServiceListener {
 		readonly IImageSourceService imageSourceService;
-		Image currentImage;
+		Image? currentImage;
 
-		protected BackgroundImageService(IImageSourceService imageSourceService) {
-			if (imageSourceService == null)
-				throw new ArgumentNullException(nameof(imageSourceService));
-			this.imageSourceService = imageSourceService;
-		}
+		protected BackgroundImageService(IImageSourceService imageSourceService) =>
+			this.imageSourceService = imageSourceService ?? throw new ArgumentNullException(nameof(imageSourceService));
 
 		protected void Initialize() => imageSourceService.Register(this);
 
@@ -119,7 +116,7 @@ namespace dnSpy.BackgroundImage {
 		}
 
 		public void OnImageChanged() {
-			if (currentImage == null) {
+			if (currentImage is null) {
 				currentImage = InitializeImage(new Image());
 				AddImageToAdornmentLayer();
 			}
@@ -128,8 +125,8 @@ namespace dnSpy.BackgroundImage {
 		}
 
 		protected void UpdateImagePosition() {
-			Debug.Assert(currentImage != null);
-			if (currentImage == null)
+			Debug2.Assert(currentImage is not null);
+			if (currentImage is null)
 				return;
 			UpdateImagePosition(currentImage);
 		}
@@ -229,7 +226,7 @@ namespace dnSpy.BackgroundImage {
 		}
 
 		public void OnSettingsChanged() {
-			if (currentImage == null) {
+			if (currentImage is null) {
 				currentImage = new Image();
 				AddImageToAdornmentLayer();
 			}
@@ -237,7 +234,7 @@ namespace dnSpy.BackgroundImage {
 		}
 
 		void AddImageToAdornmentLayer() {
-			Debug.Assert(currentImage != null);
+			Debug2.Assert(currentImage is not null);
 			AddImageToAdornmentLayerCore(currentImage);
 		}
 

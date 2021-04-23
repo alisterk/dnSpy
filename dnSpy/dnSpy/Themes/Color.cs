@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -45,8 +45,8 @@ namespace dnSpy.Themes {
 		/// </summary>
 		public ThemeColor InheritedColor;
 
-		public Color(ColorInfo colorInfo) {
-			ColorInfo = colorInfo;
-		}
+#pragma warning disable CS8618 // Non-nullable field is uninitialized.
+		public Color(ColorInfo colorInfo) => ColorInfo = colorInfo;
+#pragma warning restore CS8618 // Non-nullable field is uninitialized.
 	}
 }

@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -31,16 +31,12 @@ namespace dnSpy.Contracts.Documents.TreeView {
 		/// </summary>
 		public FieldDef FieldDef { get; }
 
-		IMDTokenProvider IMDTokenNode.Reference => FieldDef;
+		IMDTokenProvider? IMDTokenNode.Reference => FieldDef;
 
 		/// <summary>
 		/// Constructor
 		/// </summary>
 		/// <param name="field">Field</param>
-		protected FieldNode(FieldDef field) {
-			if (field == null)
-				throw new ArgumentNullException(nameof(field));
-			FieldDef = field;
-		}
+		protected FieldNode(FieldDef field) => FieldDef = field ?? throw new ArgumentNullException(nameof(field));
 	}
 }

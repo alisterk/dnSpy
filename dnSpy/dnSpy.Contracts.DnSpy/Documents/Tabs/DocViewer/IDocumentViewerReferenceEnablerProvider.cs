@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -32,7 +32,7 @@ namespace dnSpy.Contracts.Documents.Tabs.DocViewer {
 		/// </summary>
 		/// <param name="documentViewer">Document viewer</param>
 		/// <returns></returns>
-		IDocumentViewerReferenceEnabler Create(IDocumentViewer documentViewer);
+		IDocumentViewerReferenceEnabler? Create(IDocumentViewer documentViewer);
 	}
 
 	/// <summary>Metadata</summary>
@@ -50,11 +50,7 @@ namespace dnSpy.Contracts.Documents.Tabs.DocViewer {
 		/// <param name="id">Reference id, eg. <see cref="PredefinedSpanReferenceIds.HighlightRelatedKeywords"/>. This id
 		/// must equal an id stored in <see cref="SpanReference.Id"/></param>
 		public ExportDocumentViewerReferenceEnablerProviderAttribute(string id)
-			: base(typeof(IDocumentViewerReferenceEnablerProvider)) {
-			if (id == null)
-				throw new ArgumentNullException(nameof(id));
-			Id = id;
-		}
+			: base(typeof(IDocumentViewerReferenceEnablerProvider)) => Id = id ?? throw new ArgumentNullException(nameof(id));
 
 		/// <summary>
 		/// Reference id, eg. <see cref="PredefinedSpanReferenceIds.HighlightRelatedKeywords"/>
@@ -69,7 +65,7 @@ namespace dnSpy.Contracts.Documents.Tabs.DocViewer {
 		/// <summary>
 		/// Raised whenever <see cref="IsEnabled"/> has changed
 		/// </summary>
-		event EventHandler IsEnabledChanged;
+		event EventHandler? IsEnabledChanged;
 
 		/// <summary>
 		/// true if the reference is enabled and can be highlighted, false if the reference

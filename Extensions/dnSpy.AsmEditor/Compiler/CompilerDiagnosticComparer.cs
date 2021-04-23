@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -19,14 +19,22 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using dnSpy.Contracts.AsmEditor.Compiler;
 
 namespace dnSpy.AsmEditor.Compiler {
 	sealed class CompilerDiagnosticComparer : IComparer<CompilerDiagnostic> {
 		public static readonly CompilerDiagnosticComparer Instance = new CompilerDiagnosticComparer();
 
-		public int Compare(CompilerDiagnostic x, CompilerDiagnostic y) =>
-			GetOrder(x.Severity) - GetOrder(y.Severity);
+		public int Compare([AllowNull] CompilerDiagnostic x, [AllowNull] CompilerDiagnostic y) {
+			if ((object?)x == y)
+				return 0;
+			if (x is null)
+				return -1;
+			if (y is null)
+				return 1;
+			return GetOrder(x.Severity) - GetOrder(y.Severity);
+		}
 
 		int GetOrder(CompilerDiagnosticSeverity severity) {
 			switch (severity) {

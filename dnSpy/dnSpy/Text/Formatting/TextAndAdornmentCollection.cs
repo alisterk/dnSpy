@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -23,14 +23,12 @@ using System.Collections.ObjectModel;
 using Microsoft.VisualStudio.Text.Formatting;
 
 namespace dnSpy.Text.Formatting {
+#pragma warning disable CS8644 // Type does not implement interface member. Nullability of reference types in interface implemented by the base type doesn't match.
 	sealed class TextAndAdornmentCollection : ReadOnlyCollection<ISequenceElement>, ITextAndAdornmentCollection {
+#pragma warning restore CS8644 // Type does not implement interface member. Nullability of reference types in interface implemented by the base type doesn't match.
 		public ITextAndAdornmentSequencer Sequencer { get; }
 
 		public TextAndAdornmentCollection(ITextAndAdornmentSequencer textAndAdornmentSequencer, IList<ISequenceElement> list)
-			: base(list) {
-			if (textAndAdornmentSequencer == null)
-				throw new ArgumentNullException(nameof(textAndAdornmentSequencer));
-			Sequencer = textAndAdornmentSequencer;
-		}
+			: base(list) => Sequencer = textAndAdornmentSequencer ?? throw new ArgumentNullException(nameof(textAndAdornmentSequencer));
 	}
 }

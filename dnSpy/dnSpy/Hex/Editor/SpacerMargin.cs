@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -47,7 +47,7 @@ namespace dnSpy.Hex.Editor {
 			this.textFormatterProvider = textFormatterProvider;
 		}
 
-		public override WpfHexViewMargin CreateMargin(WpfHexViewHost wpfHexViewHost, WpfHexViewMargin marginContainer) =>
+		public override WpfHexViewMargin? CreateMargin(WpfHexViewHost wpfHexViewHost, WpfHexViewMargin marginContainer) =>
 			new SpacerMargin(wpfHexViewHost);
 	}
 
@@ -61,10 +61,8 @@ namespace dnSpy.Hex.Editor {
 		readonly WpfHexViewHost wpfHexViewHost;
 
 		public SpacerMargin(WpfHexViewHost wpfHexViewHost) {
-			if (wpfHexViewHost == null)
-				throw new ArgumentNullException(nameof(wpfHexViewHost));
 			frameworkElement = new FrameworkElement();
-			this.wpfHexViewHost = wpfHexViewHost;
+			this.wpfHexViewHost = wpfHexViewHost ?? throw new ArgumentNullException(nameof(wpfHexViewHost));
 			wpfHexViewHost.HexView.Options.OptionChanged += Options_OptionChanged;
 			frameworkElement.Width = SELECTION_MARGIN_WIDTH;
 			frameworkElement.ClipToBounds = true;
@@ -74,10 +72,10 @@ namespace dnSpy.Hex.Editor {
 
 		void UpdateVisibility() => frameworkElement.Visibility = Enabled ? Visibility.Visible : Visibility.Collapsed;
 
-		public override HexViewMargin GetHexViewMargin(string marginName) =>
+		public override HexViewMargin? GetHexViewMargin(string marginName) =>
 			StringComparer.OrdinalIgnoreCase.Equals(marginName, PredefinedHexMarginNames.Spacer) ? this : null;
 
-		void Options_OptionChanged(object sender, VSTE.EditorOptionChangedEventArgs e) {
+		void Options_OptionChanged(object? sender, VSTE.EditorOptionChangedEventArgs e) {
 			if (e.OptionId == DefaultHexViewHostOptions.SelectionMarginName)
 				UpdateVisibility();
 		}

@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2011 AlphaSierraPapa for the SharpDevelop Team
+// Copyright (c) 2011 AlphaSierraPapa for the SharpDevelop Team
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this
 // software and associated documentation files (the "Software"), to deal in the Software
@@ -29,16 +29,12 @@ namespace dnSpy.Analyzer.TreeNodes {
 	sealed class TypeNode : EntityNode {
 		readonly TypeDef analyzedType;
 
-		public TypeNode(TypeDef analyzedType) {
-			if (analyzedType == null)
-				throw new ArgumentNullException(nameof(analyzedType));
-			this.analyzedType = analyzedType;
-		}
+		public TypeNode(TypeDef analyzedType) => this.analyzedType = analyzedType ?? throw new ArgumentNullException(nameof(analyzedType));
 
 		public override void Initialize() => TreeNode.LazyLoading = true;
 		protected override ImageReference GetIcon(IDotNetImageService dnImgMgr) => dnImgMgr.GetImageReference(analyzedType);
 		protected override void Write(ITextColorWriter output, IDecompiler decompiler) =>
-			new NodePrinter().Write(output, decompiler, analyzedType, Context.ShowToken);
+			new NodeFormatter().Write(output, decompiler, analyzedType, Context.ShowToken);
 
 		public override IEnumerable<TreeNodeData> CreateChildren() {
 			if (AttributeAppliedToNode.CanShow(analyzedType))
@@ -57,7 +53,7 @@ namespace dnSpy.Analyzer.TreeNodes {
 				yield return new TypeExtensionMethodsNode(analyzedType);
 		}
 
-		public override IMemberRef Member => analyzedType;
-		public override IMDTokenProvider Reference => analyzedType;
+		public override IMemberRef? Member => analyzedType;
+		public override IMDTokenProvider? Reference => analyzedType;
 	}
 }

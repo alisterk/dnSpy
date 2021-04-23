@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using dnSpy.Contracts.Hex;
 using dnSpy.Contracts.Hex.Classification;
@@ -33,27 +34,21 @@ namespace dnSpy.Hex.Classification {
 		readonly HexTagAggregator<HexClassificationTag> hexTagAggregator;
 		readonly HexBuffer buffer;
 
-		public override event EventHandler<HexClassificationChangedEventArgs> ClassificationChanged;
+		public override event EventHandler<HexClassificationChangedEventArgs>? ClassificationChanged;
 
 		protected HexClassifierAggregator(HexTagAggregator<HexClassificationTag> hexTagAggregator, VSTC.IClassificationTypeRegistryService classificationTypeRegistryService, HexBuffer buffer) {
-			if (hexTagAggregator == null)
-				throw new ArgumentNullException(nameof(hexTagAggregator));
-			if (classificationTypeRegistryService == null)
-				throw new ArgumentNullException(nameof(classificationTypeRegistryService));
-			if (buffer == null)
-				throw new ArgumentNullException(nameof(buffer));
-			this.classificationTypeRegistryService = classificationTypeRegistryService;
-			this.hexTagAggregator = hexTagAggregator;
-			this.buffer = buffer;
+			this.classificationTypeRegistryService = classificationTypeRegistryService ?? throw new ArgumentNullException(nameof(classificationTypeRegistryService));
+			this.hexTagAggregator = hexTagAggregator ?? throw new ArgumentNullException(nameof(hexTagAggregator));
+			this.buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
 			hexTagAggregator.TagsChanged += HexTagAggregator_TagsChanged;
 		}
 
-		void HexTagAggregator_TagsChanged(object sender, HexTagsChangedEventArgs e) =>
+		void HexTagAggregator_TagsChanged(object? sender, HexTagsChangedEventArgs e) =>
 			ClassificationChanged?.Invoke(this, new HexClassificationChangedEventArgs(e.Span));
 
 		sealed class HexClassificationSpanComparer : IComparer<HexClassificationSpan> {
 			public static readonly HexClassificationSpanComparer Instance = new HexClassificationSpanComparer();
-			public int Compare(HexClassificationSpan x, HexClassificationSpan y) => x.Span.Start - y.Span.Start;
+			public int Compare([AllowNull] HexClassificationSpan x, [AllowNull] HexClassificationSpan y) => x.Span.Start - y.Span.Start;
 		}
 
 		public override void GetClassificationSpans(List<HexClassificationSpan> result, HexClassificationContext context) =>
@@ -69,10 +64,10 @@ namespace dnSpy.Hex.Classification {
 			var list = new List<HexClassificationSpan>();
 
 			var taggerContext = new HexTaggerContext(context.Line, context.LineSpan);
-			var tags = cancellationToken != null ? hexTagAggregator.GetAllTags(taggerContext, cancellationToken.Value) : hexTagAggregator.GetAllTags(taggerContext);
+			var tags = cancellationToken is not null ? hexTagAggregator.GetAllTags(taggerContext, cancellationToken.Value) : hexTagAggregator.GetAllTags(taggerContext);
 			foreach (var tagSpan in tags) {
 				var overlap = textSpan.Overlap(tagSpan.Span);
-				if (overlap != null)
+				if (overlap is not null)
 					list.Add(new HexClassificationSpan(overlap.Value, tagSpan.Tag.ClassificationType));
 			}
 

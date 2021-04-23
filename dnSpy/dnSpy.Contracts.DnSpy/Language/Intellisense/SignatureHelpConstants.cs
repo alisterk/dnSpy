@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -72,9 +72,8 @@ namespace dnSpy.Contracts.Language.Intellisense {
 		/// </summary>
 		/// <param name="buffer">Text buffer</param>
 		/// <returns></returns>
-		public static ISignatureHelpSession TryGetSignatureHelpSession(this ITextBuffer buffer) {
-			ISignatureHelpSession session;
-			if (buffer.Properties.TryGetProperty(SessionBufferKey, out session))
+		public static ISignatureHelpSession? TryGetSignatureHelpSession(this ITextBuffer buffer) {
+			if (buffer.Properties.TryGetProperty(SessionBufferKey, out ISignatureHelpSession session))
 				return session;
 			return null;
 		}
@@ -85,8 +84,7 @@ namespace dnSpy.Contracts.Language.Intellisense {
 		/// <param name="buffer">Signature help text buffer</param>
 		/// <returns></returns>
 		public static bool GetUsePrettyPrintedContent(this ITextBuffer buffer) {
-			bool usePrettyPrintedContent;
-			if (buffer.Properties.TryGetProperty(UsePrettyPrintedContentBufferKey, out usePrettyPrintedContent))
+			if (buffer.Properties.TryGetProperty(UsePrettyPrintedContentBufferKey, out bool usePrettyPrintedContent))
 				return usePrettyPrintedContent;
 			Debug.Fail(nameof(UsePrettyPrintedContentBufferKey) + " hasn't been initialized yet");
 			return false;
@@ -97,9 +95,8 @@ namespace dnSpy.Contracts.Language.Intellisense {
 		/// </summary>
 		/// <param name="buffer">Text buffer</param>
 		/// <returns></returns>
-		public static SignatureHelpClassifierContext TryGetSignatureHelpClassifierContext(this ITextBuffer buffer) {
-			SignatureHelpClassifierContext context;
-			if (buffer.Properties.TryGetProperty(SignatureHelpClassifierContextBufferKey, out context))
+		public static SignatureHelpClassifierContext? TryGetSignatureHelpClassifierContext(this ITextBuffer buffer) {
+			if (buffer.Properties.TryGetProperty(SignatureHelpClassifierContextBufferKey, out SignatureHelpClassifierContext context))
 				return context;
 			return null;
 		}

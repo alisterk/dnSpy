@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -34,11 +34,18 @@ namespace dnSpy.Contracts.MVVM.Dialogs {
 			InitializeComponent();
 			DataContextChanged += (s, e) => {
 				var data = DataContext as ProgressVM;
-				if (data != null)
+				if (data is not null) {
 					data.OnCompleted += ProgressVM_OnCompleted;
-				if (data.HasCompleted)
-					OnCompleted();
+					if (data.HasCompleted)
+						OnCompleted();
+				}
 			};
+		}
+
+		/// <inheritdoc/>
+		protected override void OnClosed(EventArgs e) {
+			progressBar.IsIndeterminate = false;
+			base.OnClosed(e);
 		}
 
 		/// <inheritdoc/>
@@ -46,18 +53,18 @@ namespace dnSpy.Contracts.MVVM.Dialogs {
 			base.OnClosing(e);
 
 			var data = DataContext as ProgressVM;
-			if (data == null)
+			if (data is null)
 				return;
 			data.Cancel();
 			if (!data.HasCompleted)
 				e.Cancel = true;
 		}
 
-		void ProgressVM_OnCompleted(object sender, EventArgs e) => OnCompleted();
+		void ProgressVM_OnCompleted(object? sender, EventArgs e) => OnCompleted();
 
 		void OnCompleted() {
 			var data = DataContext as ProgressVM;
-			DialogResult = data != null && !data.WasCanceled;
+			DialogResult = data is not null && !data.WasCanceled;
 			Close();
 		}
 

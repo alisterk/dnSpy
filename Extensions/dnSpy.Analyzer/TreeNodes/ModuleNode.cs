@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -26,12 +26,10 @@ namespace dnSpy.Analyzer.TreeNodes {
 	sealed class ModuleNode : EntityNode {
 		readonly ModuleDef module;
 
-		public override IMemberRef Member => null;
-		public override IMDTokenProvider Reference => module;
+		public override IMemberRef? Member => null;
+		public override IMDTokenProvider? Reference => module;
 
-		public ModuleNode(ModuleDef module) {
-			this.module = module;
-		}
+		public ModuleNode(ModuleDef module) => this.module = module;
 
 		protected override ImageReference GetIcon(IDotNetImageService dnImgMgr) => dnImgMgr.GetImageReference(module);
 		protected override void Write(ITextColorWriter output, IDecompiler decompiler) =>

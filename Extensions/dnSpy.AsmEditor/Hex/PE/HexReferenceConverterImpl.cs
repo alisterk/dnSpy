@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -27,21 +27,18 @@ namespace dnSpy.AsmEditor.Hex.PE {
 		readonly BufferToDocumentNodeService bufferToDocumentNodeService;
 
 		[ImportingConstructor]
-		HexReferenceConverterImpl(BufferToDocumentNodeService bufferToDocumentNodeService) {
-			this.bufferToDocumentNodeService = bufferToDocumentNodeService;
-		}
+		HexReferenceConverterImpl(BufferToDocumentNodeService bufferToDocumentNodeService) => this.bufferToDocumentNodeService = bufferToDocumentNodeService;
 
-		public override object Convert(HexView hexView, object reference) {
-			var fieldRef = reference as HexFieldReference;
-			if (fieldRef != null)
+		public override object? Convert(HexView hexView, object reference) {
+			if (reference is HexFieldReference fieldRef)
 				return ConvertFieldReference(fieldRef);
 
 			return reference;
 		}
 
-		DocumentTreeNodeData ConvertFieldReference(HexFieldReference fieldRef) {
+		DocumentTreeNodeData? ConvertFieldReference(HexFieldReference fieldRef) {
 			var peNode = bufferToDocumentNodeService.FindPENode(fieldRef.File);
-			if (peNode == null)
+			if (peNode is null)
 				return null;
 
 			return peNode.FindNode(fieldRef.Structure, fieldRef.Field);

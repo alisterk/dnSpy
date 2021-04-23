@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -28,10 +28,8 @@ namespace dnSpy.Text.Groups {
 		public IContentType ContentType { get; }
 
 		public TextViewGroupOptionCollection(IContentType contentType) {
-			if (contentType == null)
-				throw new ArgumentNullException(nameof(contentType));
 			Options = new List<TextViewGroupOption>();
-			ContentType = contentType;
+			ContentType = contentType ?? throw new ArgumentNullException(nameof(contentType));
 		}
 
 		public void Add(TextViewGroupOption option) => Options.Add(option);
@@ -44,7 +42,7 @@ namespace dnSpy.Text.Groups {
 			return false;
 		}
 
-		public object GetOptionValue(string optionId) {
+		public object? GetOptionValue(string optionId) {
 			foreach (var option in Options) {
 				if (option.OptionId == optionId)
 					return option.Value;
@@ -52,7 +50,7 @@ namespace dnSpy.Text.Groups {
 			throw new ArgumentException($"Invalid optionId: {optionId}", nameof(optionId));
 		}
 
-		public void SetOptionValue(string optionId, object value) {
+		public void SetOptionValue(string optionId, object? value) {
 			foreach (var option in Options) {
 				if (option.OptionId == optionId) {
 					option.Value = value;

@@ -1,4 +1,4 @@
-﻿/*
+/*
 	Copyright (c) 2015 Ki
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -39,8 +39,7 @@ namespace dnSpy.BamlDecompiler.Handlers {
 			parent.Xaml.Element.Add(doc.Xaml.Element);
 
 			HandlerMap.ProcessChildren(ctx, (BamlBlockNode)node, doc);
-			var key = node.Annotation as XamlResourceKey;
-			if (key != null && key.KeyNode.Record != node.Record) {
+			if (node.Annotation is XamlResourceKey key && key.KeyNode.Record != node.Record) {
 				var handler = (IDeferHandler)HandlerMap.LookupHandler(key.KeyNode.Record.Type);
 				var keyElem = handler.TranslateDefer(ctx, key.KeyNode, doc);
 

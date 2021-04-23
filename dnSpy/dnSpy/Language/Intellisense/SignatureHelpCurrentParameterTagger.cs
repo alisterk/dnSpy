@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -48,9 +48,9 @@ namespace dnSpy.Language.Intellisense {
 			signatureHelpParameterDocumentationClassificationTag = new ClassificationTag(classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.SignatureHelpParameterDocumentation));
 		}
 
-		public ITagger<T> CreateTagger<T>(ITextBuffer buffer) where T : ITag {
+		public ITagger<T>? CreateTagger<T>(ITextBuffer buffer) where T : ITag {
 			var session = buffer.TryGetSignatureHelpSession();
-			if (session == null)
+			if (session is null)
 				return null;
 			if (buffer.ContentType.TypeName.EndsWith(SignatureHelpConstants.ExtendedSignatureHelpContentTypeSuffix))
 				return new SignatureHelpCurrentParameterTaggerEx(buffer, signatureHelpDocumentationClassificationTag, signatureHelpParameterClassificationTag, signatureHelpParameterDocumentationClassificationTag) as ITagger<T>;
@@ -59,29 +59,23 @@ namespace dnSpy.Language.Intellisense {
 	}
 
 	sealed class SignatureHelpCurrentParameterTagger : ITagger<IClassificationTag> {
-		public event EventHandler<SnapshotSpanEventArgs> TagsChanged { add { } remove { } }
+		public event EventHandler<SnapshotSpanEventArgs>? TagsChanged { add { } remove { } }
 
 		readonly ITextBuffer buffer;
 		readonly ISignatureHelpSession session;
 		readonly ClassificationTag signatureHelpCurrentParameterClassificationTag;
 
 		public SignatureHelpCurrentParameterTagger(ISignatureHelpSession session, ITextBuffer buffer, ClassificationTag signatureHelpCurrentParameterClassificationTag) {
-			if (session == null)
-				throw new ArgumentNullException(nameof(session));
-			if (buffer == null)
-				throw new ArgumentNullException(nameof(buffer));
-			if (signatureHelpCurrentParameterClassificationTag == null)
-				throw new ArgumentNullException(nameof(signatureHelpCurrentParameterClassificationTag));
-			this.session = session;
-			this.buffer = buffer;
-			this.signatureHelpCurrentParameterClassificationTag = signatureHelpCurrentParameterClassificationTag;
+			this.session = session ?? throw new ArgumentNullException(nameof(session));
+			this.buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
+			this.signatureHelpCurrentParameterClassificationTag = signatureHelpCurrentParameterClassificationTag ?? throw new ArgumentNullException(nameof(signatureHelpCurrentParameterClassificationTag));
 		}
 
 		public IEnumerable<ITagSpan<IClassificationTag>> GetTags(NormalizedSnapshotSpanCollection spans) {
 			if (session.IsDismissed)
 				yield break;
 			var parameter = session.SelectedSignature?.CurrentParameter;
-			if (parameter == null)
+			if (parameter is null)
 				yield break;
 			bool usePrettyPrintedContent = buffer.GetUsePrettyPrintedContent();
 			var locus = usePrettyPrintedContent ? parameter.PrettyPrintedLocus : parameter.Locus;
@@ -95,7 +89,7 @@ namespace dnSpy.Language.Intellisense {
 	}
 
 	sealed class SignatureHelpCurrentParameterTaggerEx : ITagger<IClassificationTag> {
-		public event EventHandler<SnapshotSpanEventArgs> TagsChanged { add { } remove { } }
+		public event EventHandler<SnapshotSpanEventArgs>? TagsChanged { add { } remove { } }
 
 		readonly ITextBuffer buffer;
 		readonly ClassificationTag signatureHelpDocumentationClassificationTag;
@@ -103,24 +97,16 @@ namespace dnSpy.Language.Intellisense {
 		readonly ClassificationTag signatureHelpParameterDocumentationClassificationTag;
 
 		public SignatureHelpCurrentParameterTaggerEx(ITextBuffer buffer, ClassificationTag signatureHelpDocumentationClassificationTag, ClassificationTag signatureHelpParameterClassificationTag, ClassificationTag signatureHelpParameterDocumentationClassificationTag) {
-			if (buffer == null)
-				throw new ArgumentNullException(nameof(buffer));
-			if (signatureHelpDocumentationClassificationTag == null)
-				throw new ArgumentNullException(nameof(signatureHelpDocumentationClassificationTag));
-			if (signatureHelpParameterClassificationTag == null)
-				throw new ArgumentNullException(nameof(signatureHelpParameterClassificationTag));
-			if (signatureHelpParameterDocumentationClassificationTag == null)
-				throw new ArgumentNullException(nameof(signatureHelpParameterDocumentationClassificationTag));
-			this.buffer = buffer;
-			this.signatureHelpDocumentationClassificationTag = signatureHelpDocumentationClassificationTag;
-			this.signatureHelpParameterClassificationTag = signatureHelpParameterClassificationTag;
-			this.signatureHelpParameterDocumentationClassificationTag = signatureHelpParameterDocumentationClassificationTag;
+			this.buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
+			this.signatureHelpDocumentationClassificationTag = signatureHelpDocumentationClassificationTag ?? throw new ArgumentNullException(nameof(signatureHelpDocumentationClassificationTag));
+			this.signatureHelpParameterClassificationTag = signatureHelpParameterClassificationTag ?? throw new ArgumentNullException(nameof(signatureHelpParameterClassificationTag));
+			this.signatureHelpParameterDocumentationClassificationTag = signatureHelpParameterDocumentationClassificationTag ?? throw new ArgumentNullException(nameof(signatureHelpParameterDocumentationClassificationTag));
 		}
 
 		public IEnumerable<ITagSpan<IClassificationTag>> GetTags(NormalizedSnapshotSpanCollection spans) {
 			var context = buffer.TryGetSignatureHelpClassifierContext();
-			Debug.Assert(context != null);
-			if (context == null || context.Session.IsDismissed)
+			Debug2.Assert(context is not null);
+			if (context is null || context.Session.IsDismissed)
 				yield break;
 			ClassificationTag tag;
 			if (context.Type == SignatureHelpClassifierContextTypes.SignatureDocumentation)

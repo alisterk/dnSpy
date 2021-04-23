@@ -1,4 +1,4 @@
-﻿/*
+/*
     Copyright (C) 2017 HoLLy
 
     This file is part of dnSpy
@@ -31,59 +31,42 @@ namespace dnSpy.Analyzer.TreeNodes {
 	/// </summary>
 	sealed class MethodOverriddenNode : SearchNode {
 		readonly MethodDef analyzedMethod;
+		readonly List<TypeDef> analyzedTypes;
 
 		public MethodOverriddenNode(MethodDef analyzedMethod) {
-			if (analyzedMethod == null)
-				throw new ArgumentNullException(nameof(analyzedMethod));
-
-			this.analyzedMethod = analyzedMethod;
+			this.analyzedMethod = analyzedMethod ?? throw new ArgumentNullException(nameof(analyzedMethod));
+			analyzedTypes = new List<TypeDef> { analyzedMethod.DeclaringType };
 		}
 
 		protected override void Write(ITextColorWriter output, IDecompiler decompiler) =>
 			output.Write(BoxedTextColor.Text, dnSpy_Analyzer_Resources.OverridesTreeNode);
 
 		protected override IEnumerable<AnalyzerTreeNodeData> FetchChildren(CancellationToken ct) {
-			//note: only goes up 1 level
-			AnalyzerTreeNodeData newNode = null;
-			try {
-				//get base type (if any)
-				if (analyzedMethod.DeclaringType.BaseType == null) {
+			AddTypeEquivalentTypes(Context.DocumentService, analyzedTypes[0], analyzedTypes);
+			var overrides = analyzedMethod.Overrides;
+			foreach (var declType in analyzedTypes) {
+				if (overrides.Count > 0) {
+					bool matched = false;
+					foreach (var o in overrides) {
+						if (o.MethodDeclaration.ResolveMethodDef() is MethodDef method && (method.IsVirtual || method.IsAbstract)) {
+							matched = true;
+							yield return new MethodNode(method) { Context = Context };
+						}
+					}
+					if (matched)
+						yield break;
+				}
+				foreach (var method in TypesHierarchyHelpers.FindBaseMethods(analyzedMethod, declType)) {
+					if (!(method.IsVirtual || method.IsAbstract))
+						continue;
+					yield return new MethodNode(method) { Context = Context };
 					yield break;
 				}
-				ITypeDefOrRef baseType = analyzedMethod.DeclaringType.BaseType;
-
-				while (baseType != null) { 
-					//only typedef has a Methods property
-					if (baseType is TypeDef def) {
-						foreach (var method in def.Methods) {
-							if (TypesHierarchyHelpers.IsBaseMethod(method, analyzedMethod)) {
-								newNode = new MethodNode(method) {Context = Context};
-								break; //there can be only one
-							}
-						}
-						//escape from the while loop if we have a match (cannot yield return in try/catch)
-						if (newNode != null)
-							break;
-
-						baseType = def.BaseType;
-					}
-					else {
-						//try to resolve the TypeRef
-						//will be null if resolving failed
-						baseType = baseType.Resolve();
-					}
-				}
 			}
-			catch (ResolveException) {
-				//ignored
-			}
-			if (newNode != null)
-				yield return newNode;
 		}
 
 		public static bool CanShow(MethodDef method) =>
-			method.DeclaringType.BaseType != null &&
-			method.IsVirtual &&
-			!method.DeclaringType.IsInterface;
+			method.DeclaringType.BaseType is not null &&
+			(method.IsVirtual || method.IsAbstract) && method.IsReuseSlot;
 	}
 }

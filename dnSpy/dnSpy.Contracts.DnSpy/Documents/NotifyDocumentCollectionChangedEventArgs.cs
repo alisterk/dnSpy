@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -37,9 +37,10 @@ namespace dnSpy.Contracts.Documents {
 		/// <summary>
 		/// User data
 		/// </summary>
-		public object Data { get; private set; }
+		public object? Data { get; private set; }
 
-		NotifyDocumentCollectionChangedEventArgs() {
+		NotifyDocumentCollectionChangedEventArgs(IDsDocument[] documents) {
+			Documents = documents;
 		}
 
 		/// <summary>
@@ -48,12 +49,9 @@ namespace dnSpy.Contracts.Documents {
 		/// <param name="clearedDocuments">All cleared documents</param>
 		/// <param name="data">Data to send to listeners</param>
 		/// <returns></returns>
-		public static NotifyDocumentCollectionChangedEventArgs CreateClear(IDsDocument[] clearedDocuments, object data) {
-			if (clearedDocuments == null)
-				throw new ArgumentNullException(nameof(clearedDocuments));
-			var e = new NotifyDocumentCollectionChangedEventArgs();
+		public static NotifyDocumentCollectionChangedEventArgs CreateClear(IDsDocument[] clearedDocuments, object? data) {
+			var e = new NotifyDocumentCollectionChangedEventArgs(clearedDocuments ?? throw new ArgumentNullException(nameof(clearedDocuments)));
 			e.Type = NotifyDocumentCollectionType.Clear;
-			e.Documents = clearedDocuments;
 			e.Data = data;
 			return e;
 		}
@@ -64,12 +62,11 @@ namespace dnSpy.Contracts.Documents {
 		/// <param name="document">Added document</param>
 		/// <param name="data">Data to send to listeners</param>
 		/// <returns></returns>
-		public static NotifyDocumentCollectionChangedEventArgs CreateAdd(IDsDocument document, object data) {
-			if (document == null)
+		public static NotifyDocumentCollectionChangedEventArgs CreateAdd(IDsDocument document, object? data) {
+			if (document is null)
 				throw new ArgumentNullException(nameof(document));
-			var e = new NotifyDocumentCollectionChangedEventArgs();
+			var e = new NotifyDocumentCollectionChangedEventArgs(new IDsDocument[] { document });
 			e.Type = NotifyDocumentCollectionType.Add;
-			e.Documents = new IDsDocument[] { document };
 			e.Data = data;
 			return e;
 		}
@@ -80,8 +77,8 @@ namespace dnSpy.Contracts.Documents {
 		/// <param name="document">Removed document</param>
 		/// <param name="data">Data to send to listeners</param>
 		/// <returns></returns>
-		public static NotifyDocumentCollectionChangedEventArgs CreateRemove(IDsDocument document, object data) {
-			if (document == null)
+		public static NotifyDocumentCollectionChangedEventArgs CreateRemove(IDsDocument document, object? data) {
+			if (document is null)
 				throw new ArgumentNullException(nameof(document));
 			return CreateRemove(new[] { document }, data);
 		}
@@ -92,12 +89,9 @@ namespace dnSpy.Contracts.Documents {
 		/// <param name="documents">Removed documents</param>
 		/// <param name="data">Data to send to listeners</param>
 		/// <returns></returns>
-		public static NotifyDocumentCollectionChangedEventArgs CreateRemove(IDsDocument[] documents, object data) {
-			if (documents == null)
-				throw new ArgumentNullException(nameof(documents));
-			var e = new NotifyDocumentCollectionChangedEventArgs();
+		public static NotifyDocumentCollectionChangedEventArgs CreateRemove(IDsDocument[] documents, object? data) {
+			var e = new NotifyDocumentCollectionChangedEventArgs(documents ?? throw new ArgumentNullException(nameof(documents)));
 			e.Type = NotifyDocumentCollectionType.Remove;
-			e.Documents = documents;
 			e.Data = data;
 			return e;
 		}

@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -25,23 +25,17 @@ using dnSpy.Contracts.Hex.Editor;
 namespace dnSpy.Hex.Editor {
 	sealed class HexMouseProcessorCollection : IDisposable {
 		readonly UIElement mouseElement;
-		readonly UIElement manipulationElement;
+		readonly UIElement? manipulationElement;
 		readonly DefaultHexMouseProcessor defaultMouseProcessor;
 		readonly HexMouseProcessor[] mouseProcessors;
 		readonly Func<MouseEventArgs, bool> allowEvent;
 		static readonly Func<MouseEventArgs, bool> defaultAllowEvent = a => true;
 
-		public HexMouseProcessorCollection(UIElement mouseElement, UIElement manipulationElement, DefaultHexMouseProcessor defaultMouseProcessor, HexMouseProcessor[] mouseProcessors, Func<MouseEventArgs, bool> allowEvent) {
-			if (mouseElement == null)
-				throw new ArgumentNullException(nameof(mouseElement));
-			if (defaultMouseProcessor == null)
-				throw new ArgumentNullException(nameof(defaultMouseProcessor));
-			if (mouseProcessors == null)
-				throw new ArgumentNullException(nameof(mouseProcessors));
-			this.mouseElement = mouseElement;
+		public HexMouseProcessorCollection(UIElement mouseElement, UIElement? manipulationElement, DefaultHexMouseProcessor defaultMouseProcessor, HexMouseProcessor[] mouseProcessors, Func<MouseEventArgs, bool>? allowEvent) {
+			this.mouseElement = mouseElement ?? throw new ArgumentNullException(nameof(mouseElement));
 			this.manipulationElement = manipulationElement;
-			this.defaultMouseProcessor = defaultMouseProcessor;
-			this.mouseProcessors = mouseProcessors;
+			this.defaultMouseProcessor = defaultMouseProcessor ?? throw new ArgumentNullException(nameof(defaultMouseProcessor));
+			this.mouseProcessors = mouseProcessors ?? throw new ArgumentNullException(nameof(mouseProcessors));
 			this.allowEvent = allowEvent ?? defaultAllowEvent;
 			mouseElement.AddHandler(UIElement.QueryContinueDragEvent, new QueryContinueDragEventHandler(MouseElement_QueryContinueDrag), true);
 			mouseElement.AddHandler(UIElement.MouseWheelEvent, new MouseWheelEventHandler(MouseElement_MouseWheel), true);
@@ -59,7 +53,7 @@ namespace dnSpy.Hex.Editor {
 			mouseElement.AddHandler(UIElement.DragOverEvent, new DragEventHandler(MouseElement_DragOver), true);
 			mouseElement.AddHandler(UIElement.DragLeaveEvent, new DragEventHandler(MouseElement_DragLeave), true);
 			mouseElement.AddHandler(UIElement.DragEnterEvent, new DragEventHandler(MouseElement_DragEnter), true);
-			if (manipulationElement != null) {
+			if (manipulationElement is not null) {
 				manipulationElement.AddHandler(UIElement.TouchUpEvent, new EventHandler<TouchEventArgs>(ManipulationElement_TouchUp), true);
 				manipulationElement.AddHandler(UIElement.TouchDownEvent, new EventHandler<TouchEventArgs>(ManipulationElement_TouchDown), true);
 				manipulationElement.AddHandler(UIElement.StylusSystemGestureEvent, new StylusSystemGestureEventHandler(ManipulationElement_StylusSystemGesture), true);
@@ -70,7 +64,7 @@ namespace dnSpy.Hex.Editor {
 			}
 		}
 
-		void MouseElement_DragEnter(object sender, DragEventArgs e) {
+		void MouseElement_DragEnter(object? sender, DragEventArgs e) {
 			foreach (var m in mouseProcessors) {
 				if (e.Handled)
 					break;
@@ -82,7 +76,7 @@ namespace dnSpy.Hex.Editor {
 				m.PostprocessDragEnter(e);
 		}
 
-		void MouseElement_DragLeave(object sender, DragEventArgs e) {
+		void MouseElement_DragLeave(object? sender, DragEventArgs e) {
 			foreach (var m in mouseProcessors) {
 				if (e.Handled)
 					break;
@@ -94,7 +88,7 @@ namespace dnSpy.Hex.Editor {
 				m.PostprocessDragLeave(e);
 		}
 
-		void MouseElement_DragOver(object sender, DragEventArgs e) {
+		void MouseElement_DragOver(object? sender, DragEventArgs e) {
 			foreach (var m in mouseProcessors) {
 				if (e.Handled)
 					break;
@@ -106,7 +100,7 @@ namespace dnSpy.Hex.Editor {
 				m.PostprocessDragOver(e);
 		}
 
-		void MouseElement_Drop(object sender, DragEventArgs e) {
+		void MouseElement_Drop(object? sender, DragEventArgs e) {
 			foreach (var m in mouseProcessors) {
 				if (e.Handled)
 					break;
@@ -118,7 +112,7 @@ namespace dnSpy.Hex.Editor {
 				m.PostprocessDrop(e);
 		}
 
-		void MouseElement_GiveFeedback(object sender, GiveFeedbackEventArgs e) {
+		void MouseElement_GiveFeedback(object? sender, GiveFeedbackEventArgs e) {
 			foreach (var m in mouseProcessors) {
 				if (e.Handled)
 					break;
@@ -140,7 +134,7 @@ namespace dnSpy.Hex.Editor {
 			return false;
 		}
 
-		void MouseElement_MouseDown(object sender, MouseButtonEventArgs e) {
+		void MouseElement_MouseDown(object? sender, MouseButtonEventArgs e) {
 			if (!allowEvent(e))
 				return;
 			bool focused = e.ChangedButton != MouseButton.Left && e.ChangedButton != MouseButton.Right && TryFocusMouseElement(e.Handled);
@@ -156,7 +150,7 @@ namespace dnSpy.Hex.Editor {
 			e.Handled |= focused;
 		}
 
-		void MouseElement_MouseEnter(object sender, MouseEventArgs e) {
+		void MouseElement_MouseEnter(object? sender, MouseEventArgs e) {
 			if (!allowEvent(e))
 				return;
 			foreach (var m in mouseProcessors) {
@@ -170,7 +164,7 @@ namespace dnSpy.Hex.Editor {
 				m.PostprocessMouseEnter(e);
 		}
 
-		void MouseElement_MouseLeave(object sender, MouseEventArgs e) {
+		void MouseElement_MouseLeave(object? sender, MouseEventArgs e) {
 			if (!allowEvent(e))
 				return;
 			foreach (var m in mouseProcessors) {
@@ -184,7 +178,7 @@ namespace dnSpy.Hex.Editor {
 				m.PostprocessMouseLeave(e);
 		}
 
-		void MouseElement_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
+		void MouseElement_MouseLeftButtonDown(object? sender, MouseButtonEventArgs e) {
 			if (!allowEvent(e))
 				return;
 			bool focused = TryFocusMouseElement(e.Handled);
@@ -200,7 +194,7 @@ namespace dnSpy.Hex.Editor {
 			e.Handled |= focused;
 		}
 
-		void MouseElement_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) {
+		void MouseElement_MouseLeftButtonUp(object? sender, MouseButtonEventArgs e) {
 			if (!allowEvent(e))
 				return;
 			foreach (var m in mouseProcessors) {
@@ -214,7 +208,7 @@ namespace dnSpy.Hex.Editor {
 				m.PostprocessMouseLeftButtonUp(e);
 		}
 
-		void MouseElement_MouseMove(object sender, MouseEventArgs e) {
+		void MouseElement_MouseMove(object? sender, MouseEventArgs e) {
 			if (!allowEvent(e))
 				return;
 			foreach (var m in mouseProcessors) {
@@ -228,7 +222,7 @@ namespace dnSpy.Hex.Editor {
 				m.PostprocessMouseMove(e);
 		}
 
-		void MouseElement_MouseRightButtonDown(object sender, MouseButtonEventArgs e) {
+		void MouseElement_MouseRightButtonDown(object? sender, MouseButtonEventArgs e) {
 			if (!allowEvent(e))
 				return;
 			bool focused = TryFocusMouseElement(e.Handled);
@@ -244,7 +238,7 @@ namespace dnSpy.Hex.Editor {
 			e.Handled |= focused;
 		}
 
-		void MouseElement_MouseRightButtonUp(object sender, MouseButtonEventArgs e) {
+		void MouseElement_MouseRightButtonUp(object? sender, MouseButtonEventArgs e) {
 			if (!allowEvent(e))
 				return;
 			foreach (var m in mouseProcessors) {
@@ -258,7 +252,7 @@ namespace dnSpy.Hex.Editor {
 				m.PostprocessMouseRightButtonUp(e);
 		}
 
-		void MouseElement_MouseUp(object sender, MouseButtonEventArgs e) {
+		void MouseElement_MouseUp(object? sender, MouseButtonEventArgs e) {
 			if (!allowEvent(e))
 				return;
 			foreach (var m in mouseProcessors) {
@@ -272,7 +266,7 @@ namespace dnSpy.Hex.Editor {
 				m.PostprocessMouseUp(e);
 		}
 
-		void MouseElement_MouseWheel(object sender, MouseWheelEventArgs e) {
+		void MouseElement_MouseWheel(object? sender, MouseWheelEventArgs e) {
 			if (!allowEvent(e))
 				return;
 			foreach (var m in mouseProcessors) {
@@ -286,7 +280,7 @@ namespace dnSpy.Hex.Editor {
 				m.PostprocessMouseWheel(e);
 		}
 
-		void MouseElement_QueryContinueDrag(object sender, QueryContinueDragEventArgs e) {
+		void MouseElement_QueryContinueDrag(object? sender, QueryContinueDragEventArgs e) {
 			foreach (var m in mouseProcessors) {
 				if (e.Handled)
 					break;
@@ -298,7 +292,7 @@ namespace dnSpy.Hex.Editor {
 				m.PostprocessQueryContinueDrag(e);
 		}
 
-		void ManipulationElement_ManipulationCompleted(object sender, ManipulationCompletedEventArgs e) {
+		void ManipulationElement_ManipulationCompleted(object? sender, ManipulationCompletedEventArgs e) {
 			foreach (var m in mouseProcessors) {
 				if (e.Handled)
 					break;
@@ -310,7 +304,7 @@ namespace dnSpy.Hex.Editor {
 				m.PostprocessManipulationCompleted(e);
 		}
 
-		void ManipulationElement_ManipulationDelta(object sender, ManipulationDeltaEventArgs e) {
+		void ManipulationElement_ManipulationDelta(object? sender, ManipulationDeltaEventArgs e) {
 			foreach (var m in mouseProcessors) {
 				if (e.Handled)
 					break;
@@ -322,7 +316,7 @@ namespace dnSpy.Hex.Editor {
 				m.PostprocessManipulationDelta(e);
 		}
 
-		void ManipulationElement_ManipulationInertiaStarting(object sender, ManipulationInertiaStartingEventArgs e) {
+		void ManipulationElement_ManipulationInertiaStarting(object? sender, ManipulationInertiaStartingEventArgs e) {
 			foreach (var m in mouseProcessors) {
 				if (e.Handled)
 					break;
@@ -334,7 +328,7 @@ namespace dnSpy.Hex.Editor {
 				m.PostprocessManipulationInertiaStarting(e);
 		}
 
-		void ManipulationElement_ManipulationStarting(object sender, ManipulationStartingEventArgs e) {
+		void ManipulationElement_ManipulationStarting(object? sender, ManipulationStartingEventArgs e) {
 			foreach (var m in mouseProcessors) {
 				if (e.Handled)
 					break;
@@ -346,7 +340,7 @@ namespace dnSpy.Hex.Editor {
 				m.PostprocessManipulationStarting(e);
 		}
 
-		void ManipulationElement_StylusSystemGesture(object sender, StylusSystemGestureEventArgs e) {
+		void ManipulationElement_StylusSystemGesture(object? sender, StylusSystemGestureEventArgs e) {
 			foreach (var m in mouseProcessors) {
 				if (e.Handled)
 					break;
@@ -358,7 +352,7 @@ namespace dnSpy.Hex.Editor {
 				m.PostprocessStylusSystemGesture(e);
 		}
 
-		void ManipulationElement_TouchDown(object sender, TouchEventArgs e) {
+		void ManipulationElement_TouchDown(object? sender, TouchEventArgs e) {
 			foreach (var m in mouseProcessors) {
 				if (e.Handled)
 					break;
@@ -370,7 +364,7 @@ namespace dnSpy.Hex.Editor {
 				m.PostprocessTouchDown(e);
 		}
 
-		void ManipulationElement_TouchUp(object sender, TouchEventArgs e) {
+		void ManipulationElement_TouchUp(object? sender, TouchEventArgs e) {
 			foreach (var m in mouseProcessors) {
 				if (e.Handled)
 					break;
@@ -399,7 +393,7 @@ namespace dnSpy.Hex.Editor {
 			mouseElement.RemoveHandler(UIElement.DragOverEvent, new DragEventHandler(MouseElement_DragOver));
 			mouseElement.RemoveHandler(UIElement.DragLeaveEvent, new DragEventHandler(MouseElement_DragLeave));
 			mouseElement.RemoveHandler(UIElement.DragEnterEvent, new DragEventHandler(MouseElement_DragEnter));
-			if (manipulationElement != null) {
+			if (manipulationElement is not null) {
 				manipulationElement.RemoveHandler(UIElement.TouchUpEvent, new EventHandler<TouchEventArgs>(ManipulationElement_TouchUp));
 				manipulationElement.RemoveHandler(UIElement.TouchDownEvent, new EventHandler<TouchEventArgs>(ManipulationElement_TouchDown));
 				manipulationElement.RemoveHandler(UIElement.StylusSystemGestureEvent, new StylusSystemGestureEventHandler(ManipulationElement_StylusSystemGesture));

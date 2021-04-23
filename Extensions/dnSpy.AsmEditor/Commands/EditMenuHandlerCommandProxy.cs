@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -25,26 +25,24 @@ namespace dnSpy.AsmEditor.Commands {
 	sealed class EditMenuHandlerCommandProxy : ICommand {
 		readonly EditMenuHandler command;
 
-		public EditMenuHandlerCommandProxy(EditMenuHandler command) {
-			this.command = command;
-		}
+		public EditMenuHandlerCommandProxy(EditMenuHandler command) => this.command = command;
 
 		AsmEditorContext CreateContext() => command.CreateContext();
 
-		event EventHandler ICommand.CanExecuteChanged {
-			add { CommandManager.RequerySuggested += value; }
-			remove { CommandManager.RequerySuggested -= value; }
+		event EventHandler? ICommand.CanExecuteChanged {
+			add => CommandManager.RequerySuggested += value;
+			remove => CommandManager.RequerySuggested -= value;
 		}
 
-		bool ICommand.CanExecute(object parameter) {
+		bool ICommand.CanExecute(object? parameter) {
 			var ctx = CreateContext();
-			return ctx != null && command.IsVisible(ctx) && command.IsEnabled(ctx);
+			return ctx is not null && command.IsVisible(ctx) && command.IsEnabled(ctx);
 		}
 
-		void ICommand.Execute(object parameter) {
+		void ICommand.Execute(object? parameter) {
 			var ctx = CreateContext();
-			Debug.Assert(ctx != null);
-			if (ctx != null)
+			Debug2.Assert(ctx is not null);
+			if (ctx is not null)
 				command.Execute(ctx);
 		}
 	}

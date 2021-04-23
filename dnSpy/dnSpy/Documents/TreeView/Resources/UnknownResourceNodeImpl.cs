@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -18,7 +18,6 @@
 */
 
 using System;
-using System.IO;
 using System.Threading;
 using dnlib.DotNet;
 using dnSpy.Contracts.Decompiler;
@@ -38,25 +37,22 @@ namespace dnSpy.Documents.TreeView.Resources {
 
 		public override void WriteShort(IDecompilerOutput output, IDecompiler decompiler, bool showOffset) {
 			base.WriteShort(output, decompiler, showOffset);
-			var documentViewerOutput = output as IDocumentViewerOutput;
-			if (documentViewerOutput != null) {
+			if (output is IDocumentViewerOutput documentViewerOutput) {
 				documentViewerOutput.AddButton(dnSpy_Resources.SaveResourceButton, () => Save());
 				documentViewerOutput.WriteLine();
 				documentViewerOutput.WriteLine();
 			}
 		}
 
-		public override string ToString(CancellationToken token, bool canDecompile) {
-			var er = Resource as EmbeddedResource;
-			if (er != null)
-				return ResourceUtilities.TryGetString(new MemoryStream(er.GetResourceData()));
+		public override string? ToString(CancellationToken token, bool canDecompile) {
+			if (Resource is EmbeddedResource er)
+				return ResourceUtilities.TryGetString(er.CreateReader().AsStream());
 			return null;
 		}
 
 		public bool Decompile(IDecompileNodeContext context) {
-			var er = Resource as EmbeddedResource;
-			if (er != null)
-				return ResourceUtilities.Decompile(context, new MemoryStream(er.GetResourceData()), er.Name);
+			if (Resource is EmbeddedResource er)
+				return ResourceUtilities.Decompile(context, er.CreateReader().AsStream(), er.Name);
 			return false;
 		}
 	}

@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -77,7 +77,7 @@ namespace dnSpy.Contracts.Decompiler {
 		/// <summary>
 		/// Project file extension, eg. .csproj or null if it's not supported
 		/// </summary>
-		string ProjectFileExtension { get; }
+		string? ProjectFileExtension { get; }
 
 		/// <summary>
 		/// Writes a type name
@@ -101,7 +101,7 @@ namespace dnSpy.Contracts.Decompiler {
 		/// <param name="type">Type</param>
 		/// <param name="includeNamespace">true to include namespace</param>
 		/// <param name="pd"><see cref="ParamDef"/> or null</param>
-		void WriteType(ITextColorWriter output, ITypeDefOrRef type, bool includeNamespace, ParamDef pd = null);
+		void WriteType(ITextColorWriter output, ITypeDefOrRef? type, bool includeNamespace, ParamDef? pd = null);
 
 		/// <summary>
 		/// Decompiles a method
@@ -174,22 +174,21 @@ namespace dnSpy.Contracts.Decompiler {
 		/// <param name="output">Output</param>
 		/// <param name="member">Member</param>
 		/// <param name="typeAttributes">Type containing attributes, used to detect the dynamic types and out/ref params</param>
-		void WriteToolTip(ITextColorWriter output, IMemberRef member, IHasCustomAttribute typeAttributes);
+		void WriteToolTip(ITextColorWriter output, IMemberRef member, IHasCustomAttribute? typeAttributes);
 
 		/// <summary>
 		/// Writes a tooltip
 		/// </summary>
 		/// <param name="output">Output</param>
 		/// <param name="variable">Local or argument</param>
-		/// <param name="name">Name or null</param>
-		void WriteToolTip(ITextColorWriter output, IVariable variable, string name);
+		void WriteToolTip(ITextColorWriter output, ISourceVariable variable);
 
 		/// <summary>
 		/// Writes a namespace tooltip
 		/// </summary>
 		/// <param name="output">Output</param>
 		/// <param name="namespace">Namespace</param>
-		void WriteNamespaceToolTip(ITextColorWriter output, string @namespace);
+		void WriteNamespaceToolTip(ITextColorWriter output, string? @namespace);
 
 		/// <summary>
 		/// Writes <paramref name="member"/> to <paramref name="output"/>
@@ -197,7 +196,7 @@ namespace dnSpy.Contracts.Decompiler {
 		/// <param name="output">Output</param>
 		/// <param name="member">Member</param>
 		/// <param name="flags">Flags</param>
-		void Write(ITextColorWriter output, IMemberRef member, SimplePrinterFlags flags);
+		void Write(ITextColorWriter output, IMemberRef member, FormatterOptions flags);
 
 		/// <summary>
 		/// Writes a comment prefix

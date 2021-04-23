@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -26,16 +26,14 @@ using dnSpy.Contracts.Controls;
 
 namespace dnSpy.AsmEditor.SaveModule {
 	class SaveModuleWindow : WindowBase {
-		public SaveModuleWindow() {
-			Loaded += SaveMultiModule_Loaded;
-		}
+		public SaveModuleWindow() => Loaded += SaveMultiModule_Loaded;
 
-		void SaveMultiModule_Loaded(object sender, RoutedEventArgs e) {
+		void SaveMultiModule_Loaded(object? sender, RoutedEventArgs e) {
 			var data = (SaveMultiModuleVM)DataContext;
 			data.OnSavedEvent += SaveMultiModuleVM_OnSavedEvent;
 		}
 
-		void SaveMultiModuleVM_OnSavedEvent(object sender, EventArgs e) {
+		void SaveMultiModuleVM_OnSavedEvent(object? sender, EventArgs e) {
 			var data = (SaveMultiModuleVM)DataContext;
 			if (!data.HasError)
 				okButton_Click(null, null);
@@ -62,11 +60,10 @@ namespace dnSpy.AsmEditor.SaveModule {
 		}
 
 		internal void ShowOptions(SaveOptionsVM data) {
-			if (data == null)
+			if (data is null)
 				return;
 
-			var mvm = data as SaveModuleOptionsVM;
-			if (mvm != null) {
+			if (data is SaveModuleOptionsVM mvm) {
 				var win = new SaveModuleOptionsDlg();
 				win.Owner = this;
 				var clone = mvm.Clone();
@@ -79,8 +76,7 @@ namespace dnSpy.AsmEditor.SaveModule {
 				return;
 			}
 
-			var hvm = data as SaveHexOptionsVM;
-			if (hvm != null) {
+			if (data is SaveHexOptionsVM hvm) {
 				var win = new SaveHexOptionsDlg();
 				win.Owner = this;
 				var clone = hvm.Clone();

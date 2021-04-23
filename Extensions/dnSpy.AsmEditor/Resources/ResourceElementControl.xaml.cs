@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -27,8 +27,7 @@ namespace dnSpy.AsmEditor.Resources {
 		public ResourceElementControl() {
 			InitializeComponent();
 			DataContextChanged += (s, e) => {
-				var data = DataContext as ResourceElementVM;
-				if (data != null) {
+				if (DataContext is ResourceElementVM data) {
 					var ownerWindow = Window.GetWindow(this);
 					data.OpenFile = new OpenFile(ownerWindow);
 					data.DnlibTypePicker = new DnlibTypePicker(ownerWindow);
@@ -37,12 +36,12 @@ namespace dnSpy.AsmEditor.Resources {
 			Loaded += ResourceElementControl_Loaded;
 		}
 
-		void ResourceElementControl_Loaded(object sender, RoutedEventArgs e) {
+		void ResourceElementControl_Loaded(object? sender, RoutedEventArgs e) {
 			var vm = DataContext as ResourceElementVM;
-			Debug.Assert(vm != null);
-			if (vm != null && !string.IsNullOrEmpty(vm.Name) && vm.IsSingleLineValue)
+			Debug2.Assert(vm is not null);
+			if (vm is not null && !string.IsNullOrEmpty(vm.Name) && vm.IsSingleLineValue)
 				valueTextBox.Focus();
-			else if (vm != null && !string.IsNullOrEmpty(vm.Name) && vm.IsMultiLineValue)
+			else if (vm is not null && !string.IsNullOrEmpty(vm.Name) && vm.IsMultiLineValue)
 				multiLineTextBox.Focus();
 			else
 				nameTextBox.Focus();

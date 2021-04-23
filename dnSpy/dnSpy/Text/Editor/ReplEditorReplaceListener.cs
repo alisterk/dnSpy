@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -26,9 +26,9 @@ using Microsoft.VisualStudio.Text.Editor;
 namespace dnSpy.Text.Editor {
 	[Export(typeof(IReplaceListenerProvider))]
 	sealed class ReplEditorReplaceListenerProvider : IReplaceListenerProvider {
-		public IReplaceListener Create(ITextView textView) {
+		public IReplaceListener? Create(ITextView textView) {
 			var replEditor = ReplEditorUtils.TryGetInstance(textView) as ReplEditor;
-			if (replEditor == null)
+			if (replEditor is null)
 				return null;
 			return new ReplEditorReplaceListener(replEditor);
 		}
@@ -37,11 +37,7 @@ namespace dnSpy.Text.Editor {
 	sealed class ReplEditorReplaceListener : IReplaceListener {
 		readonly ReplEditor replEditor;
 
-		public ReplEditorReplaceListener(ReplEditor replEditor) {
-			if (replEditor == null)
-				throw new ArgumentNullException(nameof(replEditor));
-			this.replEditor = replEditor;
-		}
+		public ReplEditorReplaceListener(ReplEditor replEditor) => this.replEditor = replEditor ?? throw new ArgumentNullException(nameof(replEditor));
 
 		public bool CanReplace(SnapshotSpan span, string newText) => replEditor.CanReplace(span, newText);
 	}

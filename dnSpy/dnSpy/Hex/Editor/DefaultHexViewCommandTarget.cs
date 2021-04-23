@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -32,13 +32,10 @@ namespace dnSpy.Hex.Editor {
 		readonly Lazy<HexEditorOperationsFactoryService> editorOperationsFactoryService;
 
 		[ImportingConstructor]
-		DefaultHexViewCommandTargetFilterProvider(Lazy<HexEditorOperationsFactoryService> editorOperationsFactoryService) {
-			this.editorOperationsFactoryService = editorOperationsFactoryService;
-		}
+		DefaultHexViewCommandTargetFilterProvider(Lazy<HexEditorOperationsFactoryService> editorOperationsFactoryService) => this.editorOperationsFactoryService = editorOperationsFactoryService;
 
-		public ICommandTargetFilter Create(object target) {
-			var hexView = target as HexView;
-			if (hexView != null)
+		public ICommandTargetFilter? Create(object target) {
+			if (target is HexView hexView)
 				return new DefaultHexViewCommandTarget(hexView, editorOperationsFactoryService.Value);
 			return null;
 		}
@@ -50,9 +47,7 @@ namespace dnSpy.Hex.Editor {
 		HexEditorOperations EditorOperations { get; }
 
 		public DefaultHexViewCommandTarget(HexView hexView, HexEditorOperationsFactoryService editorOperationsFactoryService) {
-			if (hexView == null)
-				throw new ArgumentNullException(nameof(hexView));
-			this.hexView = hexView;
+			this.hexView = hexView ?? throw new ArgumentNullException(nameof(hexView));
 			EditorOperations = editorOperationsFactoryService.GetEditorOperations(hexView);
 		}
 
@@ -308,12 +303,12 @@ namespace dnSpy.Hex.Editor {
 			return CommandTargetStatus.NotHandled;
 		}
 
-		public CommandTargetStatus Execute(Guid group, int cmdId, object args = null) {
-			object result = null;
+		public CommandTargetStatus Execute(Guid group, int cmdId, object? args = null) {
+			object? result = null;
 			return Execute(group, cmdId, args, ref result);
 		}
 
-		public CommandTargetStatus Execute(Guid group, int cmdId, object args, ref object result) {
+		public CommandTargetStatus Execute(Guid group, int cmdId, object? args, ref object? result) {
 			if (IsReadOnly && IsEditCommand(group, cmdId))
 				return CommandTargetStatus.NotHandled;
 

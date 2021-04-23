@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -26,7 +26,7 @@ using Microsoft.VisualStudio.Text.Formatting;
 
 namespace dnSpy.Text.Editor {
 	sealed class ScrollMap : IScrollMap, IDisposable {
-		public event EventHandler MappingChanged;
+		public event EventHandler? MappingChanged;
 		public ITextView TextView { get; }
 		public bool AreElisionsExpanded { get; }
 		public double Start => 0;
@@ -35,9 +35,7 @@ namespace dnSpy.Text.Editor {
 		bool IsWordWrap => (TextView.Options.WordWrapStyle() & WordWrapStyles.WordWrap) != 0;
 
 		public ScrollMap(ITextView textView, bool areElisionsExpanded) {
-			if (textView == null)
-				throw new ArgumentNullException(nameof(textView));
-			TextView = textView;
+			TextView = textView ?? throw new ArgumentNullException(nameof(textView));
 			//TODO: Support AreElisionsExpanded == false (use visual snapshot instead of text snapshot)
 			AreElisionsExpanded = areElisionsExpanded;
 			TextView.Options.OptionChanged += Options_OptionChanged;
@@ -46,7 +44,7 @@ namespace dnSpy.Text.Editor {
 			TextView.Closed += TextView_Closed;
 		}
 
-		void TextView_LayoutChanged(object sender, TextViewLayoutChangedEventArgs e) {
+		void TextView_LayoutChanged(object? sender, TextViewLayoutChangedEventArgs e) {
 			bool update = false;
 			if (e.OldViewState.ViewportHeight != e.NewViewState.ViewportHeight)
 				update = true;
@@ -56,10 +54,10 @@ namespace dnSpy.Text.Editor {
 				UpdateCachedState();
 		}
 
-		void TextView_Closed(object sender, EventArgs e) => Dispose();
-		void TextBuffer_ChangedLowPriority(object sender, TextContentChangedEventArgs e) => UpdateCachedState();
+		void TextView_Closed(object? sender, EventArgs e) => Dispose();
+		void TextBuffer_ChangedLowPriority(object? sender, TextContentChangedEventArgs e) => UpdateCachedState();
 
-		void Options_OptionChanged(object sender, EditorOptionChangedEventArgs e) {
+		void Options_OptionChanged(object? sender, EditorOptionChangedEventArgs e) {
 			if (e.OptionId == DefaultTextViewOptions.WordWrapStyleName)
 				UpdateCachedState();
 		}
@@ -82,8 +80,7 @@ namespace dnSpy.Text.Editor {
 				return line.Start;
 			double fraction = coordinate - (int)coordinate;
 			var viewLine = TextView.GetTextViewLineContainingBufferPosition(line.Start);
-			int logicalLineNumber;
-			int logicalLines = GetNumberOfLogicalLines(viewLine, out logicalLineNumber);
+			int logicalLines = GetNumberOfLogicalLines(viewLine, out int logicalLineNumber);
 			logicalLineNumber = (int)Math.Round(fraction * logicalLines, MidpointRounding.AwayFromZero);
 			while (!viewLine.IsLastTextViewLineForSnapshotLine && logicalLineNumber-- > 0)
 				viewLine = TextView.GetTextViewLineContainingBufferPosition(viewLine.GetPointAfterLineBreak());
@@ -100,8 +97,7 @@ namespace dnSpy.Text.Editor {
 			}
 			else {
 				var viewLine = TextView.GetTextViewLineContainingBufferPosition(bufferPosition);
-				int logicalLineNumber;
-				int logicalLines = GetNumberOfLogicalLines(viewLine, out logicalLineNumber);
+				int logicalLines = GetNumberOfLogicalLines(viewLine, out int logicalLineNumber);
 				double fraction = (double)logicalLineNumber / logicalLines;
 				line = viewLine.Start.GetContainingLine();
 				return Start + line.LineNumber + fraction;

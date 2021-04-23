@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -28,12 +28,12 @@ namespace dnSpy.Contracts.ToolWindows {
 		/// <summary>
 		/// A style or a resource key or null to use the default style
 		/// </summary>
-		public object TabControlStyle { get; set; }
+		public object? TabControlStyle { get; set; }
 
 		/// <summary>
 		/// A style or a resource key or null to use the default style
 		/// </summary>
-		public object TabItemStyle { get; set; }
+		public object? TabItemStyle { get; set; }
 
 		/// <summary>
 		/// Tool window group guid, eg. <see cref="MenuConstants.GUIDOBJ_TOOLWINDOW_TABCONTROL_GUID"/>
@@ -58,20 +58,16 @@ namespace dnSpy.Contracts.ToolWindows {
 		/// Constructor
 		/// </summary>
 		/// <param name="groupGuid">See <see cref="ToolWindowGroupGuid"/></param>
-		public ToolWindowGroupServiceOptions(Guid groupGuid) {
-			ToolWindowGroupGuid = groupGuid;
-		}
+		public ToolWindowGroupServiceOptions(Guid groupGuid) => ToolWindowGroupGuid = groupGuid;
 
 		/// <summary>
 		/// Clones this instance
 		/// </summary>
 		/// <returns></returns>
-		public ToolWindowGroupServiceOptions Clone() {
-			return new ToolWindowGroupServiceOptions {
-				TabControlStyle = TabControlStyle,
-				TabItemStyle = TabItemStyle,
-				ToolWindowGroupGuid = ToolWindowGroupGuid,
-			};
-		}
+		public ToolWindowGroupServiceOptions Clone() => new ToolWindowGroupServiceOptions {
+			TabControlStyle = TabControlStyle,
+			TabItemStyle = TabItemStyle,
+			ToolWindowGroupGuid = ToolWindowGroupGuid,
+		};
 	}
 }

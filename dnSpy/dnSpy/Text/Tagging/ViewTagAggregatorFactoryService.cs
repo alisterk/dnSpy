@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -30,20 +30,18 @@ namespace dnSpy.Text.Tagging {
 		readonly ITaggerFactory taggerFactory;
 
 		[ImportingConstructor]
-		ViewTagAggregatorFactoryService(ITaggerFactory taggerFactory) {
-			this.taggerFactory = taggerFactory;
-		}
+		ViewTagAggregatorFactoryService(ITaggerFactory taggerFactory) => this.taggerFactory = taggerFactory;
 
 		public ITagAggregator<T> CreateTagAggregator<T>(ITextView textView) where T : ITag => CreateTagAggregator<T>(textView, TagAggregatorOptions.None);
 		public ITagAggregator<T> CreateTagAggregator<T>(ITextView textView, TagAggregatorOptions options) where T : ITag {
-			if (textView == null)
+			if (textView is null)
 				throw new ArgumentNullException(nameof(textView));
 			return new TextViewTagAggregator<T>(taggerFactory, textView, options);
 		}
 
 		public ISynchronousTagAggregator<T> CreateSynchronousTagAggregator<T>(ITextView textView) where T : ITag => CreateSynchronousTagAggregator<T>(textView, TagAggregatorOptions.None);
 		public ISynchronousTagAggregator<T> CreateSynchronousTagAggregator<T>(ITextView textView, TagAggregatorOptions options) where T : ITag {
-			if (textView == null)
+			if (textView is null)
 				throw new ArgumentNullException(nameof(textView));
 			return new TextViewTagAggregator<T>(taggerFactory, textView, options);
 		}

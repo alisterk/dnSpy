@@ -1,4 +1,4 @@
-﻿/*
+/*
 	Copyright (c) 2015 Ki
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -80,10 +80,7 @@ namespace dnSpy.BamlDecompiler.Xaml {
 			return null;
 		}
 
-		public static XamlResourceKey FindKeyInAncestors(BamlNode node) {
-			BamlNode found;
-			return FindKeyInAncestors(node, out found);
-		}
+		public static XamlResourceKey FindKeyInAncestors(BamlNode node) => FindKeyInAncestors(node, out var found);
 
 		public static XamlResourceKey FindKeyInAncestors(BamlNode node, out BamlNode found) {
 			BamlNode n = node;
@@ -93,7 +90,7 @@ namespace dnSpy.BamlDecompiler.Xaml {
 					return (XamlResourceKey)n.Annotation;
 				}
 				n = n.Parent;
-			} while (n != null);
+			} while (n is not null);
 			found = null;
 			return null;
 		}

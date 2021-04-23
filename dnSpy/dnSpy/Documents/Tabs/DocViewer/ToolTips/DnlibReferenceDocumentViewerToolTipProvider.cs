@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -17,7 +17,6 @@
     along with dnSpy.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -34,56 +33,60 @@ using dnSpy.Decompiler.IL;
 namespace dnSpy.Documents.Tabs.DocViewer.ToolTips {
 	[ExportDocumentViewerToolTipProvider(TabConstants.ORDER_DNLIBREFTOOLTIPCONTENTPROVIDER)]
 	sealed class DnlibReferenceDocumentViewerToolTipProvider : IDocumentViewerToolTipProvider {
-		public object Create(IDocumentViewerToolTipProviderContext context, object @ref) {
-			if (@ref is GenericParam)
-				return Create(context, (GenericParam)@ref);
-			if (@ref is IMemberRef)
-				return Create(context, (IMemberRef)@ref);
-			if (@ref is Parameter)
-				return Create(context, (Parameter)@ref);
-			if (@ref is Local)
-				return Create(context, (Local)@ref);
-			if (@ref is OpCode)
-				return Create(context, (OpCode)@ref);
-			if (@ref is NamespaceReference)
-				return Create(context, (NamespaceReference)@ref);
+		public object? Create(IDocumentViewerToolTipProviderContext context, object? @ref) {
+			switch (@ref) {
+			case GenericParam gp:
+				return Create(context, gp);
+			case IMemberRef mr:
+				return Create(context, mr);
+			case Parameter pd:
+				return Create(context, new SourceParameter(pd, pd.Name, pd.Type, SourceVariableFlags.None));
+			case SourceParameter p:
+				return Create(context, p);
+			case SourceLocal l:
+				return Create(context, l);
+			case OpCode opc:
+				return Create(context, opc);
+			case NamespaceReference nsr:
+				return Create(context, nsr);
+			}
 			return null;
 		}
 
-		string GetDocumentation(XmlDocumentationProvider docProvider, IMemberRef mr) {
+		string? GetDocumentation(XmlDocumentationProvider docProvider, IMemberRef mr) {
 			var sb = new StringBuilder();
 			var doc = docProvider.GetDocumentation(XmlDocKeyProvider.GetKey(mr, sb));
-			if (doc != null)
+			if (doc is not null)
 				return doc;
 			var method = mr as IMethod;
-			if (method == null)
+			if (method is null)
 				return null;
 			string name = method.Name;
 			if (name.StartsWith("set_") || name.StartsWith("get_")) {
 				var md = Resolve(method) as MethodDef;
-				if (md == null)
+				if (md is null)
 					return null;
-				mr = md.DeclaringType.Properties.FirstOrDefault(p => p.GetMethod == md || p.SetMethod == md);
-				return docProvider.GetDocumentation(XmlDocKeyProvider.GetKey(mr, sb));
+				var mr2 = md.DeclaringType.Properties.FirstOrDefault(p => p.GetMethod == md || p.SetMethod == md);
+				return docProvider.GetDocumentation(XmlDocKeyProvider.GetKey(mr2, sb));
 			}
 			else if (name.StartsWith("add_")) {
 				var md = Resolve(method) as MethodDef;
-				if (md == null)
+				if (md is null)
 					return null;
-				mr = md.DeclaringType.Events.FirstOrDefault(p => p.AddMethod == md);
-				return docProvider.GetDocumentation(XmlDocKeyProvider.GetKey(mr, sb));
+				var mr2 = md.DeclaringType.Events.FirstOrDefault(p => p.AddMethod == md);
+				return docProvider.GetDocumentation(XmlDocKeyProvider.GetKey(mr2, sb));
 			}
 			else if (name.StartsWith("remove_")) {
 				var md = Resolve(method) as MethodDef;
-				if (md == null)
+				if (md is null)
 					return null;
-				mr = md.DeclaringType.Events.FirstOrDefault(p => p.RemoveMethod == md);
-				return docProvider.GetDocumentation(XmlDocKeyProvider.GetKey(mr, sb));
+				var mr2 = md.DeclaringType.Events.FirstOrDefault(p => p.RemoveMethod == md);
+				return docProvider.GetDocumentation(XmlDocKeyProvider.GetKey(mr2, sb));
 			}
 			return null;
 		}
 
-		static IMemberRef Resolve(IMemberRef mr) {
+		static IMemberRef? Resolve(IMemberRef mr) {
 			if (mr is ITypeDefOrRef)
 				return ((ITypeDefOrRef)mr).ResolveTypeDef();
 			if (mr is IMethod && ((IMethod)mr).IsMethod)
@@ -103,12 +106,12 @@ namespace dnSpy.Documents.Tabs.DocViewer.ToolTips {
 			provider.CreateNewOutput();
 			try {
 				var docProvider = XmlDocLoader.LoadDocumentation(gp.Module);
-				if (docProvider != null) {
+				if (docProvider is not null) {
 					if (!provider.Output.WriteXmlDocGeneric(GetDocumentation(docProvider, gp.Owner), gp.Name) && gp.Owner is TypeDef) {
 						// If there's no doc available, use the parent class' documentation if this
 						// is a generic type parameter (and not a generic method parameter).
 						var owner = ((TypeDef)gp.Owner).DeclaringType;
-						while (owner != null) {
+						while (owner is not null) {
 							if (provider.Output.WriteXmlDocGeneric(GetDocumentation(docProvider, owner), gp.Name))
 								break;
 							owner = owner.DeclaringType;
@@ -139,7 +142,7 @@ namespace dnSpy.Documents.Tabs.DocViewer.ToolTips {
 			try {
 				if (resolvedRef is IMemberDef) {
 					var docProvider = XmlDocLoader.LoadDocumentation(resolvedRef.Module);
-					if (docProvider != null)
+					if (docProvider is not null)
 						provider.Output.WriteXmlDoc(GetDocumentation(docProvider, resolvedRef));
 				}
 			}
@@ -149,53 +152,35 @@ namespace dnSpy.Documents.Tabs.DocViewer.ToolTips {
 			return provider.Create();
 		}
 
-		object Create(IDocumentViewerToolTipProviderContext context, Local local) {
-			var name = GetDecompilerLocalName(context.DocumentViewer.Content.MethodDebugInfos, local) ?? local.Name;
-			return Create(context, local, name);
-		}
-
-		string GetDecompilerLocalName(IReadOnlyList<MethodDebugInfo> infos, Local local) {
-			foreach (var info in infos) {
-				foreach (var sourceLocal in info.Locals) {
-					if (sourceLocal.Local == local)
-						return sourceLocal.Name;
-				}
-			}
-			return null;
-		}
-
-		object Create(IDocumentViewerToolTipProviderContext context, Parameter p) => Create(context, p, null);
-		object Create(IDocumentViewerToolTipProviderContext context, IVariable v, string name) {
+		object Create(IDocumentViewerToolTipProviderContext context, SourceLocal local) {
 			var provider = context.Create();
-			provider.SetImage(v);
+			provider.SetImage(local);
+			context.Decompiler.WriteToolTip(provider.Output, local);
+			return provider.Create();
+		}
 
-			if (v == null) {
-				if (name == null)
-					return null;
-				provider.Output.Write(BoxedTextColor.Text, string.Format("(local variable) {0}", name));
-				return provider.Create();
-			}
+		object Create(IDocumentViewerToolTipProviderContext context, SourceParameter parameter) {
+			var provider = context.Create();
+			provider.SetImage(parameter);
 
-			context.Decompiler.WriteToolTip(provider.Output, v, name);
+			context.Decompiler.WriteToolTip(provider.Output, parameter);
 
 			provider.CreateNewOutput();
-			if (v is Parameter) {
-				var method = ((Parameter)v).Method;
-				try {
-					var docProvider = XmlDocLoader.LoadDocumentation(method.Module);
-					if (docProvider != null) {
-						if (!provider.Output.WriteXmlDocParameter(GetDocumentation(docProvider, method), v.Name)) {
-							var owner = method.DeclaringType;
-							while (owner != null) {
-								if (provider.Output.WriteXmlDocParameter(GetDocumentation(docProvider, owner), v.Name))
-									break;
-								owner = owner.DeclaringType;
-							}
+			var method = parameter.Parameter.Method;
+			try {
+				var docProvider = XmlDocLoader.LoadDocumentation(method.Module);
+				if (docProvider is not null) {
+					if (!provider.Output.WriteXmlDocParameter(GetDocumentation(docProvider, method), parameter.Name)) {
+						var owner = method.DeclaringType;
+						while (owner is not null) {
+							if (provider.Output.WriteXmlDocParameter(GetDocumentation(docProvider, owner), parameter.Name))
+								break;
+							owner = owner.DeclaringType;
 						}
 					}
 				}
-				catch (XmlException) {
-				}
+			}
+			catch (XmlException) {
 			}
 
 			return provider.Create();
@@ -205,13 +190,13 @@ namespace dnSpy.Documents.Tabs.DocViewer.ToolTips {
 			var provider = context.Create();
 
 			var s = ILLanguageHelper.GetOpCodeDocumentation(opCode);
-			string opCodeHex = opCode.Size > 1 ? string.Format("0x{0:X4}", opCode.Value) : string.Format("0x{0:X2}", opCode.Value);
+			string opCodeHex = opCode.Size > 1 ? $"0x{opCode.Value:X4}" : $"0x{opCode.Value:X2}";
 			provider.Output.Write(BoxedTextColor.OpCode, opCode.Name);
 			provider.Output.WriteSpace();
 			provider.Output.Write(BoxedTextColor.Punctuation, "(");
 			provider.Output.Write(BoxedTextColor.Number, opCodeHex);
 			provider.Output.Write(BoxedTextColor.Punctuation, ")");
-			if (s != null) {
+			if (s is not null) {
 				provider.Output.Write(BoxedTextColor.Text, " - ");
 				provider.Output.Write(BoxedTextColor.Text, s);
 			}

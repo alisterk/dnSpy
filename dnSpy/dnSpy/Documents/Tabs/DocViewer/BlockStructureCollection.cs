@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using dnSpy.Contracts.Decompiler;
 using dnSpy.Contracts.Text;
 using dnSpy.Contracts.Text.Editor;
@@ -31,7 +32,7 @@ namespace dnSpy.Documents.Tabs.DocViewer {
 
 		readonly SpanDataCollection<CodeBracesRange[]> coll;
 
-		struct Builder {
+		readonly struct Builder {
 			readonly List<SpanData<CodeBracesRange[]>> infos;
 			readonly List<CodeBracesRange> list;
 			readonly Stack<CodeBracesRange[]> listStack;
@@ -102,7 +103,7 @@ namespace dnSpy.Documents.Tabs.DocViewer {
 
 			sealed class Sorter : IComparer<CodeBracesRange> {
 				public static readonly Sorter Instance = new Sorter();
-				public int Compare(CodeBracesRange x, CodeBracesRange y) {
+				public int Compare([AllowNull] CodeBracesRange x, [AllowNull] CodeBracesRange y) {
 					int c = x.Left.Start - y.Left.Start;
 					if (c != 0)
 						return c;
@@ -126,7 +127,7 @@ namespace dnSpy.Documents.Tabs.DocViewer {
 					continue;
 				foreach (var info in spanData.Data) {
 					var data = CreateBlockStructureData(info, lineExtent.Snapshot);
-					if (data != null)
+					if (data is not null)
 						list.Add(data.Value);
 				}
 			}

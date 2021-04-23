@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -28,11 +28,7 @@ namespace dnSpy.Contracts.Hex.Files.DotNet {
 		/// Constructor
 		/// </summary>
 		/// <param name="file">File</param>
-		protected DotNetMultiFileResources(HexBufferFile file) {
-			if (file == null)
-				throw new ArgumentNullException(nameof(file));
-			File = file;
-		}
+		protected DotNetMultiFileResources(HexBufferFile file) => File = file ?? throw new ArgumentNullException(nameof(file));
 
 		/// <summary>
 		/// Gets the file
@@ -54,6 +50,6 @@ namespace dnSpy.Contracts.Hex.Files.DotNet {
 		/// </summary>
 		/// <param name="position">Position</param>
 		/// <returns></returns>
-		public abstract ComplexData GetStructure(HexPosition position);
+		public abstract ComplexData? GetStructure(HexPosition position);
 	}
 }

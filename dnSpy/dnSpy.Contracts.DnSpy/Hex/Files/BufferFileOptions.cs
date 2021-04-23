@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -23,11 +23,11 @@ namespace dnSpy.Contracts.Hex.Files {
 	/// <summary>
 	/// <see cref="HexBufferFile"/> options
 	/// </summary>
-	public struct BufferFileOptions {
+	public readonly struct BufferFileOptions {
 		/// <summary>
 		/// true if this is a default instance that hasn't been initialized
 		/// </summary>
-		public bool IsDefault => Name == null;
+		public bool IsDefault => Name is null;
 
 		/// <summary>
 		/// Span of file
@@ -57,16 +57,10 @@ namespace dnSpy.Contracts.Hex.Files {
 		/// <param name="filename">Filename if possible, otherwise any name</param>
 		/// <param name="tags">Tags, see eg. <see cref="PredefinedBufferFileTags"/></param>
 		public BufferFileOptions(HexSpan span, string name, string filename, string[] tags) {
-			if (name == null)
-				throw new ArgumentNullException(nameof(name));
-			if (filename == null)
-				throw new ArgumentNullException(nameof(filename));
-			if (tags == null)
-				throw new ArgumentNullException(nameof(tags));
 			Span = span;
-			Name = name;
-			Filename = filename;
-			Tags = tags;
+			Name = name ?? throw new ArgumentNullException(nameof(name));
+			Filename = filename ?? throw new ArgumentNullException(nameof(filename));
+			Tags = tags ?? throw new ArgumentNullException(nameof(tags));
 		}
 	}
 }

@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -23,7 +23,7 @@ namespace dnSpy.Contracts.Hex.Files {
 	/// <summary>
 	/// Enum field info
 	/// </summary>
-	public struct EnumFieldInfo {
+	public readonly struct EnumFieldInfo {
 		/// <summary>
 		/// Gets the enum field value
 		/// </summary>
@@ -40,10 +40,8 @@ namespace dnSpy.Contracts.Hex.Files {
 		/// <param name="value">Enum field value</param>
 		/// <param name="name">Enum field name</param>
 		public EnumFieldInfo(ulong value, string name) {
-			if (name == null)
-				throw new ArgumentNullException(nameof(name));
 			Value = value;
-			Name = name;
+			Name = name ?? throw new ArgumentNullException(nameof(name));
 		}
 	}
 }

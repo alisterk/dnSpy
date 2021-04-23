@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -32,15 +32,11 @@ namespace dnSpy.Hex.Files.DotNet {
 		protected MDTable MDTable { get; }
 
 		public TableRecordDataFactory(TablesHeap tablesHeap, MDTable mdTable) {
-			if (tablesHeap == null)
-				throw new ArgumentNullException(nameof(tablesHeap));
-			if (mdTable == null)
-				throw new ArgumentNullException(nameof(mdTable));
-			TablesHeap = tablesHeap;
-			MDTable = mdTable;
+			TablesHeap = tablesHeap ?? throw new ArgumentNullException(nameof(tablesHeap));
+			MDTable = mdTable ?? throw new ArgumentNullException(nameof(mdTable));
 		}
 
-		public TableRecordData Create(uint rid) {
+		public TableRecordData? Create(uint rid) {
 			if (!MDTable.IsValidRID(rid))
 				return null;
 			var position = MDTable.Span.Start + (rid - 1) * MDTable.RowSize;
@@ -246,6 +242,8 @@ namespace dnSpy.Hex.Files.DotNet {
 			new FlagInfo(0x0040, "NoOptimization"),
 			new FlagInfo(0x0080, "PreserveSig"),
 			new FlagInfo(0x0100, "AggressiveInlining"),
+			new FlagInfo(0x0200, "AggressiveOptimization"),
+			new FlagInfo(0x0400, "SecurityMitigations"),
 			new FlagInfo(0x1000, "InternalCall"),
 		});
 
@@ -297,6 +295,8 @@ namespace dnSpy.Hex.Files.DotNet {
 		static readonly ReadOnlyCollection<FlagInfo> paramAttrFlagInfos = new ReadOnlyCollection<FlagInfo>(new FlagInfo[] {
 			new FlagInfo(0x0001, "In"),
 			new FlagInfo(0x0002, "Out"),
+			new FlagInfo(0x0004, "Lcid"),
+			new FlagInfo(0x0008, "Retval"),
 			new FlagInfo(0x0010, "Optional"),
 			new FlagInfo(0x1000, "HasDefault"),
 			new FlagInfo(0x2000, "HasFieldMarshal"),

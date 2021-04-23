@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -27,15 +27,11 @@ namespace dnSpy.Documents.Tabs.DocViewer {
 	sealed class BlockStructureServiceDataProvider : IBlockStructureServiceDataProvider {
 		readonly LazyBlockStructureCollection lazyCollection;
 
-		BlockStructureServiceDataProvider(LazyBlockStructureCollection lazyCollection) {
-			if (lazyCollection == null)
-				throw new ArgumentNullException(nameof(lazyCollection));
-			this.lazyCollection = lazyCollection;
-		}
+		BlockStructureServiceDataProvider(LazyBlockStructureCollection lazyCollection) => this.lazyCollection = lazyCollection ?? throw new ArgumentNullException(nameof(lazyCollection));
 
-		public static IBlockStructureServiceDataProvider TryCreate(IDocumentViewer documentViewer) {
+		public static IBlockStructureServiceDataProvider? TryCreate(IDocumentViewer documentViewer) {
 			var lazyColl = documentViewer.Content.GetCustomData<LazyBlockStructureCollection>(DocumentViewerContentDataIds.BlockStructure);
-			return lazyColl == null ? null : new BlockStructureServiceDataProvider(lazyColl);
+			return lazyColl is null ? null : new BlockStructureServiceDataProvider(lazyColl);
 		}
 
 		public void GetData(SnapshotSpan lineExtent, List<BlockStructureData> list) => lazyCollection.Collection.GetData(lineExtent, list);

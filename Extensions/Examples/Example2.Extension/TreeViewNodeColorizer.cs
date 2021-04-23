@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Windows.Media;
 using dnSpy.Contracts.Documents.TreeView;
@@ -18,18 +18,18 @@ namespace Example2.Extension {
 
 		// Disable compiler warnings. The fields aren't referenced, just exported so
 		// the metadata can be added to some table. The fields will always be null.
-#pragma warning disable 0169
+#pragma warning disable CS0169
 		// Export the classes that define the name, and base types
 		[Export(typeof(ClassificationTypeDefinition))]
 		[Name(UnderlineClassificationType)]
 		[BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)]
-		static ClassificationTypeDefinition UnderlineClassificationTypeDefinition;
+		static ClassificationTypeDefinition? UnderlineClassificationTypeDefinition;
 
 		[Export(typeof(ClassificationTypeDefinition))]
 		[Name(LightgreenBackgroundClassificationType)]
 		[BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)]
-		static ClassificationTypeDefinition LightgreenBackgroundClassificationTypeDefinition;
-#pragma warning restore 0169
+		static ClassificationTypeDefinition? LightgreenBackgroundClassificationTypeDefinition;
+#pragma warning restore CS0169
 
 		// Export the classes that define the colors and order
 		[Export(typeof(EditorFormatDefinition))]
@@ -38,9 +38,7 @@ namespace Example2.Extension {
 		[UserVisible(true)]
 		[Order(After = Priority.Default)]
 		sealed class UnderlineClassificationFormatDefinition : ClassificationFormatDefinition {
-			UnderlineClassificationFormatDefinition() {
-				TextDecorations = System.Windows.TextDecorations.Underline;
-			}
+			UnderlineClassificationFormatDefinition() => TextDecorations = System.Windows.TextDecorations.Underline;
 		}
 
 		[Export(typeof(EditorFormatDefinition))]
@@ -49,9 +47,7 @@ namespace Example2.Extension {
 		[UserVisible(true)]
 		[Order(After = Priority.Default)]
 		sealed class LightGreenBackgroundClassificationFormatDefinition : ClassificationFormatDefinition {
-			LightGreenBackgroundClassificationFormatDefinition() {
-				BackgroundBrush = Brushes.LightGreen;
-			}
+			LightGreenBackgroundClassificationFormatDefinition() => BackgroundBrush = Brushes.LightGreen;
 		}
 	}
 
@@ -62,23 +58,19 @@ namespace Example2.Extension {
 		readonly IClassificationTypeRegistryService classificationTypeRegistryService;
 
 		[ImportingConstructor]
-		TreeViewNodeColorizerProvider(IClassificationTypeRegistryService classificationTypeRegistryService) {
-			this.classificationTypeRegistryService = classificationTypeRegistryService;
-		}
+		TreeViewNodeColorizerProvider(IClassificationTypeRegistryService classificationTypeRegistryService) => this.classificationTypeRegistryService = classificationTypeRegistryService;
 
-		public ITextClassifier Create(IContentType contentType) => new TreeViewNodeColorizer(classificationTypeRegistryService);
+		public ITextClassifier? Create(IContentType contentType) => new TreeViewNodeColorizer(classificationTypeRegistryService);
 	}
 
 	sealed class TreeViewNodeColorizer : ITextClassifier {
 		readonly IClassificationTypeRegistryService classificationTypeRegistryService;
 
-		public TreeViewNodeColorizer(IClassificationTypeRegistryService classificationTypeRegistryService) {
-			this.classificationTypeRegistryService = classificationTypeRegistryService;
-		}
+		public TreeViewNodeColorizer(IClassificationTypeRegistryService classificationTypeRegistryService) => this.classificationTypeRegistryService = classificationTypeRegistryService;
 
 		public IEnumerable<TextClassificationTag> GetTags(TextClassifierContext context) {
 			var tvContext = context as TreeViewNodeClassifierContext;
-			if (tvContext == null)
+			if (tvContext is null)
 				yield break;
 
 			// Don't do a thing if it's a tooltip

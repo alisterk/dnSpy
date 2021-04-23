@@ -19,7 +19,7 @@ namespace dnSpy.Decompiler.ILSpy.Core.Properties {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class dnSpy_Decompiler_ILSpy_Core_Resources {
@@ -215,6 +215,15 @@ namespace dnSpy.Decompiler.ILSpy.Core.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Hexadecimal numbers.
+        /// </summary>
+        public static string DecompilerSettings_HexadecimalNumbers {
+            get {
+                return ResourceManager.GetString("DecompilerSettings_HexadecimalNumbers", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Use increment and decrement operators.
         /// </summary>
         public static string DecompilerSettings_IntroduceIncrementAndDecrement {
@@ -238,6 +247,15 @@ namespace dnSpy.Decompiler.ILSpy.Core.Properties {
         public static string DecompilerSettings_MaxArrayElements {
             get {
                 return ResourceManager.GetString("DecompilerSettings_MaxArrayElements", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Max string length.
+        /// </summary>
+        public static string DecompilerSettings_MaxStringLength {
+            get {
+                return ResourceManager.GetString("DecompilerSettings_MaxStringLength", resourceCulture);
             }
         }
         
@@ -274,6 +292,15 @@ namespace dnSpy.Decompiler.ILSpy.Core.Properties {
         public static string DecompilerSettings_RemoveEmptyDefaultCtors {
             get {
                 return ResourceManager.GetString("DecompilerSettings_RemoveEmptyDefaultCtors", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Replace &apos;new delegate-class(xxx)&apos; with &apos;xxx&apos;.
+        /// </summary>
+        public static string DecompilerSettings_RemoveNewDelegateClass {
+            get {
+                return ResourceManager.GetString("DecompilerSettings_RemoveNewDelegateClass", resourceCulture);
             }
         }
         

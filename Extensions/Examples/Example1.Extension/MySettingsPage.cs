@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using dnSpy.Contracts.Images;
@@ -14,9 +14,7 @@ namespace Example1.Extension {
 
 		// This constructor gets the single MySettingsImpl instance exported by MySettingsImpl in MySettings.cs
 		[ImportingConstructor]
-		MyAppSettingsPageProvider(MySettings mySettings) {
-			this.mySettings = mySettings;
-		}
+		MyAppSettingsPageProvider(MySettings mySettings) => this.mySettings = mySettings;
 
 		public IEnumerable<AppSettingsPage> Create() {
 			// We only create one page
@@ -45,16 +43,16 @@ namespace Example1.Extension {
 
 		// This is the content shown in the page. It should be a WPF object (eg. a UserControl) or a
 		// ViewModel with a DataTemplate defined in a resource dictionary.
-		public override object UIObject {
+		public override object? UIObject {
 			get {
-				if (uiObject == null) {
+				if (uiObject is null) {
 					uiObject = new MySettingsControl();
 					uiObject.DataContext = newSettings;
 				}
 				return uiObject;
 			}
 		}
-		MySettingsControl uiObject;
+		MySettingsControl? uiObject;
 
 		readonly MySettings globalSettings;
 		readonly MySettings newSettings;
@@ -64,10 +62,9 @@ namespace Example1.Extension {
 			newSettings = mySettings.Clone();
 		}
 
-		public override void OnApply() {
+		public override void OnApply() =>
 			// OK/Apply was pressed, save the settings
 			newSettings.CopyTo(globalSettings);
-		}
 
 		public override void OnClosed() {
 			// The dialog box was closed

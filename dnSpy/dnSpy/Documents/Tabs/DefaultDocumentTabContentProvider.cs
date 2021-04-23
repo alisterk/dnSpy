@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -28,11 +28,9 @@ namespace dnSpy.Documents.Tabs {
 		readonly IDocumentTabContentFactoryService documentTabContentFactoryService;
 
 		[ImportingConstructor]
-		DefaultDocumentTabContentProvider(IDocumentTabContentFactoryService documentTabContentFactoryService) {
-			this.documentTabContentFactoryService = documentTabContentFactoryService;
-		}
+		DefaultDocumentTabContentProvider(IDocumentTabContentFactoryService documentTabContentFactoryService) => this.documentTabContentFactoryService = documentTabContentFactoryService;
 
-		public DocumentTabContent Create(IDocumentTabService documentTabService) =>
+		public DocumentTabContent? Create(IDocumentTabService documentTabService) =>
 			documentTabContentFactoryService.CreateTabContent(Array.Empty<DocumentTreeNodeData>());
 	}
 }

@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -31,17 +31,13 @@ namespace dnSpy.Contracts.Documents.TreeView {
 		/// </summary>
 		public PropertyDef PropertyDef { get; }
 
-		IMDTokenProvider IMDTokenNode.Reference => PropertyDef;
+		IMDTokenProvider? IMDTokenNode.Reference => PropertyDef;
 
 		/// <summary>
 		/// Constructor
 		/// </summary>
 		/// <param name="property">Property</param>
-		protected PropertyNode(PropertyDef property) {
-			if (property == null)
-				throw new ArgumentNullException(nameof(property));
-			PropertyDef = property;
-		}
+		protected PropertyNode(PropertyDef property) => PropertyDef = property ?? throw new ArgumentNullException(nameof(property));
 
 		/// <summary>
 		/// Creates a <see cref="MethodNode"/>, a getter, setter, or an other property method

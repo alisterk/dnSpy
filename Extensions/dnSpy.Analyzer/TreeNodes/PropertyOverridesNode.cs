@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2011 AlphaSierraPapa for the SharpDevelop Team
+// Copyright (c) 2011 AlphaSierraPapa for the SharpDevelop Team
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this
 // software and associated documentation files (the "Software"), to deal in the Software
@@ -28,12 +28,7 @@ namespace dnSpy.Analyzer.TreeNodes {
 	sealed class PropertyOverridesNode : SearchNode {
 		readonly PropertyDef analyzedProperty;
 
-		public PropertyOverridesNode(PropertyDef analyzedProperty) {
-			if (analyzedProperty == null)
-				throw new ArgumentNullException(nameof(analyzedProperty));
-
-			this.analyzedProperty = analyzedProperty;
-		}
+		public PropertyOverridesNode(PropertyDef analyzedProperty) => this.analyzedProperty = analyzedProperty ?? throw new ArgumentNullException(nameof(analyzedProperty));
 
 		protected override void Write(ITextColorWriter output, IDecompiler decompiler) =>
 			output.Write(BoxedTextColor.Text, dnSpy_Analyzer_Resources.OverriddenByTreeNode);
@@ -51,7 +46,7 @@ namespace dnSpy.Analyzer.TreeNodes {
 
 				if (TypesHierarchyHelpers.IsBaseProperty(analyzedProperty, property)) {
 					MethodDef anyAccessor = property.GetMethod ?? property.SetMethod;
-					if (anyAccessor == null)
+					if (anyAccessor is null)
 						continue;
 					bool hidesParent = !anyAccessor.IsVirtual ^ anyAccessor.IsNewSlot;
 					yield return new PropertyNode(property, hidesParent) { Context = Context };
@@ -61,7 +56,7 @@ namespace dnSpy.Analyzer.TreeNodes {
 
 		public static bool CanShow(PropertyDef property) {
 			var accessor = property.GetMethod ?? property.SetMethod;
-			return accessor != null && accessor.IsVirtual && !accessor.IsFinal && !accessor.DeclaringType.IsInterface;
+			return accessor is not null && accessor.IsVirtual && !accessor.IsFinal && !accessor.DeclaringType.IsInterface;
 		}
 	}
 }

@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -33,9 +33,7 @@ namespace dnSpy.Text.Editor {
 		readonly IEditorOperations editorOperations;
 
 		public DefaultTextViewMouseProcessor(IWpfTextView wpfTextView, IEditorOperationsFactoryService editorOperationsFactoryService) {
-			if (wpfTextView == null)
-				throw new ArgumentNullException(nameof(wpfTextView));
-			this.wpfTextView = wpfTextView;
+			this.wpfTextView = wpfTextView ?? throw new ArgumentNullException(nameof(wpfTextView));
 			editorOperations = editorOperationsFactoryService.GetEditorOperations(wpfTextView);
 		}
 
@@ -51,7 +49,7 @@ namespace dnSpy.Text.Editor {
 			return false;
 		}
 
-		public override void OnMouseRightButtonDown(object sender, MouseButtonEventArgs e) {
+		public override void OnMouseRightButtonDown(object? sender, MouseButtonEventArgs e) {
 			e.Handled = true;
 			var mouseLoc = GetLocation(e);
 			wpfTextView.Caret.MoveTo(mouseLoc.TextViewLine, mouseLoc.Point.X, true);
@@ -83,7 +81,7 @@ namespace dnSpy.Text.Editor {
 				editorOperations.MoveCaret(mouseLoc.TextViewLine, 0, extendSelection);
 		}
 
-		public override void OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
+		public override void OnMouseLeftButtonDown(object? sender, MouseButtonEventArgs e) {
 			e.Handled = true;
 			var mouseLoc = GetLocation(e);
 			int clickCount = e.ClickCount;
@@ -135,7 +133,7 @@ namespace dnSpy.Text.Editor {
 				var v = Version;
 				while (v != newVersion) {
 					var changes = v.Changes;
-					if (changes == null)
+					if (changes is null)
 						break;
 					if (changes.Count == 1 && changes[0].OldPosition == 0 && changes[0].OldLength == v.Length)
 						return false;
@@ -146,7 +144,7 @@ namespace dnSpy.Text.Editor {
 			}
 		}
 
-		public override void OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e) {
+		public override void OnMouseLeftButtonUp(object? sender, MouseButtonEventArgs e) {
 			bool oldMouseCaptured = mouseCaptured;
 			CancelMouseLeftButtonSelection();
 			if (oldMouseCaptured) {
@@ -167,8 +165,7 @@ namespace dnSpy.Text.Editor {
 		}
 
 		VirtualSnapshotSpan GetSelectionOrCaretIfNoSelection() {
-			VirtualSnapshotPoint start, end;
-			GetSelectionOrCaretIfNoSelection(out start, out end);
+			GetSelectionOrCaretIfNoSelection(out var start, out var end);
 			return new VirtualSnapshotSpan(start, end);
 		}
 
@@ -183,13 +180,13 @@ namespace dnSpy.Text.Editor {
 			}
 		}
 
-		public override void OnMouseMove(object sender, MouseEventArgs e) {
+		public override void OnMouseMove(object? sender, MouseEventArgs e) {
 			if (e.LeftButton == MouseButtonState.Pressed) {
-				if (mouseLeftDownInfo != null && !mouseLeftDownInfo.Value.TryAdvanceVersion(wpfTextView.TextSnapshot.Version)) {
+				if (mouseLeftDownInfo is not null && !mouseLeftDownInfo.Value.TryAdvanceVersion(wpfTextView.TextSnapshot.Version)) {
 					CancelMouseLeftButtonSelection();
 					return;
 				}
-				if (!mouseCaptured && mouseLeftDownInfo != null) {
+				if (!mouseCaptured && mouseLeftDownInfo is not null) {
 					var mouseLoc = GetLocation(e);
 					var dist = mouseLeftDownInfo.Value.Point - mouseLoc.Point;
 					bool movedEnough = Math.Abs(dist.X) >= SystemParameters.MinimumHorizontalDragDistance ||
@@ -202,11 +199,11 @@ namespace dnSpy.Text.Editor {
 				}
 				else if (mouseCaptured) {
 					e.Handled = true;
-					Debug.Assert(mouseLeftDownInfo != null);
-					if (mouseLeftDownInfo == null)
+					Debug2.Assert(mouseLeftDownInfo is not null);
+					if (mouseLeftDownInfo is null)
 						StopScrolling();
 					else if (mouseLeftDownInfo.Value.Clicks == 2 || mouseLeftDownInfo.Value.Clicks == 3) {
-						Debug.Assert(dispatcherTimer == null);
+						Debug2.Assert(dispatcherTimer is null);
 						StopScrolling();
 
 						var mouseLoc = GetLocation(e);
@@ -220,17 +217,17 @@ namespace dnSpy.Text.Editor {
 							editorOperations.SelectCurrentWord();
 						else
 							editorOperations.SelectLine(wpfTextView.Caret.ContainingTextViewLine, false);
-						VirtualSnapshotPoint selStart, selEnd;
-						GetSelectionOrCaretIfNoSelection(out selStart, out selEnd);
+						GetSelectionOrCaretIfNoSelection(out var selStart, out var selEnd);
 
 						VirtualSnapshotPoint anchorPoint, activePoint;
-						if (selStart < mouseLeftDownInfo.Value.Span.Start) {
+						var translatedSpan = mouseLeftDownInfo.Value.Span.TranslateTo(selStart.Position.Snapshot, SpanTrackingMode.EdgeExclusive);
+						if (selStart < translatedSpan.Start) {
 							activePoint = selStart;
-							anchorPoint = mouseLeftDownInfo.Value.Span.End;
+							anchorPoint = translatedSpan.End;
 						}
 						else {
 							activePoint = selEnd;
-							anchorPoint = mouseLeftDownInfo.Value.Span.Start;
+							anchorPoint = translatedSpan.Start;
 						}
 						wpfTextView.Selection.Select(anchorPoint, activePoint);
 						wpfTextView.Caret.MoveTo(activePoint);
@@ -245,7 +242,7 @@ namespace dnSpy.Text.Editor {
 			}
 		}
 		bool mouseCaptured;
-		DispatcherTimer dispatcherTimer;
+		DispatcherTimer? dispatcherTimer;
 		double dispatcherTimerXCoord;
 
 		void StopScrolling() {
@@ -256,15 +253,14 @@ namespace dnSpy.Text.Editor {
 		void UpdateScrolling(MouseEventArgs e) {
 			var mouseLoc = GetLocation(e);
 			dispatcherTimerXCoord = mouseLoc.Point.X;
-			TimeSpan interval;
-			var scrollDir = GetScrollDirection(mouseLoc, out interval);
-			if (scrollDir == null) {
+			var scrollDir = GetScrollDirection(mouseLoc, out var interval);
+			if (scrollDir is null) {
 				StopScrolling();
 				wpfTextView.Caret.EnsureVisible();
 				return;
 			}
 
-			if (dispatcherTimer != null) {
+			if (dispatcherTimer is not null) {
 				// It resets the timer if we write a new value, even if it's identical to the original value
 				if (dispatcherTimer.Interval != interval)
 					dispatcherTimer.Interval = interval;

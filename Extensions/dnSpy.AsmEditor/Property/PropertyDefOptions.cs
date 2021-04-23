@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -23,9 +23,9 @@ using dnlib.DotNet;
 namespace dnSpy.AsmEditor.Property {
 	sealed class PropertyDefOptions {
 		public PropertyAttributes Attributes;
-		public UTF8String Name;
-		public PropertySig PropertySig;
-		public Constant Constant;
+		public UTF8String? Name;
+		public PropertySig? PropertySig;
+		public Constant? Constant;
 		public List<MethodDef> GetMethods = new List<MethodDef>();
 		public List<MethodDef> SetMethods = new List<MethodDef>();
 		public List<MethodDef> OtherMethods = new List<MethodDef>();
@@ -63,15 +63,13 @@ namespace dnSpy.AsmEditor.Property {
 
 		public PropertyDef CreatePropertyDef(ModuleDef ownerModule) => ownerModule.UpdateRowId(CopyTo(new PropertyDefUser()));
 
-		public static PropertyDefOptions Create(ModuleDef module, UTF8String name, bool isInstance) {
-			return new PropertyDefOptions {
-				Attributes = 0,
-				Name = name,
-				PropertySig = isInstance ?
+		public static PropertyDefOptions Create(ModuleDef module, UTF8String name, bool isInstance) => new PropertyDefOptions {
+			Attributes = 0,
+			Name = name,
+			PropertySig = isInstance ?
 								PropertySig.CreateInstance(module.CorLibTypes.Int32) :
 								PropertySig.CreateStatic(module.CorLibTypes.Int32),
-				Constant = null,
-			};
-		}
+			Constant = null,
+		};
 	}
 }

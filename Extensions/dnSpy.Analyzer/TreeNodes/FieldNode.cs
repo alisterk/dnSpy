@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2011 AlphaSierraPapa for the SharpDevelop Team
+// Copyright (c) 2011 AlphaSierraPapa for the SharpDevelop Team
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this
 // software and associated documentation files (the "Software"), to deal in the Software
@@ -29,11 +29,7 @@ namespace dnSpy.Analyzer.TreeNodes {
 	sealed class FieldNode : EntityNode {
 		readonly FieldDef analyzedField;
 
-		public FieldNode(FieldDef analyzedField) {
-			if (analyzedField == null)
-				throw new ArgumentNullException(nameof(analyzedField));
-			this.analyzedField = analyzedField;
-		}
+		public FieldNode(FieldDef analyzedField) => this.analyzedField = analyzedField ?? throw new ArgumentNullException(nameof(analyzedField));
 
 		public override void Initialize() => TreeNode.LazyLoading = true;
 		protected override ImageReference GetIcon(IDotNetImageService dnImgMgr) => dnImgMgr.GetImageReference(analyzedField);
@@ -41,7 +37,7 @@ namespace dnSpy.Analyzer.TreeNodes {
 		protected override void Write(ITextColorWriter output, IDecompiler decompiler) {
 			decompiler.WriteType(output, analyzedField.DeclaringType, true);
 			output.Write(BoxedTextColor.Operator, ".");
-			new NodePrinter().Write(output, decompiler, analyzedField, Context.ShowToken);
+			new NodeFormatter().Write(output, decompiler, analyzedField, Context.ShowToken);
 		}
 
 		public override IEnumerable<TreeNodeData> CreateChildren() {
@@ -50,7 +46,7 @@ namespace dnSpy.Analyzer.TreeNodes {
 				yield return new FieldAccessNode(analyzedField, true);
 		}
 
-		public override IMemberRef Member => analyzedField;
-		public override IMDTokenProvider Reference => analyzedField;
+		public override IMemberRef? Member => analyzedField;
+		public override IMDTokenProvider? Reference => analyzedField;
 	}
 }

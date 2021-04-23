@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -37,24 +37,20 @@ namespace dnSpy.Hex.Formatting {
 		int spansCount;
 
 		public HexHtmlBuilder(VSTC.IClassificationFormatMap classificationFormatMap, string delimiter, int tabSize) {
-			if (classificationFormatMap == null)
-				throw new ArgumentNullException(nameof(classificationFormatMap));
-			if (delimiter == null)
-				throw new ArgumentNullException(nameof(delimiter));
 			if (tabSize < 1)
 				throw new ArgumentOutOfRangeException(nameof(tabSize));
-			this.classificationFormatMap = classificationFormatMap;
-			this.delimiter = delimiter;
+			this.classificationFormatMap = classificationFormatMap ?? throw new ArgumentNullException(nameof(classificationFormatMap));
+			this.delimiter = delimiter ?? throw new ArgumentNullException(nameof(delimiter));
 			htmlWriter = new CTF.HtmlClipboardFormatWriter() { TabSize = tabSize };
 			cssWriter = new StringBuilder();
 		}
 
 		public void Add(HexBufferLineFormatter bufferLines, HexClassifier classifier, NormalizedHexBufferSpanCollection spans, CancellationToken cancellationToken) {
-			if (bufferLines == null)
+			if (bufferLines is null)
 				throw new ArgumentNullException(nameof(bufferLines));
-			if (classifier == null)
+			if (classifier is null)
 				throw new ArgumentNullException(nameof(classifier));
-			if (spans == null)
+			if (spans is null)
 				throw new ArgumentNullException(nameof(spans));
 			if (spans.Count != 0 && spans[0].Buffer != bufferLines.Buffer)
 				throw new ArgumentException();
@@ -109,8 +105,7 @@ namespace dnSpy.Hex.Formatting {
 		}
 
 		void WriteCssColor(string name, Brush brush) {
-			var scb = brush as SolidColorBrush;
-			if (scb != null)
+			if (brush is SolidColorBrush scb)
 				cssWriter.Append(string.Format(name + ": rgb({0}, {1}, {2}); ", scb.Color.R, scb.Color.G, scb.Color.B));
 		}
 

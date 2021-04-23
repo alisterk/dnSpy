@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -29,7 +29,7 @@ using Microsoft.VisualStudio.Text.Classification;
 namespace dnSpy.Text.Classification {
 	sealed class CategoryEditorFormatMap : IEditorFormatMap {
 		public bool IsInBatchUpdate { get; private set; }
-		public event EventHandler<FormatItemsEventArgs> FormatMappingChanged;
+		public event EventHandler<FormatItemsEventArgs>? FormatMappingChanged;
 
 		readonly Dispatcher dispatcher;
 		readonly IEditorFormatDefinitionService editorFormatDefinitionService;
@@ -37,12 +37,8 @@ namespace dnSpy.Text.Classification {
 		readonly Dictionary<string, ResourceDictionary> resourceDicts;
 
 		public CategoryEditorFormatMap(Dispatcher dispatcher, IEditorFormatDefinitionService editorFormatDefinitionService) {
-			if (dispatcher == null)
-				throw new ArgumentNullException(nameof(dispatcher));
-			if (editorFormatDefinitionService == null)
-				throw new ArgumentNullException(nameof(editorFormatDefinitionService));
-			this.dispatcher = dispatcher;
-			this.editorFormatDefinitionService = editorFormatDefinitionService;
+			this.dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
+			this.editorFormatDefinitionService = editorFormatDefinitionService ?? throw new ArgumentNullException(nameof(editorFormatDefinitionService));
 			batchChanges = new HashSet<string>(StringComparer.Ordinal);
 			resourceDicts = new Dictionary<string, ResourceDictionary>(StringComparer.Ordinal);
 		}
@@ -83,10 +79,9 @@ namespace dnSpy.Text.Classification {
 		}
 
 		public ResourceDictionary GetProperties(string key) {
-			if (key == null)
+			if (key is null)
 				throw new ArgumentNullException(nameof(key));
-			ResourceDictionary resDict;
-			if (resourceDicts.TryGetValue(key, out resDict))
+			if (resourceDicts.TryGetValue(key, out var resDict))
 				return resDict;
 			resDict = editorFormatDefinitionService.GetDefinition(key)?.CreateResourceDictionary() ?? new ResourceDictionary();
 			resourceDicts.Add(key, resDict);
@@ -96,7 +91,7 @@ namespace dnSpy.Text.Classification {
 		public void AddProperties(string key, ResourceDictionary properties) =>
 			SetProperties(key, properties);
 		public void SetProperties(string key, ResourceDictionary properties) {
-			if (key == null)
+			if (key is null)
 				throw new ArgumentNullException(nameof(key));
 			resourceDicts[key] = properties;
 			if (IsInBatchUpdate)

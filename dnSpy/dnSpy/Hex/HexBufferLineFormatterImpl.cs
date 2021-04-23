@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -74,7 +74,7 @@ namespace dnSpy.Hex {
 			foreach (var fi in typeof(HexValuesDisplayFormat).GetFields()) {
 				if (!fi.IsLiteral)
 					continue;
-				var value = (HexValuesDisplayFormat)fi.GetValue(null);
+				var value = (HexValuesDisplayFormat)fi.GetValue(null)!;
 				if (value < HexBufferLineFormatterOptions.HexValuesDisplayFormat_First || value > HexBufferLineFormatterOptions.HexValuesDisplayFormat_Last)
 					throw new InvalidOperationException();
 			}
@@ -130,9 +130,7 @@ namespace dnSpy.Hex {
 		};
 
 		public HexBufferLineFormatterImpl(HexBuffer buffer, HexBufferLineFormatterOptions options) {
-			if (buffer == null)
-				throw new ArgumentNullException(nameof(buffer));
-			if (options == null)
+			if (options is null)
 				throw new ArgumentNullException(nameof(options));
 			if (options.CharsPerLine < 0)
 				throw new ArgumentOutOfRangeException(nameof(options));
@@ -155,10 +153,8 @@ namespace dnSpy.Hex {
 			if (options.ValuesFormat < HexBufferLineFormatterOptions.HexValuesDisplayFormat_First || options.ValuesFormat > HexBufferLineFormatterOptions.HexValuesDisplayFormat_Last)
 				throw new ArgumentOutOfRangeException(nameof(options));
 
-			this.buffer = buffer;
-			columnOrder = TryCreateColumns(options.ColumnOrder ?? defaultColumnOrders);
-			if (columnOrder == null)
-				throw new ArgumentOutOfRangeException(nameof(options));
+			this.buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
+			columnOrder = TryCreateColumns(options.ColumnOrder ?? defaultColumnOrders) ?? throw new ArgumentOutOfRangeException(nameof(options));
 			cellList = new List<HexCell>();
 			useRelativePositions = options.UseRelativePositions;
 			startPosition = options.StartPosition;
@@ -214,9 +210,7 @@ namespace dnSpy.Hex {
 			}
 			if (LineCount == 0)
 				throw new InvalidOperationException();
-
-			VST.Span offsetSpan, valuesSpan, asciiSpan;
-			CalculateColumnSpans(out offsetSpan, out valuesSpan, out asciiSpan);
+			CalculateColumnSpans(out var offsetSpan, out var valuesSpan, out var asciiSpan);
 			OffsetSpan = offsetSpan;
 			ValuesSpan = valuesSpan;
 			AsciiSpan = asciiSpan;
@@ -285,9 +279,9 @@ namespace dnSpy.Hex {
 		}
 
 		void CalculateColumnSpans(out VST.Span offsetSpan, out VST.Span valuesSpan, out VST.Span asciiSpan) {
-			offsetSpan = default(VST.Span);
-			valuesSpan = default(VST.Span);
-			asciiSpan = default(VST.Span);
+			offsetSpan = default;
+			valuesSpan = default;
+			asciiSpan = default;
 
 			bool needSep = false;
 			int position = 0;
@@ -354,7 +348,7 @@ namespace dnSpy.Hex {
 			return length;
 		}
 
-		static ReadOnlyCollection<HexColumnType> TryCreateColumns(HexColumnType[] columnOrders) {
+		static ReadOnlyCollection<HexColumnType>? TryCreateColumns(HexColumnType[] columnOrders) {
 			var columns = columnOrders.ToList();
 			if (!columns.Contains(HexColumnType.Offset))
 				columns.Add(HexColumnType.Offset);
@@ -562,7 +556,7 @@ namespace dnSpy.Hex {
 				int cellStart = CurrentTextIndex;
 				int spaces;
 				if (visibleBytesSpan.Contains(pos)) {
-					if (visStart == null)
+					if (visStart is null)
 						visStart = CurrentTextIndex;
 					long valueIndex = (long)(pos - visibleBytesSpan.Start).ToUInt64();
 					spaces = valueFormatter.FormatValue(stringBuilder, hexBytes, valueIndex, flags);
@@ -570,11 +564,11 @@ namespace dnSpy.Hex {
 					bufferSpan = new HexBufferSpan(new HexBufferPoint(buffer, pos), new HexBufferPoint(buffer, endPos));
 				}
 				else {
-					if (visStart != null && visEnd == null)
+					if (visStart is not null && visEnd is null)
 						visEnd = CurrentTextIndex;
 					stringBuilder.Append(' ', valueFormatter.FormattedLength);
 					spaces = valueFormatter.FormattedLength;
-					bufferSpan = default(HexBufferSpan);
+					bufferSpan = default;
 				}
 				if (cellStart + valueFormatter.FormattedLength != CurrentTextIndex)
 					throw new InvalidOperationException();
@@ -593,9 +587,9 @@ namespace dnSpy.Hex {
 			}
 			if (pos != end)
 				throw new InvalidOperationException();
-			if (visStart != null && visEnd == null)
+			if (visStart is not null && visEnd is null)
 				visEnd = CurrentTextIndex;
-			visibleSpan = visStart == null ? default(VST.Span) : VST.Span.FromBounds(visStart.Value, visEnd.Value);
+			visibleSpan = visStart is null ? default : VST.Span.FromBounds(visStart.Value, visEnd!.Value);
 			fullSpan = VST.Span.FromBounds(fullStart, CurrentTextIndex);
 			if (ValuesSpan != fullSpan)
 				throw new InvalidOperationException();
@@ -617,7 +611,7 @@ namespace dnSpy.Hex {
 				HexBufferSpan bufferSpan;
 				int cellStart = CurrentTextIndex;
 				if (visibleBytesSpan.Contains(pos)) {
-					if (visStart == null)
+					if (visStart is null)
 						visStart = CurrentTextIndex;
 					long index = (long)(pos - visibleBytesSpan.Start).ToUInt64();
 					int b = hexBytes.TryReadByte(index);
@@ -630,10 +624,10 @@ namespace dnSpy.Hex {
 					bufferSpan = new HexBufferSpan(buffer, new HexSpan(pos, 1));
 				}
 				else {
-					if (visStart != null && visEnd == null)
+					if (visStart is not null && visEnd is null)
 						visEnd = CurrentTextIndex;
 					stringBuilder.Append(' ');
-					bufferSpan = default(HexBufferSpan);
+					bufferSpan = default;
 				}
 				var cellSpan = VST.Span.FromBounds(cellStart, CurrentTextIndex);
 				var separatorSpan = new VST.Span(cellSpan.End, 0);
@@ -643,9 +637,9 @@ namespace dnSpy.Hex {
 			}
 			if ((ulong)fullStart + bytesPerLine != (ulong)CurrentTextIndex)
 				throw new InvalidOperationException();
-			if (visStart != null && visEnd == null)
+			if (visStart is not null && visEnd is null)
 				visEnd = CurrentTextIndex;
-			visibleSpan = visStart == null ? default(VST.Span) : VST.Span.FromBounds(visStart.Value, visEnd.Value);
+			visibleSpan = visStart is null ? default : VST.Span.FromBounds(visStart.Value, visEnd!.Value);
 			fullSpan = VST.Span.FromBounds(fullStart, CurrentTextIndex);
 			if (AsciiSpan != fullSpan)
 				throw new InvalidOperationException();
@@ -677,7 +671,7 @@ namespace dnSpy.Hex {
 		}
 
 		public override HexBufferSpan GetValueBufferSpan(HexCell cell, int cellPosition) {
-			if (cell == null)
+			if (cell is null)
 				throw new ArgumentNullException(nameof(cell));
 			if (cellPosition < 0 || cellPosition >= cell.CellSpan.Length)
 				throw new ArgumentOutOfRangeException(nameof(cellPosition));
@@ -687,7 +681,7 @@ namespace dnSpy.Hex {
 		public override bool CanEditValueCell => valueFormatter.CanEdit;
 
 		public override PositionAndData? EditValueCell(HexCell cell, int cellPosition, char c) {
-			if (cell == null)
+			if (cell is null)
 				throw new ArgumentNullException(nameof(cell));
 			if (cell.BufferSpan.Buffer != Buffer)
 				throw new ArgumentException();

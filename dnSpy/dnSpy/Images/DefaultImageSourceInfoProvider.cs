@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -30,25 +30,21 @@ using dnSpy.Contracts.Images;
 namespace dnSpy.Images {
 	sealed class DefaultImageSourceInfoProvider : IImageSourceInfoProvider {
 		readonly Assembly assembly;
-		Dictionary<string, ImageSourceInfo[]> nameToInfosDict;
+		Dictionary<string, ImageSourceInfo[]>? nameToInfosDict;
 
-		public DefaultImageSourceInfoProvider(Assembly assembly) {
-			if (assembly == null)
-				throw new ArgumentNullException(nameof(assembly));
-			this.assembly = assembly;
-		}
+		public DefaultImageSourceInfoProvider(Assembly assembly) => this.assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
 
-		public ImageSourceInfo[] GetImageSourceInfos(string name) {
-			if (nameToInfosDict == null)
+		public ImageSourceInfo[]? GetImageSourceInfos(string name) {
+			if (nameToInfosDict is null)
 				InitializeResources();
-			ImageSourceInfo[] infos;
-			if (nameToInfosDict.TryGetValue(name, out infos))
+			Debug2.Assert(nameToInfosDict is not null);
+			if (nameToInfosDict.TryGetValue(name, out var infos))
 				return infos;
 			return null;
 		}
 
 		void InitializeResources() {
-			if (nameToInfosDict != null)
+			if (nameToInfosDict is not null)
 				return;
 			var dict = new Dictionary<string, List<ImageSourceInfo>>(StringComparer.InvariantCultureIgnoreCase);
 
@@ -56,17 +52,19 @@ namespace dnSpy.Images {
 			var rsrcName = asmName.Name + ".g.resources";
 			try {
 				var baseUri = "/" + asmName.Name + ";v" + asmName.Version + ";component/";
-				using (var mod = ModuleDefMD.Load(assembly.ManifestModule)) {
+				var options = new ModuleCreationOptions();
+				options.TryToLoadPdbFromDisk = false;
+				using (var mod = ModuleDefMD.Load(assembly.ManifestModule, options)) {
 					var rsrc = mod.Resources.Find(rsrcName) as EmbeddedResource;
-					Debug.Assert(rsrc != null);
-					if (rsrc != null) {
-						var set = ResourceReader.Read(mod, rsrc.Data);
+					Debug2.Assert(rsrc is not null);
+					if (rsrc is not null) {
+						var set = ResourceReader.Read(mod, rsrc.CreateReader());
 						foreach (var elem in set.ResourceElements) {
 							const string imagesPrefix = "images/";
-							if (elem.Name != null && elem.Name.StartsWith(imagesPrefix, StringComparison.OrdinalIgnoreCase)) {
+							if (elem.Name is not null && elem.Name.StartsWith(imagesPrefix, StringComparison.OrdinalIgnoreCase)) {
 								var imageName = elem.Name.Substring(imagesPrefix.Length);
 								var nameNoExt = RemoveExtension(imageName);
-								string nameKey = null;
+								string? nameKey = null;
 								ImageSourceInfo? info = null;
 								if (imageName.EndsWith(".xaml", StringComparison.OrdinalIgnoreCase) || imageName.EndsWith(".baml", StringComparison.OrdinalIgnoreCase)) {
 									nameKey = nameNoExt;
@@ -81,9 +79,8 @@ namespace dnSpy.Images {
 										Size = GetImageSize(nameNoExt, out nameKey) ?? new Size(16, 16),
 									};
 								}
-								if (info != null && nameKey != null) {
-									List<ImageSourceInfo> list;
-									if (!dict.TryGetValue(nameKey, out list))
+								if (info is not null && nameKey is not null) {
+									if (!dict.TryGetValue(nameKey, out var list))
 										dict.Add(nameKey, list = new List<ImageSourceInfo>());
 									list.Add(info.Value);
 								}
@@ -114,10 +111,9 @@ namespace dnSpy.Images {
 				return null;
 			if (match.Groups.Count != 3)
 				return null;
-			int width, height;
-			if (!int.TryParse(match.Groups[1].Value, out width))
+			if (!int.TryParse(match.Groups[1].Value, out int width))
 				return null;
-			if (!int.TryParse(match.Groups[2].Value, out height))
+			if (!int.TryParse(match.Groups[2].Value, out int height))
 				return null;
 			nameKey = name.Substring(0, match.Index);
 			return new Size(width, height);

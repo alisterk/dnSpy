@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -29,9 +29,9 @@ namespace dnSpy.Contracts.Documents.TreeView.Resources {
 	sealed class DeserializedDataInfo {
 		public Type ObjectType { get; }
 		public string Name { get; }
-		public object Value { get; }
+		public object? Value { get; }
 
-		public DeserializedDataInfo(Type objectType, string name, object value) {
+		public DeserializedDataInfo(Type objectType, string name, object? value) {
 			ObjectType = objectType;
 			Name = name;
 			Value = value;
@@ -75,9 +75,7 @@ namespace dnSpy.Contracts.Documents.TreeView.Resources {
 					DeserializedDataInfos[c.Name] = new DeserializedDataInfo(c.ObjectType, c.Name, c.Value);
 			}
 
-			public void GetObjectData(SerializationInfo info, StreamingContext context) {
-				throw new NotImplementedException();
-			}
+			public void GetObjectData(SerializationInfo info, StreamingContext context) => throw new NotImplementedException();
 		}
 
 		[Serializable]
@@ -85,17 +83,17 @@ namespace dnSpy.Contracts.Documents.TreeView.Resources {
 			public DontDeserializeType(SerializationInfo info, StreamingContext context) {
 			}
 
-			public void GetObjectData(SerializationInfo info, StreamingContext context) {
-				throw new NotImplementedException();
-			}
+			public void GetObjectData(SerializationInfo info, StreamingContext context) => throw new NotImplementedException();
 		}
 
 		public static Dictionary<string, DeserializedDataInfo> Deserialize(string asmName, string typeName, byte[] data) {
 			var fmt = new BinaryFormatter();
 			fmt.Binder = new MyBinder(asmName, typeName);
+#pragma warning disable SYSLIB0011
 			var obj = fmt.Deserialize(new MemoryStream(data)) as DeserializedType;
-			Debug.Assert(obj != null);
-			if (obj == null)
+#pragma warning restore SYSLIB0011
+			Debug2.Assert(obj is not null);
+			if (obj is null)
 				return new Dictionary<string, DeserializedDataInfo>();
 			return obj.DeserializedDataInfos;
 		}

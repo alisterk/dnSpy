@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2014 AlphaSierraPapa for the SharpDevelop Team
+// Copyright (c) 2014 AlphaSierraPapa for the SharpDevelop Team
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this
 // software and associated documentation files (the "Software"), to deal in the Software
@@ -16,6 +16,7 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+#nullable disable
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -48,17 +49,16 @@ namespace dnSpy.Text.AvalonEdit {
 		/// </summary>
 		/// <exception cref="ArgumentNullException">input is null.</exception>
 		public Rope(IEnumerable<T> input) {
-			if (input == null)
+			if (input is null)
 				throw new ArgumentNullException("input");
-			Rope<T> inputRope = input as Rope<T>;
-			if (inputRope != null) {
+			if (input is Rope<T> inputRope) {
 				// clone ropes instead of copying them
 				inputRope.root.Publish();
 				root = inputRope.root;
 			}
 			else {
 				string text = input as string;
-				if (text != null) {
+				if (text is not null) {
 					// if a string is IEnumerable<T>, then T must be char
 					((Rope<char>)(object)this).root = CharRope.InitFromString(text);
 				}
@@ -91,9 +91,7 @@ namespace dnSpy.Text.AvalonEdit {
 			return new Rope<T>(root);
 		}
 
-		object ICloneable.Clone() {
-			return Clone();
-		}
+		object ICloneable.Clone() => Clone();
 
 		/// <summary>
 		/// Resets the rope to an empty list.
@@ -111,9 +109,7 @@ namespace dnSpy.Text.AvalonEdit {
 		/// <remarks>
 		/// This method counts as a read access and may be called concurrently to other read accesses.
 		/// </remarks>
-		public int Length {
-			get { return root.length; }
-		}
+		public int Length => root.length;
 
 		/// <summary>
 		/// Gets the length of the rope.
@@ -122,9 +118,7 @@ namespace dnSpy.Text.AvalonEdit {
 		/// <remarks>
 		/// This method counts as a read access and may be called concurrently to other read accesses.
 		/// </remarks>
-		public int Count {
-			get { return root.length; }
-		}
+		public int Count => root.length;
 
 		/// <summary>
 		/// Inserts another rope into this rope.
@@ -136,7 +130,7 @@ namespace dnSpy.Text.AvalonEdit {
 			if (index < 0 || index > Length) {
 				throw new ArgumentOutOfRangeException("index", index, "0 <= index <= " + Length.ToString(CultureInfo.InvariantCulture));
 			}
-			if (newElements == null)
+			if (newElements is null)
 				throw new ArgumentNullException("newElements");
 			newElements.root.Publish();
 			root = root.Insert(index, newElements.root);
@@ -200,9 +194,7 @@ namespace dnSpy.Text.AvalonEdit {
 				nodeStartIndex = nodeStartOffset;
 			}
 
-			internal bool IsInside(int offset) {
-				return offset >= nodeStartIndex && offset < nodeStartIndex + node.length;
-			}
+			internal bool IsInside(int offset) => offset >= nodeStartIndex && offset < nodeStartIndex + node.length;
 		}
 
 		// cached pointer to 'last used node', used to speed up accesses by index that are close together
@@ -250,7 +242,7 @@ namespace dnSpy.Text.AvalonEdit {
 			ImmutableStack<RopeCacheEntry> stack = lastUsedNodeStack;
 			ImmutableStack<RopeCacheEntry> oldStack = stack;
 
-			if (stack == null) {
+			if (stack is null) {
 				stack = ImmutableStack<RopeCacheEntry>.Empty.Push(new RopeCacheEntry(root, 0));
 			}
 			while (!stack.PeekOrDefault().IsInside(index))
@@ -259,12 +251,12 @@ namespace dnSpy.Text.AvalonEdit {
 				RopeCacheEntry entry = stack.PeekOrDefault();
 				// check if we've reached a leaf or function node
 				if (entry.node.height == 0) {
-					if (entry.node.contents == null) {
+					if (entry.node.contents is null) {
 						// this is a function node - go down into its subtree
 						entry = new RopeCacheEntry(entry.node.GetContentNode(), entry.nodeStartIndex);
 						// entry is now guaranteed NOT to be another function node
 					}
-					if (entry.node.contents != null) {
+					if (entry.node.contents is not null) {
 						// this is a node containing actual content, so we're done
 						break;
 					}
@@ -284,7 +276,7 @@ namespace dnSpy.Text.AvalonEdit {
 			}
 
 			// this method guarantees that it finds a leaf node
-			Debug.Assert(stack.Peek().node.contents != null);
+			Debug2.Assert(stack.Peek().node.contents is not null);
 			return stack;
 		}
 		#endregion
@@ -300,7 +292,7 @@ namespace dnSpy.Text.AvalonEdit {
 		}
 
 		internal static void VerifyArrayWithRange(T[] array, int arrayIndex, int count) {
-			if (array == null)
+			if (array is null)
 				throw new ArgumentNullException("array");
 			if (arrayIndex < 0 || arrayIndex > array.Length) {
 				throw new ArgumentOutOfRangeException("startIndex", arrayIndex, "0 <= arrayIndex <= " + array.Length.ToString(CultureInfo.InvariantCulture));
@@ -321,7 +313,7 @@ namespace dnSpy.Text.AvalonEdit {
 		/// </remarks>
 		public override string ToString() {
 			Rope<char> charRope = this as Rope<char>;
-			if (charRope != null) {
+			if (charRope is not null) {
 				return charRope.ToString(0, Length);
 			}
 			else {
@@ -339,9 +331,7 @@ namespace dnSpy.Text.AvalonEdit {
 		}
 		#endregion
 
-		bool ICollection<T>.IsReadOnly {
-			get { return false; }
-		}
+		bool ICollection<T>.IsReadOnly => false;
 
 		/// <summary>
 		/// Finds the first occurance of item.
@@ -351,9 +341,7 @@ namespace dnSpy.Text.AvalonEdit {
 		/// <remarks>
 		/// This method counts as a read access and may be called concurrently to other read accesses.
 		/// </remarks>
-		public int IndexOf(T item) {
-			return IndexOf(item, 0, Length);
-		}
+		public int IndexOf(T item) => IndexOf(item, 0, Length);
 
 		/// <summary>
 		/// Gets the index of the first occurrence the specified item.
@@ -385,9 +373,7 @@ namespace dnSpy.Text.AvalonEdit {
 		/// <summary>
 		/// Gets the index of the last occurrence of the specified item in this rope.
 		/// </summary>
-		public int LastIndexOf(T item) {
-			return LastIndexOf(item, 0, Length);
-		}
+		public int LastIndexOf(T item) => LastIndexOf(item, 0, Length);
 
 		/// <summary>
 		/// Gets the index of the last occurrence of the specified item in this rope.
@@ -413,25 +399,19 @@ namespace dnSpy.Text.AvalonEdit {
 		/// Inserts the item at the specified index in the rope.
 		/// Runs in O(lg N).
 		/// </summary>
-		public void Insert(int index, T item) {
-			InsertRange(index, new[] { item }, 0, 1);
-		}
+		public void Insert(int index, T item) => InsertRange(index, new[] { item }, 0, 1);
 
 		/// <summary>
 		/// Removes a single item from the rope.
 		/// Runs in O(lg N).
 		/// </summary>
-		public void RemoveAt(int index) {
-			RemoveRange(index, 1);
-		}
+		public void RemoveAt(int index) => RemoveRange(index, 1);
 
 		/// <summary>
 		/// Appends the item at the end of the rope.
 		/// Runs in O(lg N).
 		/// </summary>
-		public void Add(T item) {
-			InsertRange(Length, new[] { item }, 0, 1);
-		}
+		public void Add(T item) => InsertRange(Length, new[] { item }, 0, 1);
 
 		/// <summary>
 		/// Searches the item in the rope.
@@ -440,9 +420,7 @@ namespace dnSpy.Text.AvalonEdit {
 		/// <remarks>
 		/// This method counts as a read access and may be called concurrently to other read accesses.
 		/// </remarks>
-		public bool Contains(T item) {
-			return IndexOf(item) >= 0;
-		}
+		public bool Contains(T item) => IndexOf(item) >= 0;
 
 		/// <summary>
 		/// Copies the whole content of the rope into the specified array.
@@ -451,9 +429,7 @@ namespace dnSpy.Text.AvalonEdit {
 		/// <remarks>
 		/// This method counts as a read access and may be called concurrently to other read accesses.
 		/// </remarks>
-		public void CopyTo(T[] array, int arrayIndex) {
-			CopyTo(0, array, arrayIndex, Length);
-		}
+		public void CopyTo(T[] array, int arrayIndex) => CopyTo(0, array, arrayIndex, Length);
 
 		/// <summary>
 		/// Copies the a part of the rope into the specified array.
@@ -523,15 +499,15 @@ namespace dnSpy.Text.AvalonEdit {
 
 		static IEnumerator<T> Enumerate(RopeNode<T> node) {
 			Stack<RopeNode<T>> stack = new Stack<RopeNode<T>>();
-			while (node != null) {
+			while (node is not null) {
 				// go to leftmost node, pushing the right parts that we'll have to visit later
-				while (node.contents == null) {
+				while (node.contents is null) {
 					if (node.height == 0) {
 						// go down into function nodes
 						node = node.GetContentNode();
 						continue;
 					}
-					Debug.Assert(node.right != null);
+					Debug2.Assert(node.right is not null);
 					stack.Push(node.right);
 					node = node.left;
 				}
@@ -547,8 +523,6 @@ namespace dnSpy.Text.AvalonEdit {
 			}
 		}
 
-		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() {
-			return GetEnumerator();
-		}
+		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
 	}
 }

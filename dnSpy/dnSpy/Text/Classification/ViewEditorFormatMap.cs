@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -29,7 +29,7 @@ using Microsoft.VisualStudio.Text.Editor.OptionsExtensionMethods;
 namespace dnSpy.Text.Classification {
 	abstract class ViewEditorFormatMap : IEditorFormatMap {
 		public bool IsInBatchUpdate => categoryMap.IsInBatchUpdate;
-		public event EventHandler<FormatItemsEventArgs> FormatMappingChanged;
+		public event EventHandler<FormatItemsEventArgs>? FormatMappingChanged;
 
 		readonly EditorFormatMapService editorFormatMapService;
 		readonly string appearanceCategoryName;
@@ -37,18 +37,15 @@ namespace dnSpy.Text.Classification {
 		readonly HashSet<string> viewProps;
 
 		protected ViewEditorFormatMap(EditorFormatMapService editorFormatMapService, string appearanceCategoryName) {
-			if (editorFormatMapService == null)
-				throw new ArgumentNullException(nameof(editorFormatMapService));
-			if (appearanceCategoryName == null)
-				throw new ArgumentNullException(nameof(appearanceCategoryName));
-			this.editorFormatMapService = editorFormatMapService;
-			this.appearanceCategoryName = appearanceCategoryName;
+			categoryMap = null!;
+			this.editorFormatMapService = editorFormatMapService ?? throw new ArgumentNullException(nameof(editorFormatMapService));
+			this.appearanceCategoryName = appearanceCategoryName ?? throw new ArgumentNullException(nameof(appearanceCategoryName));
 			viewProps = new HashSet<string>(StringComparer.Ordinal);
 		}
 
 		protected void Initialize() => UpdateAppearanceMap();
 
-		protected void Options_OptionChanged(object sender, EditorOptionChangedEventArgs e) {
+		protected void Options_OptionChanged(object? sender, EditorOptionChangedEventArgs e) {
 			if (e.OptionId == appearanceCategoryName)
 				UpdateAppearanceMap();
 		}
@@ -60,14 +57,14 @@ namespace dnSpy.Text.Classification {
 			if (categoryMap == newMap)
 				return;
 
-			if (categoryMap != null)
+			if (categoryMap is not null)
 				categoryMap.FormatMappingChanged -= CategoryMap_FormatMappingChanged;
 			categoryMap = newMap;
 			categoryMap.FormatMappingChanged += CategoryMap_FormatMappingChanged;
 			FormatMappingChanged?.Invoke(this, new FormatItemsEventArgs(new ReadOnlyCollection<string>(viewProps.ToArray())));
 		}
 
-		void CategoryMap_FormatMappingChanged(object sender, FormatItemsEventArgs e) =>
+		void CategoryMap_FormatMappingChanged(object? sender, FormatItemsEventArgs e) =>
 			FormatMappingChanged?.Invoke(this, e);
 
 		public void BeginBatchUpdate() => categoryMap.BeginBatchUpdate();
@@ -89,7 +86,7 @@ namespace dnSpy.Text.Classification {
 		}
 
 		public void Dispose() {
-			if (categoryMap != null)
+			if (categoryMap is not null)
 				categoryMap.FormatMappingChanged -= CategoryMap_FormatMappingChanged;
 			DisposeCore();
 		}
@@ -102,9 +99,7 @@ namespace dnSpy.Text.Classification {
 
 		public TextViewEditorFormatMap(ITextView textView, EditorFormatMapService editorFormatMapService)
 			: base(editorFormatMapService, DefaultWpfViewOptions.AppearanceCategoryName) {
-			if (textView == null)
-				throw new ArgumentNullException(nameof(textView));
-			this.textView = textView;
+			this.textView = textView ?? throw new ArgumentNullException(nameof(textView));
 			textView.Options.OptionChanged += Options_OptionChanged;
 			Initialize();
 		}

@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -31,9 +31,7 @@ namespace dnSpy.TreeView {
 		public TreeNodeImpl TreeNodeImpl => treeNodeImpl;
 		readonly TreeNodeImpl treeNodeImpl;
 
-		public DsSharpTreeNode(TreeNodeImpl treeNodeImpl) {
-			this.treeNodeImpl = treeNodeImpl;
-		}
+		public DsSharpTreeNode(TreeNodeImpl treeNodeImpl) => this.treeNodeImpl = treeNodeImpl;
 
 		// Needed by XAML
 		public TreeNodeData Data => treeNodeImpl.Data;
@@ -41,8 +39,8 @@ namespace dnSpy.TreeView {
 		public override object ExpandedIcon => treeNodeImpl.Data.ExpandedIcon ?? treeNodeImpl.Data.Icon;
 		public override object Icon => treeNodeImpl.Data.Icon;
 		public override bool SingleClickExpandsChildren => treeNodeImpl.Data.SingleClickExpandsChildren;
-		public override object Text => treeNodeImpl.Data.Text;
-		public override object ToolTip => treeNodeImpl.Data.ToolTip;
+		public override object? Text => treeNodeImpl.Data.Text;
+		public override object? ToolTip => treeNodeImpl.Data.ToolTip;
 		protected override void LoadChildren() => treeNodeImpl.TreeView.AddChildren(treeNodeImpl);
 		public override bool ShowExpander => treeNodeImpl.Data.ShowExpander(base.ShowExpander);
 		public override Brush Foreground => treeNodeImpl.TreeView.GetNodeForegroundBrush();
@@ -62,8 +60,8 @@ namespace dnSpy.TreeView {
 
 		protected override void OnChildrenChanged(NotifyCollectionChangedEventArgs e) {
 			base.OnChildrenChanged(e);
-			var added = e.NewItems == null || e.NewItems.Count == 0 ? Array.Empty<TreeNodeData>() : e.NewItems.OfType<DsSharpTreeNode>().Select(a => a.TreeNodeImpl.Data).ToArray();
-			var removed = e.OldItems == null || e.OldItems.Count == 0 ? Array.Empty<TreeNodeData>() : e.OldItems.OfType<DsSharpTreeNode>().Select(a => a.TreeNodeImpl.Data).ToArray();
+			var added = e.NewItems is null || e.NewItems.Count == 0 ? Array.Empty<TreeNodeData>() : e.NewItems.OfType<DsSharpTreeNode>().Select(a => a.TreeNodeImpl.Data).ToArray();
+			var removed = e.OldItems is null || e.OldItems.Count == 0 ? Array.Empty<TreeNodeData>() : e.OldItems.OfType<DsSharpTreeNode>().Select(a => a.TreeNodeImpl.Data).ToArray();
 			treeNodeImpl.Data.OnChildrenChanged(added, removed);
 		}
 
@@ -74,7 +72,6 @@ namespace dnSpy.TreeView {
 
 		protected override void OnExpanding() {
 			base.OnExpanding();
-			Debug.Assert(IsExpanded);
 			treeNodeImpl.Data.OnIsExpandedChanged(true);
 		}
 

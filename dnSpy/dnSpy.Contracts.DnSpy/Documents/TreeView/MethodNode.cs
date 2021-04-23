@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -31,16 +31,12 @@ namespace dnSpy.Contracts.Documents.TreeView {
 		/// </summary>
 		public MethodDef MethodDef { get; }
 
-		IMDTokenProvider IMDTokenNode.Reference => MethodDef;
+		IMDTokenProvider? IMDTokenNode.Reference => MethodDef;
 
 		/// <summary>
 		/// Constructor
 		/// </summary>
 		/// <param name="method">Method</param>
-		protected MethodNode(MethodDef method) {
-			if (method == null)
-				throw new ArgumentNullException(nameof(method));
-			MethodDef = method;
-		}
+		protected MethodNode(MethodDef method) => MethodDef = method ?? throw new ArgumentNullException(nameof(method));
 	}
 }

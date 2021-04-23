@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -51,7 +51,7 @@ namespace dnSpy.AsmEditor.Compiler {
 				fields = new Dictionary<FieldDef, FieldDef>(new ImportFieldEqualityComparer(comparer));
 				methodOverrides = new Dictionary<IMethodDefOrRef, MethodAndOverride>(new ImportMethodEqualityComparer(comparer));
 				this.comparer = comparer;
-				targetType = null;
+				targetType = null!;
 			}
 
 			public void Initialize(TypeDef targetType) {
@@ -73,66 +73,62 @@ namespace dnSpy.AsmEditor.Compiler {
 					fields[f] = f;
 			}
 
-			MethodDef LookupOverride(MethodOverride o) {
-				MethodAndOverride info;
-				if (!methodOverrides.TryGetValue(o.MethodDeclaration, out info))
+			MethodDef? LookupOverride(MethodOverride o) {
+				if (!methodOverrides.TryGetValue(o.MethodDeclaration, out var info))
 					return null;
 				if (!comparer.Equals(info.MethodDeclaration.DeclaringType, o.MethodDeclaration.DeclaringType))
 					return null;
 				return info.TargetMethod;
 			}
 
-			public PropertyDef FindProperty(PropertyDef compiledProp) {
-				PropertyDef targetProp;
-				if (properties.TryGetValue(compiledProp, out targetProp))
+			public PropertyDef? FindProperty(PropertyDef compiledProp) {
+				if (properties.TryGetValue(compiledProp, out var targetProp))
 					return targetProp;
 				return FindPropertyOverride(compiledProp.GetMethod) ?? FindPropertyOverride(compiledProp.SetMethod);
 			}
 
-			PropertyDef FindPropertyOverride(MethodDef compiledMethod) {
-				if (compiledMethod == null)
+			PropertyDef? FindPropertyOverride(MethodDef compiledMethod) {
+				if (compiledMethod is null)
 					return null;
 				foreach (var o in compiledMethod.Overrides) {
 					var targetMethod = LookupOverride(o);
-					if (targetMethod != null)
+					if (targetMethod is not null)
 						return targetMethod.DeclaringType.Properties.First(a => a.GetMethod == targetMethod || a.SetMethod == targetMethod);
 				}
 				return null;
 			}
 
-			public EventDef FindEvent(EventDef compiledEvent) {
-				EventDef targetEvent;
-				if (events.TryGetValue(compiledEvent, out targetEvent))
+			public EventDef? FindEvent(EventDef compiledEvent) {
+				if (events.TryGetValue(compiledEvent, out var targetEvent))
 					return targetEvent;
 				return FindEventOverride(compiledEvent.AddMethod) ?? FindEventOverride(compiledEvent.RemoveMethod) ?? FindEventOverride(compiledEvent.InvokeMethod);
 			}
 
-			EventDef FindEventOverride(MethodDef compiledMethod) {
-				if (compiledMethod == null)
+			EventDef? FindEventOverride(MethodDef compiledMethod) {
+				if (compiledMethod is null)
 					return null;
 				foreach (var o in compiledMethod.Overrides) {
 					var targetMethod = LookupOverride(o);
-					if (targetMethod != null)
+					if (targetMethod is not null)
 						return targetMethod.DeclaringType.Events.First(a => a.AddMethod == targetMethod || a.RemoveMethod == targetMethod || a.InvokeMethod == targetMethod);
 				}
 				return null;
 			}
 
-			public MethodDef FindMethod(MethodDef compiledMethod) {
-				MethodDef targetMethod;
+			public MethodDef? FindMethod(MethodDef compiledMethod) {
+				MethodDef? targetMethod;
 				if (methods.TryGetValue(compiledMethod, out targetMethod))
 					return targetMethod;
 				foreach (var o in compiledMethod.Overrides) {
 					targetMethod = LookupOverride(o);
-					if (targetMethod != null)
+					if (targetMethod is not null)
 						return targetMethod;
 				}
 				return null;
 			}
 
-			public FieldDef FindField(FieldDef compiledField) {
-				FieldDef targetField;
-				fields.TryGetValue(compiledField, out targetField);
+			public FieldDef? FindField(FieldDef compiledField) {
+				fields.TryGetValue(compiledField, out var targetField);
 				return targetField;
 			}
 

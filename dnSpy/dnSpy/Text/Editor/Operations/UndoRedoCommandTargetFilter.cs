@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -31,11 +31,7 @@ namespace dnSpy.Text.Editor.Operations {
 
 		bool IsReadOnly => textViewUndoManager.TextView.Options.DoesViewProhibitUserInput();
 
-		public UndoRedoCommandTargetFilter(ITextViewUndoManager textViewUndoManager) {
-			if (textViewUndoManager == null)
-				throw new ArgumentNullException(nameof(textViewUndoManager));
-			this.textViewUndoManager = textViewUndoManager;
-		}
+		public UndoRedoCommandTargetFilter(ITextViewUndoManager textViewUndoManager) => this.textViewUndoManager = textViewUndoManager ?? throw new ArgumentNullException(nameof(textViewUndoManager));
 
 		public CommandTargetStatus CanExecute(Guid group, int cmdId) {
 			if (group == CommandConstants.StandardGroup) {
@@ -54,12 +50,12 @@ namespace dnSpy.Text.Editor.Operations {
 			return CommandTargetStatus.NotHandled;
 		}
 
-		public CommandTargetStatus Execute(Guid group, int cmdId, object args = null) {
-			object result = null;
+		public CommandTargetStatus Execute(Guid group, int cmdId, object? args = null) {
+			object? result = null;
 			return Execute(group, cmdId, args, ref result);
 		}
 
-		public CommandTargetStatus Execute(Guid group, int cmdId, object args, ref object result) {
+		public CommandTargetStatus Execute(Guid group, int cmdId, object? args, ref object? result) {
 			if (group == CommandConstants.StandardGroup) {
 				switch ((StandardIds)cmdId) {
 				case StandardIds.Undo:

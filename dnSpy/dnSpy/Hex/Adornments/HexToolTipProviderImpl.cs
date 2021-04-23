@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -31,30 +31,28 @@ namespace dnSpy.Hex.Adornments {
 	sealed class HexToolTipProviderImpl : HexToolTipProvider {
 		readonly WpfHexView wpfHexView;
 		readonly HexSpaceReservationManager spaceReservationManager;
-		HexSpaceReservationAgent toolTipAgent;
+		HexSpaceReservationAgent? toolTipAgent;
 
-#pragma warning disable 0169
+#pragma warning disable CS0169
 		[Export(typeof(HexSpaceReservationManagerDefinition))]
 		[VSUTIL.Name(PredefinedHexSpaceReservationManagerNames.ToolTip)]
-		static readonly HexSpaceReservationManagerDefinition toolTipSpaceReservationManagerDefinition;
-#pragma warning restore 0169
+		static readonly HexSpaceReservationManagerDefinition? toolTipSpaceReservationManagerDefinition;
+#pragma warning restore CS0169
 
 		public HexToolTipProviderImpl(WpfHexView wpfHexView) {
-			if (wpfHexView == null)
-				throw new ArgumentNullException(nameof(wpfHexView));
-			this.wpfHexView = wpfHexView;
+			this.wpfHexView = wpfHexView ?? throw new ArgumentNullException(nameof(wpfHexView));
 			spaceReservationManager = wpfHexView.GetSpaceReservationManager(PredefinedHexSpaceReservationManagerNames.ToolTip);
 		}
 
 		public override void ClearToolTip() {
-			if (toolTipAgent != null)
+			if (toolTipAgent is not null)
 				spaceReservationManager.RemoveAgent(toolTipAgent);
 		}
 
 		public override void ShowToolTip(HexBufferSpan bufferSpan, HexSpanSelectionFlags flags, object toolTipContent, VSTA.PopupStyles style) {
 			if (bufferSpan.IsDefault)
 				throw new ArgumentException();
-			if (toolTipContent == null)
+			if (toolTipContent is null)
 				throw new ArgumentNullException(nameof(toolTipContent));
 			if ((style & (VSTA.PopupStyles.DismissOnMouseLeaveText | VSTA.PopupStyles.DismissOnMouseLeaveTextOrContent)) == (VSTA.PopupStyles.DismissOnMouseLeaveText | VSTA.PopupStyles.DismissOnMouseLeaveTextOrContent))
 				throw new ArgumentOutOfRangeException(nameof(style));
@@ -62,7 +60,7 @@ namespace dnSpy.Hex.Adornments {
 			ClearToolTip();
 
 			var uiElement = GetUIElement(toolTipContent);
-			if (uiElement == null)
+			if (uiElement is null)
 				throw new ArgumentException();
 
 			spaceReservationManager.AgentChanged += SpaceReservationManager_AgentChanged;
@@ -70,19 +68,17 @@ namespace dnSpy.Hex.Adornments {
 			spaceReservationManager.AddAgent(toolTipAgent);
 		}
 
-		void SpaceReservationManager_AgentChanged(object sender, HexSpaceReservationAgentChangedEventArgs e) {
+		void SpaceReservationManager_AgentChanged(object? sender, HexSpaceReservationAgentChangedEventArgs e) {
 			if (e.OldAgent == toolTipAgent) {
 				spaceReservationManager.AgentChanged -= SpaceReservationManager_AgentChanged;
 				toolTipAgent = null;
 			}
 		}
 
-		UIElement GetUIElement(object toolTipContent) {
-			var elem = toolTipContent as UIElement;
-			if (elem != null)
+		UIElement? GetUIElement(object toolTipContent) {
+			if (toolTipContent is UIElement elem)
 				return elem;
-			var s = toolTipContent as string;
-			if (s != null)
+			if (toolTipContent is string s)
 				return CreateUIElement(s);
 			return null;
 		}

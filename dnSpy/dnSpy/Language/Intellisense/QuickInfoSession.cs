@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -30,19 +30,19 @@ namespace dnSpy.Language.Intellisense {
 	sealed class QuickInfoSession : IQuickInfoSession2 {
 		public PropertyCollection Properties { get; }
 		public BulkObservableCollection<object> QuickInfoContent { get; }
-		public event EventHandler ApplicableToSpanChanged;
+		public event EventHandler? ApplicableToSpanChanged;
 		public bool TrackMouse { get; }
 		public ITextView TextView { get; }
-		public IIntellisensePresenter Presenter => quickInfoPresenter;
-		public event EventHandler PresenterChanged;
-		public event EventHandler Recalculated;
-		public event EventHandler Dismissed;
+		public IIntellisensePresenter? Presenter => quickInfoPresenter;
+		public event EventHandler? PresenterChanged;
+		public event EventHandler? Recalculated;
+		public event EventHandler? Dismissed;
 		public bool IsDismissed { get; private set; }
 		public bool HasInteractiveContent { get; private set; }
 		bool IsStarted { get; set; }
 
-		public ITrackingSpan ApplicableToSpan {
-			get { return applicableToSpan; }
+		public ITrackingSpan? ApplicableToSpan {
+			get => applicableToSpan;
 			private set {
 				if (!TrackingSpanHelpers.IsSameTrackingSpan(applicableToSpan, value)) {
 					applicableToSpan = value;
@@ -50,47 +50,39 @@ namespace dnSpy.Language.Intellisense {
 				}
 			}
 		}
-		ITrackingSpan applicableToSpan;
+		ITrackingSpan? applicableToSpan;
 
 		readonly Lazy<IQuickInfoSourceProvider, IOrderableContentTypeMetadata>[] quickInfoSourceProviders;
 		readonly ITrackingPoint triggerPoint;
 		readonly IIntellisensePresenterFactoryService intellisensePresenterFactoryService;
-		IQuickInfoSource[] quickInfoSources;
-		IIntellisensePresenter quickInfoPresenter;
+		IQuickInfoSource[]? quickInfoSources;
+		IIntellisensePresenter? quickInfoPresenter;
 
 		public QuickInfoSession(ITextView textView, ITrackingPoint triggerPoint, bool trackMouse, IIntellisensePresenterFactoryService intellisensePresenterFactoryService, Lazy<IQuickInfoSourceProvider, IOrderableContentTypeMetadata>[] quickInfoSourceProviders) {
-			if (textView == null)
-				throw new ArgumentNullException(nameof(textView));
-			if (triggerPoint == null)
-				throw new ArgumentNullException(nameof(triggerPoint));
-			if (intellisensePresenterFactoryService == null)
-				throw new ArgumentNullException(nameof(intellisensePresenterFactoryService));
-			if (quickInfoSourceProviders == null)
-				throw new ArgumentNullException(nameof(quickInfoSourceProviders));
 			Properties = new PropertyCollection();
 			QuickInfoContent = new BulkObservableCollection<object>();
-			TextView = textView;
-			this.triggerPoint = triggerPoint;
+			TextView = textView ?? throw new ArgumentNullException(nameof(textView));
+			this.triggerPoint = triggerPoint ?? throw new ArgumentNullException(nameof(triggerPoint));
 			TrackMouse = trackMouse;
-			this.intellisensePresenterFactoryService = intellisensePresenterFactoryService;
-			this.quickInfoSourceProviders = quickInfoSourceProviders;
+			this.intellisensePresenterFactoryService = intellisensePresenterFactoryService ?? throw new ArgumentNullException(nameof(intellisensePresenterFactoryService));
+			this.quickInfoSourceProviders = quickInfoSourceProviders ?? throw new ArgumentNullException(nameof(quickInfoSourceProviders));
 			TextView.Closed += TextView_Closed;
 		}
 
-		void TextView_Closed(object sender, EventArgs e) {
+		void TextView_Closed(object? sender, EventArgs e) {
 			if (!IsDismissed)
 				Dismiss();
 		}
 
 		IQuickInfoSource[] CreateQuickInfoSources() {
-			List<IQuickInfoSource> list = null;
+			List<IQuickInfoSource>? list = null;
 			var textBuffer = TextView.TextBuffer;
 			foreach (var provider in quickInfoSourceProviders) {
 				if (!TextView.TextDataModel.ContentType.IsOfAnyType(provider.Metadata.ContentTypes))
 					continue;
 				var source = provider.Value.TryCreateQuickInfoSource(textBuffer);
-				if (source != null) {
-					if (list == null)
+				if (source is not null) {
+					if (list is null)
 						list = new List<IQuickInfoSource>();
 					list.Add(source);
 				}
@@ -99,7 +91,7 @@ namespace dnSpy.Language.Intellisense {
 		}
 
 		void DisposeQuickInfoSources() {
-			if (quickInfoSources != null) {
+			if (quickInfoSources is not null) {
 				foreach (var source in quickInfoSources)
 					source.Dispose();
 				quickInfoSources = null;
@@ -123,17 +115,16 @@ namespace dnSpy.Language.Intellisense {
 			quickInfoSources = CreateQuickInfoSources();
 
 			var newContent = new List<object>();
-			ITrackingSpan applicableToSpan = null;
+			ITrackingSpan? applicableToSpan = null;
 			foreach (var source in quickInfoSources) {
-				ITrackingSpan applicableToSpanTmp;
-				source.AugmentQuickInfoSession(this, newContent, out applicableToSpanTmp);
+				source.AugmentQuickInfoSession(this, newContent, out var applicableToSpanTmp);
 				if (IsDismissed)
 					return;
-				if (applicableToSpan == null)
+				if (applicableToSpan is null)
 					applicableToSpan = applicableToSpanTmp;
 			}
 
-			if (newContent.Count == 0 || applicableToSpan == null)
+			if (newContent.Count == 0 || applicableToSpan is null)
 				Dismiss();
 			else {
 				QuickInfoContent.BeginBulkOperation();
@@ -143,9 +134,9 @@ namespace dnSpy.Language.Intellisense {
 
 				HasInteractiveContent = CalculateHasInteractiveContent();
 				ApplicableToSpan = applicableToSpan;
-				if (quickInfoPresenter == null) {
+				if (quickInfoPresenter is null) {
 					quickInfoPresenter = intellisensePresenterFactoryService.TryCreateIntellisensePresenter(this);
-					if (quickInfoPresenter == null) {
+					if (quickInfoPresenter is null) {
 						Dismiss();
 						return;
 					}
@@ -172,14 +163,13 @@ namespace dnSpy.Language.Intellisense {
 			DisposeQuickInfoSources();
 		}
 
-		public bool Match() {
+		public bool Match() =>
 			// There's nothing to match...
-			return false;
-		}
+			false;
 
 		public void Collapse() => Dismiss();
 
-		public ITrackingPoint GetTriggerPoint(ITextBuffer textBuffer) {
+		public ITrackingPoint? GetTriggerPoint(ITextBuffer textBuffer) {
 			if (!IsStarted)
 				throw new InvalidOperationException();
 			if (IsDismissed)

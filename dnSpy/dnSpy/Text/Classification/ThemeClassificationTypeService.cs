@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -276,10 +276,83 @@ namespace dnSpy.Text.Classification {
 				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.HexToolTipServiceField0),
 				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.HexToolTipServiceField1),
 				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.HexToolTipServiceCurrentField),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.ListFindMatchHighlight),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AdvancedBreakpointStatement),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AdvancedBreakpointStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.SelectedAdvancedBreakpointStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.DisabledAdvancedBreakpointStatement),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.DisabledAdvancedBreakpointStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.SelectedDisabledAdvancedBreakpointStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.BreakpointWarningStatement),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.BreakpointWarningStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.SelectedBreakpointWarningStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.BreakpointErrorStatement),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.BreakpointErrorStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.SelectedBreakpointErrorStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AdvancedBreakpointWarningStatement),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AdvancedBreakpointWarningStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.SelectedAdvancedBreakpointWarningStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AdvancedBreakpointErrorStatement),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AdvancedBreakpointErrorStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.SelectedAdvancedBreakpointErrorStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.TracepointStatement),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.TracepointStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.SelectedTracepointStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.DisabledTracepointStatement),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.DisabledTracepointStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.SelectedDisabledTracepointStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AdvancedTracepointStatement),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AdvancedTracepointStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.SelectedAdvancedTracepointStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.DisabledAdvancedTracepointStatement),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.DisabledAdvancedTracepointStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.SelectedDisabledAdvancedTracepointStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.TracepointWarningStatement),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.TracepointWarningStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.SelectedTracepointWarningStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.TracepointErrorStatement),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.TracepointErrorStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.SelectedTracepointErrorStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AdvancedTracepointWarningStatement),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AdvancedTracepointWarningStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.SelectedAdvancedTracepointWarningStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AdvancedTracepointErrorStatement),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AdvancedTracepointErrorStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.SelectedAdvancedTracepointErrorStatementMarker),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.BookmarkName),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.ActiveBookmarkName),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.DebugLogTrace),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.DebugLogExtensionMessage),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.DebuggerValueChangedHighlight),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.DebugExceptionName),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.DebugStowedExceptionName),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.DebugReturnValueName),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.DebugVariableName),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.DebugObjectIdName),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.DebuggerDisplayAttributeEval),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.DebuggerNoStringQuotesEval),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.DebugViewPropertyName),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AsmComment),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AsmDirective),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AsmPrefix),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AsmMnemonic),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AsmKeyword),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AsmOperator),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AsmPunctuation),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AsmNumber),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AsmRegister),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AsmSelectorValue),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AsmLabelAddress),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AsmFunctionAddress),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AsmLabel),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AsmFunction),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AsmData),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AsmAddress),
+				classificationTypeRegistryService.GetClassificationType(ThemeClassificationTypeNames.AsmHexBytes),
 			};
 			foreach (var ct in classificationTypes) {
-				Debug.Assert(ct != null);
-				if (ct == null)
+				Debug2.Assert(ct is not null);
+				if (ct is null)
 					throw new InvalidOperationException();
 			}
 		}

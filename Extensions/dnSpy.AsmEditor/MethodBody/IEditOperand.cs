@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -24,6 +24,6 @@ namespace dnSpy.AsmEditor.MethodBody {
 		/// </summary>
 		/// <param name="parameter">Parameter passed from the button command</param>
 		/// <param name="operand">Operand to edit</param>
-		void Edit(object parameter, InstructionOperandVM operand);
+		void Edit(object? parameter, InstructionOperandVM operand);
 	}
 }

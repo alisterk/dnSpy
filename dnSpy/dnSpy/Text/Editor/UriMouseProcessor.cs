@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -56,15 +56,9 @@ namespace dnSpy.Text.Editor {
 		bool hasWrittenCursor;
 
 		public UriMouseProcessor(IWpfTextView wpfTextView, IViewTagAggregatorFactoryService viewTagAggregatorFactoryService, IMessageBoxService messageBoxService) {
-			if (wpfTextView == null)
-				throw new ArgumentNullException(nameof(wpfTextView));
-			if (viewTagAggregatorFactoryService == null)
-				throw new ArgumentNullException(nameof(viewTagAggregatorFactoryService));
-			if (messageBoxService == null)
-				throw new ArgumentNullException(nameof(messageBoxService));
-			this.wpfTextView = wpfTextView;
-			this.messageBoxService = messageBoxService;
-			this.viewTagAggregatorFactoryService = viewTagAggregatorFactoryService;
+			this.wpfTextView = wpfTextView ?? throw new ArgumentNullException(nameof(wpfTextView));
+			this.messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
+			this.viewTagAggregatorFactoryService = viewTagAggregatorFactoryService ?? throw new ArgumentNullException(nameof(viewTagAggregatorFactoryService));
 			origCursor = wpfTextView.VisualElement.Cursor;
 			wpfTextView.VisualElement.PreviewKeyDown += VisualElement_PreviewKeyDown;
 			wpfTextView.VisualElement.PreviewKeyUp += VisualElement_PreviewKeyUp;
@@ -72,7 +66,7 @@ namespace dnSpy.Text.Editor {
 		}
 
 		bool IsControlDown {
-			get { return isControlDown; }
+			get => isControlDown;
 			set {
 				if (isControlDown != value) {
 					isControlDown = value;
@@ -84,10 +78,10 @@ namespace dnSpy.Text.Editor {
 		static readonly MouseEventArgs defaultMouseEventArgs = new MouseEventArgs(Mouse.PrimaryDevice, 0);
 
 		void UpdateIsControlDown(KeyEventArgs e) => IsControlDown = (e.KeyboardDevice.Modifiers & ModifierKeys.Control) != 0;
-		void VisualElement_PreviewKeyUp(object sender, KeyEventArgs e) => UpdateIsControlDown(e);
-		void VisualElement_PreviewKeyDown(object sender, KeyEventArgs e) => UpdateIsControlDown(e);
+		void VisualElement_PreviewKeyUp(object? sender, KeyEventArgs e) => UpdateIsControlDown(e);
+		void VisualElement_PreviewKeyDown(object? sender, KeyEventArgs e) => UpdateIsControlDown(e);
 
-		IMappingTagSpan<IUrlTag> GetUriSpan(MouseEventArgs e) {
+		IMappingTagSpan<IUrlTag>? GetUriSpan(MouseEventArgs e) {
 			if (!IsControlDown)
 				return null;
 			var loc = MouseLocation.Create(wpfTextView, e, insertionPosition: false);
@@ -98,7 +92,7 @@ namespace dnSpy.Text.Editor {
 
 		void UpdateCursor(MouseEventArgs e) {
 			var tagSpan = GetUriSpan(e);
-			if (tagSpan == null) {
+			if (tagSpan is null) {
 				if (hasWrittenCursor) {
 					wpfTextView.VisualElement.Cursor = origCursor;
 					hasWrittenCursor = false;
@@ -118,7 +112,7 @@ namespace dnSpy.Text.Editor {
 			if (e.Handled)
 				return;
 			var tagSpan = GetUriSpan(e);
-			if (tagSpan == null)
+			if (tagSpan is null)
 				return;
 			e.Handled = true;
 			StartBrowser(tagSpan.Tag.Url);
@@ -127,14 +121,14 @@ namespace dnSpy.Text.Editor {
 		void StartBrowser(Uri uri) {
 			try {
 				if (uri.IsAbsoluteUri)
-					Process.Start(uri.AbsoluteUri);
+					Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true });
 			}
 			catch {
 				messageBoxService.Show(dnSpy_Resources.CouldNotStartBrowser);
 			}
 		}
 
-		void WpfTextView_Closed(object sender, EventArgs e) {
+		void WpfTextView_Closed(object? sender, EventArgs e) {
 			wpfTextView.VisualElement.PreviewKeyDown -= VisualElement_PreviewKeyDown;
 			wpfTextView.VisualElement.PreviewKeyUp -= VisualElement_PreviewKeyUp;
 			wpfTextView.Closed -= WpfTextView_Closed;

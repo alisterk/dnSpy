@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -21,14 +21,15 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.VisualStudio.Text;
 
 namespace dnSpy.Text {
 	sealed class NormalizedTextChangeCollection : INormalizedTextChangeCollection {
 		public ITextChange this[int index] {
-			get { return changes[index]; }
-			set { throw new NotSupportedException(); }
+			get => changes[index];
+			set => throw new NotSupportedException();
 		}
 
 		public int Count => changes.Length;
@@ -46,9 +47,7 @@ namespace dnSpy.Text {
 
 		readonly ITextChange[] changes;
 
-		NormalizedTextChangeCollection(ITextChange[] changes) {
-			this.changes = changes;
-		}
+		NormalizedTextChangeCollection(ITextChange[] changes) => this.changes = changes;
 
 		public static INormalizedTextChangeCollection Create(IList<ITextChange> changes) {
 			if (changes.Count == 0)
@@ -90,7 +89,15 @@ namespace dnSpy.Text {
 
 		sealed class Comparer : IComparer<ITextChange> {
 			public static readonly Comparer Instance = new Comparer();
-			public int Compare(ITextChange x, ITextChange y) => x.OldPosition - y.OldPosition;
+			public int Compare([AllowNull] ITextChange x, [AllowNull] ITextChange y) {
+				if ((object?)x == y)
+					return 0;
+				if (x is null)
+					return -1;
+				if (y is null)
+					return 1;
+				return x.OldPosition - y.OldPosition;
+			}
 		}
 
 		public bool Contains(ITextChange item) => Array.IndexOf(changes, item) >= 0;
@@ -103,24 +110,14 @@ namespace dnSpy.Text {
 				yield return c;
 		}
 
-		public void Add(ITextChange item) {
-			throw new NotSupportedException();
-		}
+		public void Add(ITextChange item) => throw new NotSupportedException();
 
-		public void Clear() {
-			throw new NotSupportedException();
-		}
+		public void Clear() => throw new NotSupportedException();
 
-		public void Insert(int index, ITextChange item) {
-			throw new NotSupportedException();
-		}
+		public void Insert(int index, ITextChange item) => throw new NotSupportedException();
 
-		public bool Remove(ITextChange item) {
-			throw new NotSupportedException();
-		}
+		public bool Remove(ITextChange item) => throw new NotSupportedException();
 
-		public void RemoveAt(int index) {
-			throw new NotSupportedException();
-		}
+		public void RemoveAt(int index) => throw new NotSupportedException();
 	}
 }

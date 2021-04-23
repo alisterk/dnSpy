@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -29,14 +29,11 @@ namespace dnSpy.Search {
 		public IClassificationFormatMap ClassificationFormatMap { get; }
 		public ITextElementProvider TextElementProvider { get; }
 
-		public SearchResultContext(IClassificationFormatMap classificationFormatMap, ITextElementProvider textElementProvider) {
-			if (classificationFormatMap == null)
-				throw new ArgumentNullException(nameof(classificationFormatMap));
-			if (textElementProvider == null)
-				throw new ArgumentNullException(nameof(textElementProvider));
+		public SearchResultContext(IClassificationFormatMap classificationFormatMap, ITextElementProvider textElementProvider, IDecompiler decompiler) {
 			SyntaxHighlight = true;
-			ClassificationFormatMap = classificationFormatMap;
-			TextElementProvider = textElementProvider;
+			ClassificationFormatMap = classificationFormatMap ?? throw new ArgumentNullException(nameof(classificationFormatMap));
+			TextElementProvider = textElementProvider ?? throw new ArgumentNullException(nameof(textElementProvider));
+			Decompiler = decompiler ?? throw new ArgumentNullException(nameof(decompiler));
 		}
 	}
 }

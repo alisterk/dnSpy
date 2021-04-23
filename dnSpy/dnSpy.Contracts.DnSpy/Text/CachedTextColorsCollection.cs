@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -32,9 +32,7 @@ namespace dnSpy.Contracts.Text {
 		int currentOffset;
 		bool frozen;
 
-		public CachedTextColorsCollection() {
-			colorsList = new List<SpanData<object>>();
-		}
+		public CachedTextColorsCollection() => colorsList = new List<SpanData<object>>();
 
 		public CachedTextColorsCollection Freeze() {
 			frozen = true;
@@ -44,7 +42,7 @@ namespace dnSpy.Contracts.Text {
 		public void Append(object color, string text) {
 			if (frozen)
 				throw new InvalidOperationException("Instance is frozen");
-			if (text == null)
+			if (text is null)
 				throw new ArgumentNullException(nameof(text));
 			Append(color, text, 0, text.Length);
 		}
@@ -52,7 +50,7 @@ namespace dnSpy.Contracts.Text {
 		public void Append(object color, string text, int index, int length) {
 			if (frozen)
 				throw new InvalidOperationException("Instance is frozen");
-			if (text == null)
+			if (text is null)
 				throw new ArgumentNullException(nameof(text));
 			if (index < 0)
 				throw new ArgumentOutOfRangeException(nameof(index));

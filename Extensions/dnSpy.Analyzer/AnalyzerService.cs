@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -90,9 +90,7 @@ namespace dnSpy.Analyzer {
 		sealed class GuidObjectsProvider : IGuidObjectsProvider {
 			readonly ITreeView treeView;
 
-			public GuidObjectsProvider(ITreeView treeView) {
-				this.treeView = treeView;
-			}
+			public GuidObjectsProvider(ITreeView treeView) => this.treeView = treeView;
 
 			public IEnumerable<GuidObject> GetGuidObjects(GuidObjectsProviderArgs args) {
 				yield return new GuidObject(MenuConstants.GUIDOBJ_TREEVIEW_NODES_ARRAY_GUID, treeView.TopLevelSelection);
@@ -114,7 +112,6 @@ namespace dnSpy.Analyzer {
 				ShowToken = analyzerSettings.ShowToken,
 				SingleClickExpandsChildren = analyzerSettings.SingleClickExpandsChildren,
 				SyntaxHighlight = analyzerSettings.SyntaxHighlight,
-				UseNewRenderer = analyzerSettings.UseNewRenderer,
 				AnalyzerService = this,
 			};
 
@@ -138,7 +135,7 @@ namespace dnSpy.Analyzer {
 			cmds.Add(command, ModifierKeys.Shift, Key.Enter);
 		}
 
-		void DocumentTabService_FileModified(object sender, DocumentModifiedEventArgs e) {
+		void DocumentTabService_FileModified(object? sender, DocumentModifiedEventArgs e) {
 			AnalyzerTreeNodeData.HandleModelUpdated(TreeView.Root, e.Documents);
 			RefreshNodes();
 		}
@@ -146,11 +143,11 @@ namespace dnSpy.Analyzer {
 		void ActivateNode() {
 			var nodes = TreeView.TopLevelSelection;
 			var node = nodes.Length == 0 ? null : nodes[0] as TreeNodeData;
-			if (node != null)
+			if (node is not null)
 				node.Activate();
 		}
 
-		void DocumentService_CollectionChanged(object sender, NotifyDocumentCollectionChangedEventArgs e) {
+		void DocumentService_CollectionChanged(object? sender, NotifyDocumentCollectionChangedEventArgs e) {
 			switch (e.Type) {
 			case NotifyDocumentCollectionType.Clear:
 				ClearAll();
@@ -169,13 +166,13 @@ namespace dnSpy.Analyzer {
 			}
 		}
 
-		void DecompilerService_DecompilerChanged(object sender, EventArgs e) {
-			context.Decompiler = ((IDecompilerService)sender).Decompiler;
+		void DecompilerService_DecompilerChanged(object? sender, EventArgs e) {
+			context.Decompiler = ((IDecompilerService)sender!).Decompiler;
 			RefreshNodes();
 		}
 
-		void AnalyzerSettings_PropertyChanged(object sender, PropertyChangedEventArgs e) {
-			var analyzerSettings = (IAnalyzerSettings)sender;
+		void AnalyzerSettings_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
+			var analyzerSettings = (IAnalyzerSettings)sender!;
 			switch (e.PropertyName) {
 			case nameof(analyzerSettings.ShowToken):
 				context.ShowToken = analyzerSettings.ShowToken;
@@ -187,9 +184,8 @@ namespace dnSpy.Analyzer {
 				RefreshNodes();
 				break;
 
-			case nameof(analyzerSettings.UseNewRenderer):
-				context.UseNewRenderer = analyzerSettings.UseNewRenderer;
-				RefreshNodes();
+			case nameof(analyzerSettings.SingleClickExpandsChildren):
+				context.SingleClickExpandsChildren = analyzerSettings.SingleClickExpandsChildren;
 				break;
 			}
 		}
@@ -198,10 +194,9 @@ namespace dnSpy.Analyzer {
 
 		void ITreeViewListener.OnEvent(ITreeView treeView, TreeViewListenerEventArgs e) {
 			if (e.Event == TreeViewListenerEvent.NodeCreated) {
-				Debug.Assert(context != null);
+				Debug2.Assert(context is not null);
 				var node = (ITreeNode)e.Argument;
-				var d = node.Data as AnalyzerTreeNodeData;
-				if (d != null)
+				if (node.Data is AnalyzerTreeNodeData d)
 					d.Context = context;
 				return;
 			}
@@ -216,10 +211,9 @@ namespace dnSpy.Analyzer {
 		}
 
 		public void Add(AnalyzerTreeNodeData node) {
-			if (node is EntityNode) {
-				var an = node as EntityNode;
+			if (node is EntityNode an) {
 				var found = TreeView.Root.DataChildren.OfType<EntityNode>().FirstOrDefault(n => n.Member == an.Member);
-				if (found != null) {
+				if (found is not null) {
 					found.TreeNode.IsExpanded = true;
 					TreeView.SelectItems(new TreeNodeData[] { found });
 					TreeView.Focus();
@@ -233,7 +227,7 @@ namespace dnSpy.Analyzer {
 		}
 
 		public void OnActivated(AnalyzerTreeNodeData node) {
-			if (node == null)
+			if (node is null)
 				throw new ArgumentNullException(nameof(node));
 			bool newTab = Keyboard.Modifiers == ModifierKeys.Control || Keyboard.Modifiers == ModifierKeys.Shift;
 			FollowNode(node, newTab, null);
@@ -246,17 +240,21 @@ namespace dnSpy.Analyzer {
 			var entityNode = node as EntityNode;
 			var srcRef = entityNode?.SourceRef;
 
-			bool code = useCodeRef ?? srcRef != null;
+			bool code = useCodeRef ?? srcRef is not null;
 			if (code) {
-				if (srcRef == null)
+				if (srcRef is null)
 					return;
-				documentTabService.FollowReference(srcRef.Value.Method, newTab, true, a => {
-					if (!a.HasMovedCaret && a.Success && srcRef != null)
-						a.HasMovedCaret = GoTo(a.Tab, srcRef.Value.Method, srcRef.Value.ILOffset, srcRef.Value.Reference);
-				});
+				if (srcRef.Value.ILOffset is not null) {
+					documentTabService.FollowReference(srcRef.Value.Method, newTab, true, a => {
+						if (!a.HasMovedCaret && a.Success && srcRef is not null)
+							a.HasMovedCaret = GoTo(a.Tab, srcRef.Value.Method, srcRef.Value.ILOffset, srcRef.Value.Reference);
+					});
+				}
+				else
+					documentTabService.FollowReference(srcRef.Value.Method, newTab);
 			}
 			else {
-				if (@ref == null)
+				if (@ref is null)
 					return;
 				documentTabService.FollowReference(@ref, newTab);
 			}
@@ -270,24 +268,24 @@ namespace dnSpy.Analyzer {
 			var srcRef = entityNode?.SourceRef;
 
 			if (useCodeRef)
-				return srcRef != null;
-			return @ref != null;
+				return srcRef is not null;
+			return @ref is not null;
 		}
 
-		bool GoTo(IDocumentTab tab, MethodDef method, uint? ilOffset, object @ref) {
-			if (method == null || ilOffset == null)
+		bool GoTo(IDocumentTab tab, MethodDef method, uint? ilOffset, object? @ref) {
+			if (method is null || ilOffset is null)
 				return false;
 			var documentViewer = tab.TryGetDocumentViewer();
-			if (documentViewer == null)
+			if (documentViewer is null)
 				return false;
 			var methodDebugService = documentViewer.GetMethodDebugService();
 			var methodStatement = methodDebugService.FindByCodeOffset(method, ilOffset.Value);
-			if (methodStatement == null)
+			if (methodStatement is null)
 				return false;
 
 			var textSpan = methodStatement.Value.Statement.TextSpan;
 			var loc = FindLocation(documentViewer.Content.ReferenceCollection.FindFrom(textSpan.Start), documentViewer.TextView.TextSnapshot, methodStatement.Value.Statement.TextSpan.End, @ref);
-			if (loc == null)
+			if (loc is null)
 				loc = textSpan.Start;
 
 			documentViewer.MoveCaretToPosition(loc.Value);
@@ -301,7 +299,7 @@ namespace dnSpy.Analyzer {
 			return snapshot.GetLineFromPosition(position).LineNumber;
 		}
 
-		int? FindLocation(IEnumerable<SpanData<ReferenceInfo>> refs, ITextSnapshot snapshot, int endPos, object @ref) {
+		int? FindLocation(IEnumerable<SpanData<ReferenceInfo>> refs, ITextSnapshot snapshot, int endPos, object? @ref) {
 			int lb = GetLineNumber(snapshot, endPos);
 			foreach (var info in refs) {
 				var la = GetLineNumber(snapshot, info.Span.Start);
@@ -322,21 +320,19 @@ namespace dnSpy.Analyzer {
 			return -1;
 		}
 
-		static bool RefEquals(object a, object b) {
+		static bool RefEquals(object? a, object? b) {
 			if (Equals(a, b))
 				return true;
-			if (ReferenceEquals(a, null) || ReferenceEquals(b, null))
+			if (a is null || b is null)
 				return false;
 
 			{
-				var pb = b as PropertyDef;
-				if (pb != null) {
+				if (b is PropertyDef) {
 					var tmp = a;
 					a = b;
 					b = tmp;
 				}
-				var eb = b as EventDef;
-				if (eb != null) {
+				if (b is EventDef) {
 					var tmp = a;
 					a = b;
 					b = tmp;
@@ -345,34 +341,29 @@ namespace dnSpy.Analyzer {
 
 			const SigComparerOptions flags = SigComparerOptions.CompareDeclaringTypes | SigComparerOptions.PrivateScopeIsComparable;
 
-			var type = a as IType;
-			if (type != null)
+			if (a is IType type)
 				return new SigComparer().Equals(type, b as IType);
 
-			var method = a as IMethod;
-			if (method != null && method.IsMethod)
+			if (a is IMethod method && method.IsMethod)
 				return new SigComparer(flags).Equals(method, b as IMethod);
 
-			var field = a as IField;
-			if (field != null && field.IsField)
+			if (a is IField field && field.IsField)
 				return new SigComparer(flags).Equals(field, b as IField);
 
-			var prop = a as PropertyDef;
-			if (prop != null) {
+			if (a is PropertyDef prop) {
 				if (new SigComparer(flags).Equals(prop, b as PropertyDef))
 					return true;
 				var bm = b as IMethod;
-				return bm != null &&
+				return bm is not null &&
 					(new SigComparer(flags).Equals(prop.GetMethod, bm) ||
 					new SigComparer(flags).Equals(prop.SetMethod, bm));
 			}
 
-			var evt = a as EventDef;
-			if (evt != null) {
+			if (a is EventDef evt) {
 				if (new SigComparer(flags).Equals(evt, b as EventDef))
 					return true;
 				var bm = b as IMethod;
-				return bm != null &&
+				return bm is not null &&
 					(new SigComparer(flags).Equals(evt.AddMethod, bm) ||
 					new SigComparer(flags).Equals(evt.InvokeMethod, bm) ||
 					new SigComparer(flags).Equals(evt.RemoveMethod, bm));

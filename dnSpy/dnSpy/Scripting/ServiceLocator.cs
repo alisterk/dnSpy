@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -18,42 +18,47 @@
 */
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using System.ComponentModel.Composition.Hosting;
 using System.Diagnostics;
+using System.Linq;
 using System.Windows.Threading;
 using dnSpy.Contracts.Scripting;
+using Microsoft.VisualStudio.Composition;
 
 namespace dnSpy.Scripting {
 	[Export, Export(typeof(IServiceLocator))]
 	sealed class ServiceLocator : IServiceLocator {
-		readonly Dispatcher dispatcher;
+		Dispatcher? dispatcher;
 
-		ServiceLocator() {
-			dispatcher = Dispatcher.CurrentDispatcher;
-		}
-
-		public T Resolve<T>() {
-			Debug.Assert(compositionContainer != null);
-			if (compositionContainer == null)
+		public T Resolve<T>() where T : class {
+			Debug2.Assert(exportProvider is not null);
+			Debug2.Assert(dispatcher is not null);
+			if (exportProvider is null)
 				throw new InvalidOperationException();
-			return dispatcher.UI(() => compositionContainer.GetExportedValue<T>());
+			return dispatcher.UI(() => exportProvider.GetExportedValue<T>());
 		}
 
-		public T TryResolve<T>() {
-			Debug.Assert(compositionContainer != null);
-			if (compositionContainer == null)
+		public T? TryResolve<T>() where T : class {
+			Debug2.Assert(exportProvider is not null);
+			Debug2.Assert(dispatcher is not null);
+			if (exportProvider is null)
 				throw new InvalidOperationException();
-			return dispatcher.UI(() => compositionContainer.GetExportedValueOrDefault<T>());
+			return dispatcher.UI(() => {
+				// VS-MEF doesn't have GetExportedValueOrDefault()
+				var res = exportProvider.GetExports<T, IDictionary<string, object>>(null).SingleOrDefault();
+				if (res is null)
+					return null;
+				return res.Value;
+			});
 		}
 
-		public void SetCompositionContainer(CompositionContainer compositionContainer) {
-			if (compositionContainer == null)
-				throw new ArgumentNullException(nameof(compositionContainer));
-			if (this.compositionContainer != null)
+		public void SetExportProvider(Dispatcher dispatcher, ExportProvider exportProvider) {
+			this.dispatcher = dispatcher;
+			if (this.exportProvider is not null)
 				throw new InvalidOperationException();
-			this.compositionContainer = compositionContainer;
+			this.exportProvider = exportProvider ?? throw new ArgumentNullException(nameof(exportProvider));
 		}
-		CompositionContainer compositionContainer;
+		ExportProvider? exportProvider;
 	}
 }

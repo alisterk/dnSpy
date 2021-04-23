@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -29,16 +29,16 @@ namespace dnSpy.Text.Operations {
 		public IPropertyOwner PropertyOwner { get; }
 		public PropertyCollection Properties { get; }
 		public TextUndoHistoryState State { get; private set; }
-		public ITextUndoTransaction CurrentTransaction => currentTransaction;
-		public event EventHandler<TextUndoRedoEventArgs> UndoRedoHappened;
-		public event EventHandler<TextUndoTransactionCompletedEventArgs> UndoTransactionCompleted;
+		public ITextUndoTransaction? CurrentTransaction => currentTransaction;
+		public event EventHandler<TextUndoRedoEventArgs>? UndoRedoHappened;
+		public event EventHandler<TextUndoTransactionCompletedEventArgs>? UndoTransactionCompleted;
 
 		public bool CanRedo => redoList.Count > 0;
 		public bool CanUndo => undoList.Count > 0;
-		public ITextUndoTransaction LastRedoTransaction => redoList.FirstOrDefault();
-		public ITextUndoTransaction LastUndoTransaction => undoList.FirstOrDefault();
-		public string RedoDescription => LastRedoTransaction?.Description;
-		public string UndoDescription => LastUndoTransaction?.Description;
+		public ITextUndoTransaction? LastRedoTransaction => redoList.FirstOrDefault();
+		public ITextUndoTransaction? LastUndoTransaction => undoList.FirstOrDefault();
+		public string? RedoDescription => LastRedoTransaction?.Description;
+		public string? UndoDescription => LastUndoTransaction?.Description;
 		public IEnumerable<ITextUndoTransaction> RedoStack => readOnlyRedoList;
 		public IEnumerable<ITextUndoTransaction> UndoStack => readOnlyUndoList;
 
@@ -46,13 +46,11 @@ namespace dnSpy.Text.Operations {
 		readonly List<TextUndoTransaction> undoList;
 		readonly ReadOnlyCollection<TextUndoTransaction> readOnlyRedoList;
 		readonly ReadOnlyCollection<TextUndoTransaction> readOnlyUndoList;
-		TextUndoTransaction currentTransaction;
+		TextUndoTransaction? currentTransaction;
 
 		public TextUndoHistory(IPropertyOwner propertyOwner) {
-			if (propertyOwner == null)
-				throw new ArgumentNullException(nameof(propertyOwner));
 			State = TextUndoHistoryState.Idle;
-			PropertyOwner = propertyOwner;
+			PropertyOwner = propertyOwner ?? throw new ArgumentNullException(nameof(propertyOwner));
 			Properties = new PropertyCollection();
 			redoList = new List<TextUndoTransaction>();
 			undoList = new List<TextUndoTransaction>();
@@ -89,9 +87,9 @@ namespace dnSpy.Text.Operations {
 		public ITextUndoTransaction CreateTransaction(string description) {
 			if (State != TextUndoHistoryState.Idle)
 				throw new InvalidOperationException();
-			if (description == null)
+			if (description is null)
 				throw new ArgumentNullException(nameof(description));
-			if (currentTransaction != null)
+			if (currentTransaction is not null)
 				throw new InvalidOperationException();
 			ClearRedo();
 			return currentTransaction = new TextUndoTransaction(this, undoList.LastOrDefault(), description);
@@ -100,7 +98,7 @@ namespace dnSpy.Text.Operations {
 		public void Redo(int count) {
 			if (count < 0)
 				throw new ArgumentOutOfRangeException(nameof(count));
-			if (currentTransaction != null)
+			if (currentTransaction is not null)
 				throw new InvalidOperationException();
 			if (State != TextUndoHistoryState.Idle)
 				throw new InvalidOperationException();
@@ -120,7 +118,7 @@ namespace dnSpy.Text.Operations {
 		public void Undo(int count) {
 			if (count < 0)
 				throw new ArgumentOutOfRangeException(nameof(count));
-			if (currentTransaction != null)
+			if (currentTransaction is not null)
 				throw new InvalidOperationException();
 			if (State != TextUndoHistoryState.Idle)
 				throw new InvalidOperationException();

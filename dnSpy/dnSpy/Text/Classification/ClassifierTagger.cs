@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -27,12 +27,10 @@ namespace dnSpy.Text.Classification {
 	sealed class ClassifierTagger : ITagger<ClassificationTag>, IDisposable {
 		IClassifier[] classifiers;
 
-		public event EventHandler<SnapshotSpanEventArgs> TagsChanged;
+		public event EventHandler<SnapshotSpanEventArgs>? TagsChanged;
 
 		public ClassifierTagger(IClassifier[] classifiers) {
-			if (classifiers == null)
-				throw new ArgumentNullException(nameof(classifiers));
-			this.classifiers = classifiers;
+			this.classifiers = classifiers ?? throw new ArgumentNullException(nameof(classifiers));
 			foreach (var c in classifiers)
 				c.ClassificationChanged += Classifier_ClassificationChanged;
 		}
@@ -47,7 +45,7 @@ namespace dnSpy.Text.Classification {
 			}
 		}
 
-		void Classifier_ClassificationChanged(object sender, ClassificationChangedEventArgs e) =>
+		void Classifier_ClassificationChanged(object? sender, ClassificationChangedEventArgs e) =>
 			TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(e.ChangeSpan));
 
 		public void Dispose() {

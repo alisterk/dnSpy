@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -43,7 +43,7 @@ namespace dnSpy.Text.Editor {
 			this.editorOperationsFactoryService = editorOperationsFactoryService;
 		}
 
-		public IWpfTextViewMargin CreateMargin(IWpfTextViewHost wpfTextViewHost, IWpfTextViewMargin marginContainer) =>
+		public IWpfTextViewMargin? CreateMargin(IWpfTextViewHost wpfTextViewHost, IWpfTextViewMargin marginContainer) =>
 			new LeftSelectionMargin(wpfTextViewMarginProviderCollectionProvider, wpfTextViewHost, editorOperationsFactoryService.GetEditorOperations(wpfTextViewHost.TextView));
 	}
 
@@ -53,17 +53,15 @@ namespace dnSpy.Text.Editor {
 
 		public LeftSelectionMargin(IWpfTextViewMarginProviderCollectionProvider wpfTextViewMarginProviderCollectionProvider, IWpfTextViewHost wpfTextViewHost, IEditorOperations editorOperations)
 			: base(wpfTextViewMarginProviderCollectionProvider, wpfTextViewHost, PredefinedMarginNames.LeftSelection, false) {
-			if (editorOperations == null)
-				throw new ArgumentNullException(nameof(editorOperations));
 			Cursor = Cursors.Arrow;//TODO: Use an arrow pointing to the right
 			this.wpfTextViewHost = wpfTextViewHost;
-			this.editorOperations = editorOperations;
+			this.editorOperations = editorOperations ?? throw new ArgumentNullException(nameof(editorOperations));
 			wpfTextViewHost.TextView.ZoomLevelChanged += TextView_ZoomLevelChanged;
 			// Make sure that the user can click anywhere in this margin so we'll get mouse events
 			Background = Brushes.Transparent;
 		}
 
-		void TextView_ZoomLevelChanged(object sender, ZoomLevelChangedEventArgs e) => LayoutTransform = e.ZoomTransform;
+		void TextView_ZoomLevelChanged(object? sender, ZoomLevelChangedEventArgs e) => LayoutTransform = e.ZoomTransform;
 		protected override void DisposeInternal() => wpfTextViewHost.TextView.ZoomLevelChanged -= TextView_ZoomLevelChanged;
 
 		protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e) {

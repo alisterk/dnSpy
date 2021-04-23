@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -18,6 +18,7 @@
 */
 
 using System;
+using System.Diagnostics;
 using dnSpy.Contracts.Decompiler;
 
 namespace dnSpy.Documents.Tabs.DocViewer {
@@ -26,24 +27,19 @@ namespace dnSpy.Documents.Tabs.DocViewer {
 
 		public BlockStructureCollection Collection {
 			get {
-				if (coll == null) {
+				if (coll is null) {
+					Debug2.Assert(ranges is not null);
 					coll = new BlockStructureCollection(ranges);
 					ranges = null;
 				}
 				return coll;
 			}
 		}
-		BlockStructureCollection coll;
-		CodeBracesRange[] ranges;
+		BlockStructureCollection? coll;
+		CodeBracesRange[]? ranges;
 
-		LazyBlockStructureCollection() {
-			coll = BlockStructureCollection.Empty;
-		}
+		LazyBlockStructureCollection() => coll = BlockStructureCollection.Empty;
 
-		public LazyBlockStructureCollection(CodeBracesRange[] ranges) {
-			if (ranges == null)
-				throw new ArgumentNullException(nameof(ranges));
-			this.ranges = ranges;
-		}
+		public LazyBlockStructureCollection(CodeBracesRange[] ranges) => this.ranges = ranges ?? throw new ArgumentNullException(nameof(ranges));
 	}
 }

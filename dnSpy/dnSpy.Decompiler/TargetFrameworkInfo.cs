@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -23,7 +23,7 @@ using System.Diagnostics;
 using dnlib.DotNet;
 
 namespace dnSpy.Decompiler {
-	struct TargetFrameworkInfo {
+	readonly struct TargetFrameworkInfo {
 		/// <summary>
 		/// true if <see cref="Framework"/> is .NET Framework
 		/// </summary>
@@ -45,29 +45,25 @@ namespace dnSpy.Decompiler {
 		/// Profile eg. "Client" or null. This is stored in a <c>TargetFrameworkProfile</c> tag
 		/// in the project file.
 		/// </summary>
-		public string Profile { get; }
+		public string? Profile { get; }
 
 		/// <summary>
 		/// true if the info is from <see cref="T:System.Runtime.Versioning.TargetFrameworkAttribute"/>
 		/// </summary>
 		public bool FromAttribute { get; }
 
-		TargetFrameworkInfo(string framework, string version, string profile, bool fromAttribute) {
-			if (framework == null)
-				throw new ArgumentNullException(nameof(framework));
-			if (version == null)
-				throw new ArgumentNullException(nameof(version));
-			Framework = framework;
-			Version = version;
+		TargetFrameworkInfo(string framework, string version, string? profile, bool fromAttribute) {
+			Framework = framework ?? throw new ArgumentNullException(nameof(framework));
+			Version = version ?? throw new ArgumentNullException(nameof(version));
 			Profile = profile;
 			FromAttribute = fromAttribute;
 		}
 
 		public static TargetFrameworkInfo Create(ModuleDef module) {
 			var asm = module.Assembly;
-			if (asm != null && module.IsManifestModule) {
+			if (asm is not null && module.IsManifestModule) {
 				var info = TryGetTargetFrameworkInfoInternal(asm);
-				if (info != null)
+				if (info is not null)
 					return info.Value;
 			}
 
@@ -87,7 +83,7 @@ namespace dnSpy.Decompiler {
 
 		static TargetFrameworkInfo? TryGetTargetFrameworkInfoInternal(AssemblyDef asm) {
 			var ca = asm.CustomAttributes.Find("System.Runtime.Versioning.TargetFrameworkAttribute");
-			if (ca == null)
+			if (ca is null)
 				return null;
 
 			if (ca.ConstructorArguments.Count != 1)
@@ -111,8 +107,8 @@ namespace dnSpy.Decompiler {
 			if (framework.Length == 0)
 				return null;
 
-			string versionStr = null;
-			string profile = null;
+			string? versionStr = null;
+			string? profile = null;
 			for (int i = 1; i < values.Length; i++) {
 				var kvp = values[i].Split('=');
 				if (kvp.Length != 2)
@@ -125,8 +121,7 @@ namespace dnSpy.Decompiler {
 					if (value.StartsWith("v", StringComparison.OrdinalIgnoreCase))
 						value = value.Substring(1);
 					versionStr = value;
-					Version version = null;
-					if (!System.Version.TryParse(value, out version))
+					if (!System.Version.TryParse(value, out var version))
 						return null;
 				}
 				else if (key.Equals("Profile", StringComparison.OrdinalIgnoreCase)) {
@@ -134,7 +129,7 @@ namespace dnSpy.Decompiler {
 						profile = value;
 				}
 			}
-			if (versionStr == null || versionStr.Length == 0)
+			if (versionStr is null || versionStr.Length == 0)
 				return null;
 
 			return new TargetFrameworkInfo(framework, versionStr, profile, true);
@@ -240,7 +235,7 @@ namespace dnSpy.Decompiler {
 			yield return module;
 			foreach (var asmRef in module.GetAssemblyRefs()) {
 				var asm = module.Context.AssemblyResolver.Resolve(asmRef, module);
-				if (asm != null)
+				if (asm is not null)
 					yield return asm.ManifestModule;
 			}
 		}
@@ -271,7 +266,7 @@ namespace dnSpy.Decompiler {
 					ver = Dnr2035Version.V30;
 			}
 			var asm = module.Assembly;
-			if (asm != null && module.IsManifestModule) {
+			if (asm is not null && module.IsManifestModule) {
 				if (dotNet35Asms.Contains(asm.FullName))
 					return Dnr2035Version.V35;
 				if (dotNet30Asms.Contains(asm.FullName))
@@ -280,11 +275,11 @@ namespace dnSpy.Decompiler {
 			return ver;
 		}
 
-		string GetDisplayName() {
-			if (Framework == null)
+		string? GetDisplayName() {
+			if (Framework is null)
 				return null;
 			var name = GetFrameworkDisplayName();
-			if (name == null)
+			if (name is null)
 				return null;
 
 			if (!string.IsNullOrEmpty(Profile))
@@ -292,7 +287,7 @@ namespace dnSpy.Decompiler {
 			return name;
 		}
 
-		string GetFrameworkDisplayName() {
+		string? GetFrameworkDisplayName() {
 			switch (Framework) {
 			case ".NETFramework":
 				string v = Version;
@@ -304,10 +299,15 @@ namespace dnSpy.Decompiler {
 				return ".NET Portable " + Version;
 
 			case ".NETCore":
-				return ".NET Core " + Version;
+				return "Windows Universal " + Version;
 
 			case ".NETCoreApp":
-				return ".NET Core App " + Version;
+				if (Version.StartsWith("1.") || Version.StartsWith("2.") || Version.StartsWith("3.")) {
+					// .NET Core 1.0-3.x
+					return ".NET Core " + Version;
+				}
+				// .NET 5.0+
+				return ".NET " + Version;
 
 			case ".NETPlatform":
 				return ".NET Platform " + Version;
@@ -403,6 +403,6 @@ namespace dnSpy.Decompiler {
 			}
 		}
 
-		public override string ToString() => GetDisplayName();
+		public override string? ToString() => GetDisplayName();
 	}
 }

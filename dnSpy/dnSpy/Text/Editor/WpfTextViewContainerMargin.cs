@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -34,13 +34,11 @@ namespace dnSpy.Text.Editor {
 		WpfTextViewMarginInfo[] margins;
 
 		public WpfTextViewContainerMargin(IWpfTextViewMarginProviderCollectionProvider wpfTextViewMarginProviderCollectionProvider, IWpfTextViewHost wpfTextViewHost, string name, bool isHorizontal) {
-			if (wpfTextViewMarginProviderCollectionProvider == null)
+			if (wpfTextViewMarginProviderCollectionProvider is null)
 				throw new ArgumentNullException(nameof(wpfTextViewMarginProviderCollectionProvider));
-			if (wpfTextViewHost == null)
+			if (wpfTextViewHost is null)
 				throw new ArgumentNullException(nameof(wpfTextViewHost));
-			if (name == null)
-				throw new ArgumentNullException(nameof(name));
-			this.name = name;
+			this.name = name ?? throw new ArgumentNullException(nameof(name));
 			this.isHorizontal = isHorizontal;
 			margins = Array.Empty<WpfTextViewMarginInfo>();
 			wpfTextViewMarginProviderCollection = wpfTextViewMarginProviderCollectionProvider.Create(wpfTextViewHost, this, name);
@@ -48,7 +46,7 @@ namespace dnSpy.Text.Editor {
 			UpdateMarginChildren();
 		}
 
-		void WpfTextViewMarginProviderCollection_MarginsChanged(object sender, EventArgs e) => UpdateMarginChildren();
+		void WpfTextViewMarginProviderCollection_MarginsChanged(object? sender, EventArgs e) => UpdateMarginChildren();
 
 		void UpdateMarginChildren() {
 			margins = wpfTextViewMarginProviderCollection.Margins;
@@ -82,13 +80,13 @@ namespace dnSpy.Text.Editor {
 			}
 		}
 
-		public ITextViewMargin GetTextViewMargin(string marginName) {
+		public ITextViewMargin? GetTextViewMargin(string marginName) {
 			if (StringComparer.OrdinalIgnoreCase.Equals(marginName, name))
 				return this;
 
 			foreach (var info in margins) {
 				var margin = info.Margin.GetTextViewMargin(marginName);
-				if (margin != null)
+				if (margin is not null)
 					return margin;
 			}
 

@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -32,13 +32,10 @@ namespace dnSpy.Text.Editor {
 		readonly Lazy<IEditorOperationsFactoryService> editorOperationsFactoryService;
 
 		[ImportingConstructor]
-		DefaultTextViewCommandTargetFilterProvider(Lazy<IEditorOperationsFactoryService> editorOperationsFactoryService) {
-			this.editorOperationsFactoryService = editorOperationsFactoryService;
-		}
+		DefaultTextViewCommandTargetFilterProvider(Lazy<IEditorOperationsFactoryService> editorOperationsFactoryService) => this.editorOperationsFactoryService = editorOperationsFactoryService;
 
-		public ICommandTargetFilter Create(object target) {
-			var textView = target as ITextView;
-			if (textView != null)
+		public ICommandTargetFilter? Create(object target) {
+			if (target is ITextView textView)
 				return new DefaultTextViewCommandTarget(textView, editorOperationsFactoryService.Value);
 			return null;
 		}
@@ -48,12 +45,10 @@ namespace dnSpy.Text.Editor {
 		readonly ITextView textView;
 
 		IEditorOperations EditorOperations { get; }
-		IEditorOperations2 EditorOperations2 => EditorOperations as IEditorOperations2;
+		IEditorOperations2? EditorOperations2 => EditorOperations as IEditorOperations2;
 
 		public DefaultTextViewCommandTarget(ITextView textView, IEditorOperationsFactoryService editorOperationsFactoryService) {
-			if (textView == null)
-				throw new ArgumentNullException(nameof(textView));
-			this.textView = textView;
+			this.textView = textView ?? throw new ArgumentNullException(nameof(textView));
 			EditorOperations = editorOperationsFactoryService.GetEditorOperations(textView);
 		}
 
@@ -337,12 +332,12 @@ namespace dnSpy.Text.Editor {
 			return CommandTargetStatus.NotHandled;
 		}
 
-		public CommandTargetStatus Execute(Guid group, int cmdId, object args = null) {
-			object result = null;
+		public CommandTargetStatus Execute(Guid group, int cmdId, object? args = null) {
+			object? result = null;
 			return Execute(group, cmdId, args, ref result);
 		}
 
-		public CommandTargetStatus Execute(Guid group, int cmdId, object args, ref object result) {
+		public CommandTargetStatus Execute(Guid group, int cmdId, object? args, ref object? result) {
 			if (IsReadOnly && IsEditCommand(group, cmdId))
 				return CommandTargetStatus.NotHandled;
 
@@ -367,7 +362,7 @@ namespace dnSpy.Text.Editor {
 			else if (group == CommandConstants.TextEditorGroup) {
 				switch ((TextEditorIds)cmdId) {
 				case TextEditorIds.BACKSPACE:
-					if (EditorOperations.ProvisionalCompositionSpan != null)
+					if (EditorOperations.ProvisionalCompositionSpan is not null)
 						EditorOperations.InsertText(string.Empty);
 					else
 						EditorOperations.Backspace();

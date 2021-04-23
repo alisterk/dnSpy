@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -19,6 +19,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using dnlib.DotNet;
 using dnSpy.Contracts.Decompiler;
 using dnSpy.Contracts.Documents;
@@ -33,29 +34,31 @@ using dnSpy.Contracts.TreeView;
 
 namespace dnSpy.Search {
 	class SearchResult : ViewModelBase, ISearchResult, IMDTokenNode, IComparable<ISearchResult> {
-		IMDTokenProvider IMDTokenNode.Reference => Reference2;
-		IMDTokenProvider Reference2 => Object as IMDTokenProvider;
+		IMDTokenProvider? IMDTokenNode.Reference => Reference2;
+		IMDTokenProvider? Reference2 => Object as IMDTokenProvider;
 
-		public object Reference {
+		public object? Reference {
 			get {
-				var ns = Object as string;
-				if (ns != null)
+				if (Object is string ns)
 					return new NamespaceRef(Document, ns);
-				var node = Object as DocumentTreeNodeData;
-				if (node != null)
+				if (Object is DocumentTreeNodeData node)
 					return node;
 				return Reference2;
 			}
 		}
 
+#pragma warning disable CS8618 // Non-nullable field is uninitialized.
 		public SearchResultContext Context { get; set; }
 		public object Object { get; set; }
 		public object NameObject { get; set; }
+#pragma warning restore CS8618 // Non-nullable field is uninitialized.
 		public ImageReference ObjectImageReference { get; set; }
-		public object LocationObject { get; set; }
+		public object? LocationObject { get; set; }
 		public ImageReference LocationImageReference { get; set; }
+#pragma warning disable CS8618 // Non-nullable field is uninitialized.
 		public IDsDocument Document { get; set; }
-		public object ObjectInfo { get; set; }
+#pragma warning restore CS8618 // Non-nullable field is uninitialized.
+		public object? ObjectInfo { get; set; }
 
 		public void RefreshUI() {
 			OnPropertyChanged(nameof(NameUI));
@@ -63,26 +66,26 @@ namespace dnSpy.Search {
 			OnPropertyChanged(nameof(ToolTip));
 		}
 
-		public string ToolTip {
+		public string? ToolTip {
 			get {
 				var dsDocument = Document;
-				if (dsDocument == null)
+				if (dsDocument is null)
 					return null;
 				var module = dsDocument.ModuleDef;
-				if (module == null)
+				if (module is null)
 					return dsDocument.Filename;
 				if (!string.IsNullOrWhiteSpace(module.Location))
 					return module.Location;
 				if (!string.IsNullOrWhiteSpace(module.Name))
 					return module.Name;
-				if (module.Assembly != null && !string.IsNullOrWhiteSpace(module.Assembly.Name))
+				if (module.Assembly is not null && !string.IsNullOrWhiteSpace(module.Assembly.Name))
 					return module.Assembly.Name;
 				return null;
 			}
 		}
 
 		public object NameUI => CreateUI(NameObject, false);
-		public object LocationUI => CreateUI(LocationObject, true);
+		public object? LocationUI => CreateUI(LocationObject, true);
 
 		public override string ToString() {
 			var output = new StringBuilderTextColorOutput();
@@ -93,10 +96,10 @@ namespace dnSpy.Search {
 		static class Cache {
 			static readonly TextClassifierTextColorWriter writer = new TextClassifierTextColorWriter();
 			public static TextClassifierTextColorWriter GetWriter() => writer;
-			public static void FreeWriter(TextClassifierTextColorWriter writer) { writer.Clear(); }
+			public static void FreeWriter(TextClassifierTextColorWriter writer) => writer.Clear();
 		}
 
-		object CreateUI(object o, bool includeNamespace) {
+		object CreateUI(object? o, bool includeNamespace) {
 			var writer = Cache.GetWriter();
 			try {
 				CreateUI(writer, o, includeNamespace);
@@ -108,107 +111,99 @@ namespace dnSpy.Search {
 			}
 		}
 
-		void CreateUI(ITextColorWriter output, object o, bool includeNamespace) {
-			var ns = o as NamespaceSearchResult;
-			if (ns != null) {
+		void CreateUI(ITextColorWriter output, object? o, bool includeNamespace) {
+			if (o is NamespaceSearchResult ns) {
 				output.WriteNamespace(ns.Namespace);
 				return;
 			}
 
-			var td = o as TypeDef;
-			if (td != null) {
-				Debug.Assert(Context.Decompiler != null);
+			if (o is TypeDef td) {
+				Debug2.Assert(Context.Decompiler is not null);
 				Context.Decompiler.WriteType(output, td, includeNamespace);
 				return;
 			}
 
-			var md = o as MethodDef;
-			if (md != null) {
-				output.Write(Context.Decompiler.MetadataTextColorProvider.GetColor(md), IdentifierEscaper.Escape(md.Name));
+			if (o is MethodDef md) {
+				var methodNameColor = Context.Decompiler.MetadataTextColorProvider.GetColor(md);
+				output.Write(methodNameColor, IdentifierEscaper.Escape(md.Name));
+				if (md.ImplMap is ImplMap implMap && !UTF8String.IsNullOrEmpty(implMap.Name) && implMap.Name != md.Name) {
+					output.WriteSpace();
+					output.Write(BoxedTextColor.Punctuation, "(");
+					output.Write(methodNameColor, IdentifierEscaper.Escape(implMap.Name));
+					output.Write(BoxedTextColor.Punctuation, ")");
+				}
 				return;
 			}
 
-			var fd = o as FieldDef;
-			if (fd != null) {
+			if (o is FieldDef fd) {
 				output.Write(Context.Decompiler.MetadataTextColorProvider.GetColor(fd), IdentifierEscaper.Escape(fd.Name));
 				return;
 			}
 
-			var pd = o as PropertyDef;
-			if (pd != null) {
+			if (o is PropertyDef pd) {
 				output.Write(Context.Decompiler.MetadataTextColorProvider.GetColor(pd), IdentifierEscaper.Escape(pd.Name));
 				return;
 			}
 
-			var ed = o as EventDef;
-			if (ed != null) {
+			if (o is EventDef ed) {
 				output.Write(Context.Decompiler.MetadataTextColorProvider.GetColor(ed), IdentifierEscaper.Escape(ed.Name));
 				return;
 			}
 
-			var asm = o as AssemblyDef;
-			if (asm != null) {
+			if (o is AssemblyDef asm) {
 				output.Write(asm);
 				return;
 			}
 
-			var mod = o as ModuleDef;
-			if (mod != null) {
+			if (o is ModuleDef mod) {
 				output.WriteModule(mod.FullName);
 				return;
 			}
 
-			var asmRef = o as AssemblyRef;
-			if (asmRef != null) {
+			if (o is AssemblyRef asmRef) {
 				output.Write(asmRef);
 				return;
 			}
 
-			var modRef = o as ModuleRef;
-			if (modRef != null) {
+			if (o is ModuleRef modRef) {
 				output.WriteModule(modRef.FullName);
 				return;
 			}
 
-			var paramDef = o as ParamDef;
-			if (paramDef != null) {
+			if (o is ParamDef paramDef) {
 				output.Write(BoxedTextColor.Parameter, IdentifierEscaper.Escape(paramDef.Name));
 				return;
 			}
 
 			// non-.NET file
-			var document = o as IDsDocument;
-			if (document != null) {
+			if (o is IDsDocument document) {
 				output.Write(BoxedTextColor.Text, document.GetShortName());
 				return;
 			}
 
-			var resNode = o as ResourceNode;
-			if (resNode != null) {
+			if (o is ResourceNode resNode) {
 				output.WriteFilename(resNode.Name);
 				return;
 			}
 
-			var resElNode = o as ResourceElementNode;
-			if (resElNode != null) {
+			if (o is ResourceElementNode resElNode) {
 				output.WriteFilename(resElNode.Name);
 				return;
 			}
 
-			var em = o as ErrorMessage;
-			if (em != null) {
+			if (o is ErrorMessage em) {
 				output.Write(em.Color, em.Text);
 				return;
 			}
 
-			Debug.Assert(o == null);
+			Debug2.Assert(o is null);
 		}
 
 		public static SearchResult CreateMessage(SearchResultContext context, string msg, object color, bool first) =>
 			new MessageSearchResult(msg, color, first) { Context = context };
 
-		public int CompareTo(ISearchResult other) {
-			if (other == null)
+		public int CompareTo([AllowNull] ISearchResult other) {
+			if (other is null)
 				return -1;
 			int o1 = GetOrder(this);
 			int o2 = GetOrder(other);
@@ -216,16 +211,16 @@ namespace dnSpy.Search {
 			if (d != 0)
 				return d;
 			var sr = other as SearchResult;
-			return StringComparer.CurrentCultureIgnoreCase.Compare(GetCompareString(), sr == null ? other.ToString() : sr.GetCompareString());
+			return StringComparer.CurrentCultureIgnoreCase.Compare(GetCompareString(), sr is null ? other.ToString() : sr.GetCompareString());
 		}
 
 		static int GetOrder(ISearchResult other) {
 			var mr = other as MessageSearchResult;
-			return mr == null ? 0 : mr.Order;
+			return mr is null ? 0 : mr.Order;
 		}
 
-		string GetCompareString() => compareString ?? (compareString = ToString());
-		string compareString = null;
+		string GetCompareString() => compareString ??= ToString();
+		string? compareString = null;
 	}
 
 	sealed class ErrorMessage {

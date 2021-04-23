@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -65,16 +65,14 @@ namespace dnSpy.Documents.TreeView {
 			if (!Context.CanDragAndDrop)
 				return;
 
-			var nodeIndexes = e.Data.GetData(DocumentTreeViewConstants.DATAFORMAT_COPIED_ROOT_NODES) as int[];
-			if (nodeIndexes != null) {
-				Debug.Assert(DropNodes != null);
+			if (e.Data.GetData(DocumentTreeViewConstants.DATAFORMAT_COPIED_ROOT_NODES) is int[] nodeIndexes) {
+				Debug2.Assert(DropNodes is not null);
 				DropNodes?.Invoke(index, nodeIndexes);
 				return;
 			}
 
-			var filenames = e.Data.GetData(DataFormats.FileDrop) as string[];
-			if (filenames != null) {
-				Debug.Assert(DropFiles != null);
+			if (e.Data.GetData(DataFormats.FileDrop) is string[] filenames) {
+				Debug2.Assert(DropFiles is not null);
 				DropFiles?.Invoke(index, filenames);
 				return;
 			}
@@ -82,7 +80,7 @@ namespace dnSpy.Documents.TreeView {
 			Debug.Fail("Unknown drop data format");
 		}
 
-		public Action<int, int[]> DropNodes;
-		public Action<int, string[]> DropFiles;
+		public Action<int, int[]>? DropNodes;
+		public Action<int, string[]>? DropFiles;
 	}
 }

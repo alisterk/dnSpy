@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -25,53 +25,68 @@ using dnSpy.Contracts.Settings;
 
 namespace dnSpy.Settings {
 	sealed class SettingsSectionProvider {
+		readonly object lockObj;
 		readonly List<ISettingsSection> sections;
 
 		public SettingsSectionProvider() {
+			lockObj = new object();
 			sections = new List<ISettingsSection>();
 		}
 
-		public ISettingsSection[] Sections => sections.ToArray();
+		public ISettingsSection[] Sections {
+			get {
+				lock (lockObj)
+					return sections.ToArray();
+			}
+		}
 
 		public ISettingsSection CreateSection(string name) {
-			Debug.Assert(name != null);
-			if (name == null)
+			Debug2.Assert(name is not null);
+			if (name is null)
 				throw new ArgumentNullException(nameof(name));
 
 			var section = new SettingsSection(name);
-			sections.Add(section);
+			lock (lockObj)
+				sections.Add(section);
 			return section;
 		}
 
 		public ISettingsSection GetOrCreateSection(string name) {
-			Debug.Assert(name != null);
-			if (name == null)
+			Debug2.Assert(name is not null);
+			if (name is null)
 				throw new ArgumentNullException(nameof(name));
 
-			var section = sections.FirstOrDefault(a => StringComparer.Ordinal.Equals(name, a.Name));
-			if (section != null)
-				return section;
-			sections.Add(section = new SettingsSection(name));
+			ISettingsSection? section;
+			lock (lockObj) {
+				section = sections.FirstOrDefault(a => StringComparer.Ordinal.Equals(name, a.Name));
+				if (section is not null)
+					return section;
+				sections.Add(section = new SettingsSection(name));
+			}
 			return section;
 		}
 
 		public void RemoveSection(string name) {
-			Debug.Assert(name != null);
-			if (name == null)
+			Debug2.Assert(name is not null);
+			if (name is null)
 				throw new ArgumentNullException(nameof(name));
 
-			for (int i = sections.Count - 1; i >= 0; i--) {
-				if (StringComparer.Ordinal.Equals(name, sections[i].Name))
-					sections.RemoveAt(i);
+			lock (lockObj) {
+				for (int i = sections.Count - 1; i >= 0; i--) {
+					if (StringComparer.Ordinal.Equals(name, sections[i].Name))
+						sections.RemoveAt(i);
+				}
 			}
 		}
 
 		public void RemoveSection(ISettingsSection section) {
-			Debug.Assert(section != null);
-			if (section == null)
+			Debug2.Assert(section is not null);
+			if (section is null)
 				throw new ArgumentNullException(nameof(section));
 
-			bool b = sections.Remove(section);
+			bool b;
+			lock (lockObj)
+				b = sections.Remove(section);
 			Debug.Assert(b);
 		}
 	}

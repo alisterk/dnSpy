@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -35,9 +35,7 @@ namespace dnSpy.Hex.Formatting {
 		int linePartIndex;
 
 		public HexLinePartsTextSource(HexLinePartsCollection linePartsCollection) {
-			if (linePartsCollection == null)
-				throw new ArgumentNullException(nameof(linePartsCollection));
-			this.linePartsCollection = linePartsCollection;
+			this.linePartsCollection = linePartsCollection ?? throw new ArgumentNullException(nameof(linePartsCollection));
 			text = linePartsCollection.Text;
 		}
 
@@ -47,10 +45,10 @@ namespace dnSpy.Hex.Formatting {
 
 		public override TextRun GetTextRun(int textSourceCharacterIndex) {
 			var linePart = linePartsCollection.GetLinePartFromColumn(textSourceCharacterIndex, ref linePartIndex);
-			if (linePart == null)
+			if (linePart is null)
 				return endOfLine;
 			var part = linePart.Value;
-			if (part.AdornmentElement != null)
+			if (part.AdornmentElement is not null)
 				return new AdornmentTextRun(part);
 			else {
 				int offs = textSourceCharacterIndex - part.Column;
@@ -73,10 +71,11 @@ namespace dnSpy.Hex.Formatting {
 			public override LineBreakCondition BreakAfter { get; }
 			public override bool HasFixedSize { get; }
 			public override int Length { get; }
-			public override TextRunProperties Properties { get; }
+			public override TextRunProperties? Properties { get; }
 			readonly HexAdornmentElement adornmentElement;
 
 			public AdornmentTextRun(HexLinePart linePart) {
+				Debug2.Assert(linePart.AdornmentElement is not null);
 				adornmentElement = linePart.AdornmentElement;
 				if (linePart.Span.Length != 0 || adornmentElement.Affinity == VST.PositionAffinity.Successor) {
 					BreakBefore = LineBreakCondition.BreakPossible;
@@ -106,7 +105,7 @@ namespace dnSpy.Hex.Formatting {
 		public int GetColumnOfFirstNonWhitespace() {
 			int column = 0;
 			foreach (var part in linePartsCollection.LineParts) {
-				if (part.AdornmentElement != null)
+				if (part.AdornmentElement is not null)
 					break;
 				int len = part.Span.Length;
 				int start = part.Span.Start;

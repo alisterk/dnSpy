@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -21,7 +21,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using dnSpy.Text.MEF;
 using Microsoft.VisualStudio.Utilities;
 
 namespace dnSpy.Text {
@@ -31,25 +30,22 @@ namespace dnSpy.Text {
 		readonly Lazy<TProvider, TProviderMetadata>[] providers;
 
 		public ProviderSelector(IContentTypeRegistryService contentTypeRegistryService, IEnumerable<Lazy<TProvider, TProviderMetadata>> providers) {
-			if (contentTypeRegistryService == null)
-				throw new ArgumentNullException(nameof(contentTypeRegistryService));
-			this.contentTypeRegistryService = contentTypeRegistryService;
+			this.contentTypeRegistryService = contentTypeRegistryService ?? throw new ArgumentNullException(nameof(contentTypeRegistryService));
 			dict = new Dictionary<IContentType, Lazy<TProvider, TProviderMetadata>[]>();
 			this.providers = providers.ToArray();
 		}
 
 		public IEnumerable<Lazy<TProvider, TProviderMetadata>> GetProviders(IContentType contentType) {
-			if (contentType == null)
+			if (contentType is null)
 				throw new ArgumentNullException(nameof(contentType));
 
-			Lazy<TProvider, TProviderMetadata>[] result;
-			if (!dict.TryGetValue(contentType, out result))
+			if (!dict.TryGetValue(contentType, out var result))
 				dict[contentType] = result = CreateProviderList(contentType);
 			return result;
 		}
 
 		Lazy<TProvider, TProviderMetadata>[] CreateProviderList(IContentType contentType) {
-			List<KeyValuePair<Lazy<TProvider, TProviderMetadata>, int>> list = null;
+			List<(Lazy<TProvider, TProviderMetadata> lz, int dist)>? list = null;
 
 			// We only allow a provider to match if its supported content type equals the
 			// requested content type or if it's a child of the requested content type.
@@ -59,22 +55,22 @@ namespace dnSpy.Text {
 			foreach (var provider in providers) {
 				foreach (var ctString in provider.Metadata.ContentTypes) {
 					var ct = contentTypeRegistryService.GetContentType(ctString);
-					Debug.Assert(ct != null);
-					if (ct == null)
+					Debug2.Assert(ct is not null);
+					if (ct is null)
 						continue;
 					int dist = GetDistance(ct, contentType);
 					if (dist < 0)
 						continue;
-					if (list == null)
-						list = new List<KeyValuePair<Lazy<TProvider, TProviderMetadata>, int>>();
-					list.Add(new KeyValuePair<Lazy<TProvider, TProviderMetadata>, int>(provider, dist));
+					if (list is null)
+						list = new List<(Lazy<TProvider, TProviderMetadata>, int)>();
+					list.Add((provider, dist));
 				}
 			}
 
-			if (list == null)
+			if (list is null)
 				return Array.Empty<Lazy<TProvider, TProviderMetadata>>();
-			list.Sort((a, b) => a.Value - b.Value);
-			return list.Select(a => a.Key).ToArray();
+			list.Sort((a, b) => a.dist - b.dist);
+			return list.Select(a => a.lz).ToArray();
 		}
 
 		int GetDistance(IContentType baseType, IContentType other) {

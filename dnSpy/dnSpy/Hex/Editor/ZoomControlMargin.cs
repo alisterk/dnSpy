@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -40,11 +40,9 @@ namespace dnSpy.Hex.Editor {
 		readonly HexEditorOperationsFactoryService editorOperationsFactoryService;
 
 		[ImportingConstructor]
-		ZoomControlMarginProvider(HexEditorOperationsFactoryService editorOperationsFactoryService) {
-			this.editorOperationsFactoryService = editorOperationsFactoryService;
-		}
+		ZoomControlMarginProvider(HexEditorOperationsFactoryService editorOperationsFactoryService) => this.editorOperationsFactoryService = editorOperationsFactoryService;
 
-		public override WpfHexViewMargin CreateMargin(WpfHexViewHost wpfHexViewHost, WpfHexViewMargin marginContainer) =>
+		public override WpfHexViewMargin? CreateMargin(WpfHexViewHost wpfHexViewHost, WpfHexViewMargin marginContainer) =>
 			new ZoomControlMargin(wpfHexViewHost, editorOperationsFactoryService.GetEditorOperations(wpfHexViewHost.HexView));
 	}
 
@@ -61,7 +59,7 @@ namespace dnSpy.Hex.Editor {
 			}
 
 			double HexViewZoomLevel {
-				get { return owner.wpfHexViewHost.HexView.ZoomLevel; }
+				get => owner.wpfHexViewHost.HexView.ZoomLevel;
 				set {
 					if (owner.wpfHexViewHost.HexView.Options.IsOptionDefined(DefaultWpfHexViewOptions.ZoomLevelId, true))
 						owner.wpfHexViewHost.HexView.Options.SetOptionValue(DefaultWpfHexViewOptions.ZoomLevelId, value);
@@ -91,8 +89,8 @@ namespace dnSpy.Hex.Editor {
 						return;
 					}
 					if (Keyboard.Modifiers == ModifierKeys.None && e.Key == Key.Escape) {
-						Debug.Assert(originalZoomLevel != null);
-						if (originalZoomLevel != null)
+						Debug2.Assert(originalZoomLevel is not null);
+						if (originalZoomLevel is not null)
 							HexViewZoomLevel = originalZoomLevel.Value;
 						UpdateTextWithZoomLevel();
 						owner.wpfHexViewHost.HexView.VisualElement.Focus();
@@ -111,28 +109,28 @@ namespace dnSpy.Hex.Editor {
 
 			static readonly VSTE.ZoomLevelConverter zoomLevelConverter = new VSTE.ZoomLevelConverter();
 
-			void ZoomControlMargin_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e) {
+			void ZoomControlMargin_IsVisibleChanged(object? sender, DependencyPropertyChangedEventArgs e) {
 				if (Visibility == Visibility.Visible) {
 					originalZoomLevel = null;
 					owner.RegisterEvents();
 					UpdateTextWithZoomLevel();
 
 					// The combobox is too tall, but I want to use the style from the UI.Wpf dll
-					if (horizontalScrollBarMargin == null) {
+					if (horizontalScrollBarMargin is null) {
 						horizontalScrollBarMargin = owner.wpfHexViewHost.GetHexViewMargin(PredefinedHexMarginNames.HorizontalScrollBar);
-						Debug.Assert(horizontalScrollBarMargin != null);
-						if (horizontalScrollBarMargin != null)
+						Debug2.Assert(horizontalScrollBarMargin is not null);
+						if (horizontalScrollBarMargin is not null)
 							horizontalScrollBarMargin.VisualElement.SizeChanged += VisualElement_SizeChanged;
 					}
-					if (horizontalScrollBarMargin != null)
+					if (horizontalScrollBarMargin is not null)
 						Height = horizontalScrollBarMargin.VisualElement.Height;
 				}
 				else
 					owner.UnregisterEvents();
 			}
-			WpfHexViewMargin horizontalScrollBarMargin;
+			WpfHexViewMargin? horizontalScrollBarMargin;
 
-			void VisualElement_SizeChanged(object sender, SizeChangedEventArgs e) =>
+			void VisualElement_SizeChanged(object? sender, SizeChangedEventArgs e) =>
 				Height = e.NewSize.Height;
 
 			public void UpdateTextWithZoomLevel() {
@@ -142,7 +140,7 @@ namespace dnSpy.Hex.Editor {
 
 			bool TryUpdateZoomLevel() {
 				double? newValue = zoomLevelConverter.ConvertBack(Text, typeof(double), null, CultureInfo.CurrentUICulture) as double?;
-				if (newValue == null || newValue.Value < VSTE.ZoomConstants.MinZoom || newValue.Value > VSTE.ZoomConstants.MaxZoom)
+				if (newValue is null || newValue.Value < VSTE.ZoomConstants.MinZoom || newValue.Value > VSTE.ZoomConstants.MaxZoom)
 					return false;
 				HexViewZoomLevel = newValue.Value;
 				return true;
@@ -150,7 +148,7 @@ namespace dnSpy.Hex.Editor {
 
 			public void Dispose() {
 				IsVisibleChanged -= ZoomControlMargin_IsVisibleChanged;
-				if (horizontalScrollBarMargin != null)
+				if (horizontalScrollBarMargin is not null)
 					horizontalScrollBarMargin.VisualElement.SizeChanged -= VisualElement_SizeChanged;
 			}
 		}
@@ -160,13 +158,9 @@ namespace dnSpy.Hex.Editor {
 		readonly HexEditorOperations editorOperations;
 
 		public ZoomControlMargin(WpfHexViewHost wpfHexViewHost, HexEditorOperations editorOperations) {
-			if (wpfHexViewHost == null)
-				throw new ArgumentNullException(nameof(wpfHexViewHost));
-			if (editorOperations == null)
-				throw new ArgumentNullException(nameof(editorOperations));
 			zoomControl = new TheZoomControl(this);
-			this.wpfHexViewHost = wpfHexViewHost;
-			this.editorOperations = editorOperations;
+			this.wpfHexViewHost = wpfHexViewHost ?? throw new ArgumentNullException(nameof(wpfHexViewHost));
+			this.editorOperations = editorOperations ?? throw new ArgumentNullException(nameof(editorOperations));
 
 			wpfHexViewHost.HexView.Options.OptionChanged += Options_OptionChanged;
 
@@ -181,10 +175,10 @@ namespace dnSpy.Hex.Editor {
 
 		void UpdateVisibility() => zoomControl.Visibility = Enabled ? Visibility.Visible : Visibility.Collapsed;
 
-		public override HexViewMargin GetHexViewMargin(string marginName) =>
+		public override HexViewMargin? GetHexViewMargin(string marginName) =>
 			StringComparer.OrdinalIgnoreCase.Equals(PredefinedHexMarginNames.ZoomControl, marginName) ? this : null;
 
-		void Options_OptionChanged(object sender, VSTE.EditorOptionChangedEventArgs e) {
+		void Options_OptionChanged(object? sender, VSTE.EditorOptionChangedEventArgs e) {
 			if (e.OptionId == DefaultHexViewHostOptions.ZoomControlName || e.OptionId == DefaultHexViewHostOptions.HorizontalScrollBarName)
 				UpdateVisibility();
 			else if (!Enabled) {
@@ -194,7 +188,7 @@ namespace dnSpy.Hex.Editor {
 				zoomControl.UpdateTextWithZoomLevel();
 		}
 
-		void HexView_ZoomLevelChanged(object sender, VSTE.ZoomLevelChangedEventArgs e) => zoomControl.UpdateTextWithZoomLevel();
+		void HexView_ZoomLevelChanged(object? sender, VSTE.ZoomLevelChangedEventArgs e) => zoomControl.UpdateTextWithZoomLevel();
 
 		bool hasRegisteredEvents;
 		void RegisterEvents() {

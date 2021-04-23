@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -30,13 +30,10 @@ namespace dnSpy.Hex.Intellisense.DnSpy {
 		readonly HexQuickInfoBroker quickInfoBroker;
 
 		[ImportingConstructor]
-		QuickInfoCommandTargetFilterProvider(HexQuickInfoBroker quickInfoBroker) {
-			this.quickInfoBroker = quickInfoBroker;
-		}
+		QuickInfoCommandTargetFilterProvider(HexQuickInfoBroker quickInfoBroker) => this.quickInfoBroker = quickInfoBroker;
 
-		public ICommandTargetFilter Create(object target) {
-			var hexView = target as HexView;
-			if (hexView != null)
+		public ICommandTargetFilter? Create(object target) {
+			if (target is HexView hexView)
 				return new QuickInfoCommandTargetFilter(quickInfoBroker, hexView);
 			return null;
 		}
@@ -45,15 +42,11 @@ namespace dnSpy.Hex.Intellisense.DnSpy {
 	sealed class QuickInfoCommandTargetFilter : ICommandTargetFilter {
 		readonly HexQuickInfoBroker quickInfoBroker;
 		readonly HexView hexView;
-		HexQuickInfoSession quickInfoSession;
+		HexQuickInfoSession? quickInfoSession;
 
 		public QuickInfoCommandTargetFilter(HexQuickInfoBroker quickInfoBroker, HexView hexView) {
-			if (quickInfoBroker == null)
-				throw new ArgumentNullException(nameof(quickInfoBroker));
-			if (hexView == null)
-				throw new ArgumentNullException(nameof(hexView));
-			this.quickInfoBroker = quickInfoBroker;
-			this.hexView = hexView;
+			this.quickInfoBroker = quickInfoBroker ?? throw new ArgumentNullException(nameof(quickInfoBroker));
+			this.hexView = hexView ?? throw new ArgumentNullException(nameof(hexView));
 		}
 
 		public CommandTargetStatus CanExecute(Guid group, int cmdId) {
@@ -66,12 +59,12 @@ namespace dnSpy.Hex.Intellisense.DnSpy {
 			return CommandTargetStatus.NotHandled;
 		}
 
-		public CommandTargetStatus Execute(Guid group, int cmdId, object args = null) {
-			object result = null;
+		public CommandTargetStatus Execute(Guid group, int cmdId, object? args = null) {
+			object? result = null;
 			return Execute(group, cmdId, args, ref result);
 		}
 
-		public CommandTargetStatus Execute(Guid group, int cmdId, object args, ref object result) {
+		public CommandTargetStatus Execute(Guid group, int cmdId, object? args, ref object? result) {
 			if (group == CommandConstants.HexEditorGroup) {
 				switch ((HexEditorIds)cmdId) {
 				case HexEditorIds.QUICKINFO:
@@ -83,7 +76,7 @@ namespace dnSpy.Hex.Intellisense.DnSpy {
 		}
 
 		void TriggerQuickInfo() {
-			if (quickInfoSession != null) {
+			if (quickInfoSession is not null) {
 				quickInfoSession.Dismissed -= QuickInfoSession_Dismissed;
 				quickInfoSession.Dismiss();
 				quickInfoSession = null;
@@ -95,8 +88,8 @@ namespace dnSpy.Hex.Intellisense.DnSpy {
 				quickInfoSession = null;
 		}
 
-		void QuickInfoSession_Dismissed(object sender, EventArgs e) {
-			var qiSession = (HexQuickInfoSession)sender;
+		void QuickInfoSession_Dismissed(object? sender, EventArgs e) {
+			var qiSession = (HexQuickInfoSession)sender!;
 			qiSession.Dismissed -= QuickInfoSession_Dismissed;
 			Debug.Assert(qiSession == quickInfoSession);
 			if (qiSession == quickInfoSession)

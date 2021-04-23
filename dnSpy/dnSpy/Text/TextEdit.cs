@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -43,12 +43,10 @@ namespace dnSpy.Text {
 		readonly List<ITextChange> changes;
 		readonly EditOptions options;
 		readonly int? reiteratedVersionNumber;
-		readonly object editTag;
+		readonly object? editTag;
 
-		public TextEdit(TextBuffer textBuffer, EditOptions options, int? reiteratedVersionNumber, object editTag) {
-			if (textBuffer == null)
-				throw new ArgumentNullException(nameof(textBuffer));
-			this.textBuffer = textBuffer;
+		public TextEdit(TextBuffer textBuffer, EditOptions options, int? reiteratedVersionNumber, object? editTag) {
+			this.textBuffer = textBuffer ?? throw new ArgumentNullException(nameof(textBuffer));
 			TextSnapshot = textBuffer.CurrentSnapshot;
 			changes = new List<ITextChange>();
 			this.options = options;

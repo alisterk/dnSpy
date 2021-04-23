@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2011 AlphaSierraPapa for the SharpDevelop Team
+// Copyright (c) 2011 AlphaSierraPapa for the SharpDevelop Team
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this
 // software and associated documentation files (the "Software"), to deal in the Software
@@ -33,17 +33,12 @@ namespace dnSpy.Analyzer.TreeNodes {
 	sealed class MethodUsesNode : SearchNode {
 		readonly MethodDef analyzedMethod;
 
-		public MethodUsesNode(MethodDef analyzedMethod) {
-			if (analyzedMethod == null)
-				throw new ArgumentNullException(nameof(analyzedMethod));
-
-			this.analyzedMethod = analyzedMethod;
-		}
+		public MethodUsesNode(MethodDef analyzedMethod) => this.analyzedMethod = analyzedMethod ?? throw new ArgumentNullException(nameof(analyzedMethod));
 
 		protected override void Write(ITextColorWriter output, IDecompiler decompiler) =>
 			output.Write(BoxedTextColor.Text, dnSpy_Analyzer_Resources.UsesTreeNode);
 
-		struct DefRef<T> where T : IDnlibDef {
+		readonly struct DefRef<T> where T : IDnlibDef {
 			public readonly T Def;
 			public readonly SourceRef SourceRef;
 			public DefRef(T def, SourceRef sourceRef) {
@@ -63,10 +58,9 @@ namespace dnSpy.Analyzer.TreeNodes {
 
 		IEnumerable<DefRef<MethodDef>> GetUsedMethods() {
 			foreach (Instruction instr in analyzedMethod.Body.Instructions) {
-				IMethod mr = instr.Operand as IMethod;
-				if (mr != null && !mr.IsField) {
+				if (instr.Operand is IMethod mr && !mr.IsField) {
 					MethodDef def = mr.ResolveMethodDef();
-					if (def != null)
+					if (def is not null)
 						yield return new DefRef<MethodDef>(def, new SourceRef(analyzedMethod, instr.Offset, instr.Operand as IMDTokenProvider));
 				}
 			}
@@ -74,10 +68,9 @@ namespace dnSpy.Analyzer.TreeNodes {
 
 		IEnumerable<DefRef<FieldDef>> GetUsedFields() {
 			foreach (Instruction instr in analyzedMethod.Body.Instructions) {
-				IField fr = instr.Operand as IField;
-				if (fr != null && !fr.IsMethod) {
+				if (instr.Operand is IField fr && !fr.IsMethod) {
 					FieldDef def = fr.ResolveFieldDef();
-					if (def != null)
+					if (def is not null)
 						yield return new DefRef<FieldDef>(def, new SourceRef(analyzedMethod, instr.Offset, instr.Operand as IMDTokenProvider));
 				}
 			}

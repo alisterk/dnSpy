@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -33,45 +33,41 @@ namespace dnSpy.Hex.Files {
 
 		HexFileStructureInfoProvider[] HexFileStructureInfoProviders {
 			get {
-				if (hexFileStructureInfoProviders == null)
+				if (hexFileStructureInfoProviders is null)
 					hexFileStructureInfoProviders = CreateProviders();
 				return hexFileStructureInfoProviders;
 			}
 		}
-		HexFileStructureInfoProvider[] hexFileStructureInfoProviders;
+		HexFileStructureInfoProvider[]? hexFileStructureInfoProviders;
 
 		public HexFileStructureInfoServiceImpl(HexView hexView, HexBufferFileServiceFactory hexBufferFileServiceFactory, Lazy<HexFileStructureInfoProviderFactory, IOrderable>[] hexFileStructureInfoProviderFactories) {
-			if (hexView == null)
-				throw new ArgumentNullException(nameof(hexView));
-			if (hexBufferFileServiceFactory == null)
+			if (hexBufferFileServiceFactory is null)
 				throw new ArgumentNullException(nameof(hexBufferFileServiceFactory));
-			if (hexFileStructureInfoProviderFactories == null)
-				throw new ArgumentNullException(nameof(hexFileStructureInfoProviderFactories));
-			this.hexView = hexView;
+			this.hexView = hexView ?? throw new ArgumentNullException(nameof(hexView));
 			hexBufferFileService = hexBufferFileServiceFactory.Create(hexView.Buffer);
-			this.hexFileStructureInfoProviderFactories = hexFileStructureInfoProviderFactories;
+			this.hexFileStructureInfoProviderFactories = hexFileStructureInfoProviderFactories ?? throw new ArgumentNullException(nameof(hexFileStructureInfoProviderFactories));
 		}
 
 		HexFileStructureInfoProvider[] CreateProviders() {
 			var providers = new List<HexFileStructureInfoProvider>(hexFileStructureInfoProviderFactories.Length);
 			foreach (var lz in hexFileStructureInfoProviderFactories) {
 				var provider = lz.Value.Create(hexView);
-				if (provider != null)
+				if (provider is not null)
 					providers.Add(provider);
 			}
 			return providers.ToArray();
 		}
 
-		public override HexIndexes[] GetSubStructureIndexes(HexPosition position) {
+		public override HexIndexes[]? GetSubStructureIndexes(HexPosition position) {
 			var info = hexBufferFileService.GetFileAndStructure(position);
-			if (info == null)
+			if (info is null)
 				return null;
 
 			var file = info.Value.File;
 			var structure = info.Value.Structure;
 			foreach (var provider in HexFileStructureInfoProviders) {
 				var indexes = provider.GetSubStructureIndexes(file, structure, position);
-				if (indexes == null)
+				if (indexes is null)
 					continue;
 				bool b = IsValidIndexes(indexes, structure);
 				Debug.Assert(b);
@@ -82,7 +78,7 @@ namespace dnSpy.Hex.Files {
 		}
 
 		static bool IsValidIndexes(HexIndexes[] indexes, ComplexData structure) {
-			if (indexes == null)
+			if (indexes is null)
 				return false;
 			if (indexes.Length == 0)
 				return true;
@@ -101,32 +97,32 @@ namespace dnSpy.Hex.Files {
 			return true;
 		}
 
-		public override object GetToolTip(HexPosition position) {
+		public override object? GetToolTip(HexPosition position) {
 			var info = hexBufferFileService.GetFileAndStructure(position);
-			if (info == null)
+			if (info is null)
 				return null;
 
 			var file = info.Value.File;
 			var structure = info.Value.Structure;
 			foreach (var provider in HexFileStructureInfoProviders) {
 				var toolTip = provider.GetToolTip(file, structure, position);
-				if (toolTip != null)
+				if (toolTip is not null)
 					return toolTip;
 			}
 
 			return null;
 		}
 
-		public override object GetReference(HexPosition position) {
+		public override object? GetReference(HexPosition position) {
 			var info = hexBufferFileService.GetFileAndStructure(position);
-			if (info == null)
+			if (info is null)
 				return null;
 
 			var file = info.Value.File;
 			var structure = info.Value.Structure;
 			foreach (var provider in HexFileStructureInfoProviders) {
 				var toolTip = provider.GetReference(file, structure, position);
-				if (toolTip != null)
+				if (toolTip is not null)
 					return toolTip;
 			}
 
@@ -135,7 +131,7 @@ namespace dnSpy.Hex.Files {
 
 		public override HexSpan? GetFieldReferenceSpan(HexPosition position) {
 			var info = hexBufferFileService.GetFileAndStructure(position);
-			if (info == null)
+			if (info is null)
 				return null;
 
 			var file = info.Value.File;
@@ -144,13 +140,13 @@ namespace dnSpy.Hex.Files {
 			HexSpan? span;
 			foreach (var provider in HexFileStructureInfoProviders) {
 				span = provider.GetFieldReferenceSpan(file, structure, position);
-				if (span != null)
+				if (span is not null)
 					return span;
 			}
 
 			var field = structure.GetSimpleField(position);
 			span = (field?.Data as SimpleData)?.GetFieldReferenceSpan(file);
-			if (span != null)
+			if (span is not null)
 				return span;
 
 			return null;

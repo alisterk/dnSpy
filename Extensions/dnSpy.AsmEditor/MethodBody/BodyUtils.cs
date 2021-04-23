@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -37,80 +37,68 @@ namespace dnSpy.AsmEditor.MethodBody {
 
 	static class BodyUtils {
 		public static readonly Parameter NullParameter = new Parameter(int.MinValue);
-		static ISimpleILPrinter simpleILPrinter;
+		static ISimpleILPrinter? simpleILPrinter;
 
 		[ExportAutoLoaded]
 		sealed class BodyUtilsInit : IAutoLoaded {
 			[ImportingConstructor]
-			BodyUtilsInit([ImportMany] IEnumerable<ISimpleILPrinter> simpleILPrinters) {
-				BodyUtils.simpleILPrinter = simpleILPrinters.OrderBy(a => a.Order).FirstOrDefault() ?? new DummyPrinter();
-			}
+			BodyUtilsInit([ImportMany] IEnumerable<ISimpleILPrinter> simpleILPrinters) => BodyUtils.simpleILPrinter = simpleILPrinters.OrderBy(a => a.Order).FirstOrDefault() ?? new DummyPrinter();
 
 			sealed class DummyPrinter : ISimpleILPrinter {
 				public double Order => 0;
 
-				public bool Write(IDecompilerOutput output, IMemberRef member) {
-					if (member == null || member is GenericParam)
+				public bool Write(IDecompilerOutput output, IMemberRef? member) {
+					if (member is null || member is GenericParam)
 						return false;
 					Write(output, member);
 					return true;
 				}
 
-				public void Write(IDecompilerOutput output, TypeSig type) {
-					Write(output, type);
-				}
+				public void Write(IDecompilerOutput output, TypeSig? type) => Write(output, (object?)type);
 
-				public void Write(IDecompilerOutput output, MethodSig sig) {
-					Write(output, sig);
-				}
+				public void Write(IDecompilerOutput output, MethodSig? sig) => Write(output, (object?)sig);
 
-				void Write(IDecompilerOutput output, object value) {
-					output.Write(string.Format("Missing ISimpleILPrinter: {0}", value), BoxedTextColor.Text);
-				}
+				void Write(IDecompilerOutput output, object? value) => output.Write($"Missing ISimpleILPrinter: {value}", BoxedTextColor.Text);
 			}
 		}
 
-		public static bool IsNull(object op) {
-			return op == null ||
-				op == NullParameter ||
-				op == InstructionVM.Null ||
-				op == LocalVM.Null;
-		}
+		public static bool IsNull(object? op) =>
+			op is null ||
+			op == NullParameter ||
+			op == InstructionVM.Null ||
+			op == LocalVM.Null;
 
-		public static object TryGetVM(Dictionary<object, object> ops, object objModel) {
-			if (objModel == null)
+		public static object? TryGetVM(Dictionary<object, object> ops, object? objModel) {
+			if (objModel is null)
 				return null;
-			object objVm;
-			if (!ops.TryGetValue(objModel, out objVm))
+			if (!ops.TryGetValue(objModel, out var objVm))
 				return objModel;
 			return objVm;
 		}
 
-		public static object TryGetModel(Dictionary<object, object> ops, object objVm) {
+		public static object? TryGetModel(Dictionary<object, object> ops, object? objVm) {
 			if (IsNull(objVm))
 				return null;
-			object objModel;
-			if (!ops.TryGetValue(objVm, out objModel))
+			Debug2.Assert(objVm is not null);
+			if (!ops.TryGetValue(objVm, out var objModel))
 				return objVm;
 			return objModel;
 		}
 
-		public static object ToOperandVM(Dictionary<object, object> ops, object operand) {
-			var targets = operand as IList<Instruction>;
-			if (targets != null) {
-				var newTargets = new InstructionVM[targets.Count];
+		public static object? ToOperandVM(Dictionary<object, object> ops, object? operand) {
+			if (operand is IList<Instruction> targets) {
+				var newTargets = new InstructionVM?[targets.Count];
 				for (int i = 0; i < newTargets.Length; i++)
-					newTargets[i] = (InstructionVM)TryGetVM(ops, (object)targets[i] ?? InstructionVM.Null);
+					newTargets[i] = (InstructionVM?)TryGetVM(ops, (object)targets[i] ?? InstructionVM.Null);
 				return newTargets;
 			}
 
 			return TryGetVM(ops, operand);
 		}
 
-		public static object ToOperandModel(Dictionary<object, object> ops, object operand) {
-			var targets = operand as IList<InstructionVM>;
-			if (targets != null) {
-				var newTargets = new Instruction[targets.Count];
+		public static object? ToOperandModel(Dictionary<object, object> ops, object? operand) {
+			if (operand is IList<InstructionVM> targets) {
+				var newTargets = new Instruction?[targets.Count];
 				for (int i = 0; i < newTargets.Length; i++)
 					newTargets[i] = TryGetModel(ops, targets[i]) as Instruction;
 				return newTargets;
@@ -342,21 +330,21 @@ namespace dnSpy.AsmEditor.MethodBody {
 			}
 		}
 
-		static T ReadList<T>(IList<T> list, int index) {
-			if (list == null || index < 0 || index >= list.Count)
-				return default(T);
+		static T? ReadList<T>(IList<T>? list, int index) where T : class {
+			if (list is null || index < 0 || index >= list.Count)
+				return null;
 			return list[index];
 		}
 
 		public static void OptimizeMacros(this IList<InstructionVM> instrs) {
 			foreach (var instr in instrs) {
-				Parameter arg;
-				LocalVM local;
+				Parameter? arg;
+				LocalVM? local;
 				switch (instr.Code) {
 				case Code.Ldarg:
 				case Code.Ldarg_S:
 					arg = instr.InstructionOperandVM.Value as Parameter;
-					if (arg == null)
+					if (arg is null)
 						break;
 					if (arg.Index == 0)
 						instr.Code = Code.Ldarg_0;
@@ -372,7 +360,7 @@ namespace dnSpy.AsmEditor.MethodBody {
 
 				case Code.Ldarga:
 					arg = instr.InstructionOperandVM.Value as Parameter;
-					if (arg == null)
+					if (arg is null)
 						break;
 					if (byte.MinValue <= arg.Index && arg.Index <= byte.MaxValue)
 						instr.Code = Code.Ldarga_S;
@@ -415,7 +403,7 @@ namespace dnSpy.AsmEditor.MethodBody {
 				case Code.Ldloc:
 				case Code.Ldloc_S:
 					local = instr.InstructionOperandVM.Value as LocalVM;
-					if (local == null)
+					if (local is null)
 						break;
 					if (local.Index == 0)
 						instr.Code = Code.Ldloc_0;
@@ -431,7 +419,7 @@ namespace dnSpy.AsmEditor.MethodBody {
 
 				case Code.Ldloca:
 					local = instr.InstructionOperandVM.Value as LocalVM;
-					if (local == null)
+					if (local is null)
 						break;
 					if (byte.MinValue <= local.Index && local.Index <= byte.MaxValue)
 						instr.Code = Code.Ldloca_S;
@@ -439,7 +427,7 @@ namespace dnSpy.AsmEditor.MethodBody {
 
 				case Code.Starg:
 					arg = instr.InstructionOperandVM.Value as Parameter;
-					if (arg == null)
+					if (arg is null)
 						break;
 					if (byte.MinValue <= arg.Index && arg.Index <= byte.MaxValue)
 						instr.Code = Code.Starg_S;
@@ -448,7 +436,7 @@ namespace dnSpy.AsmEditor.MethodBody {
 				case Code.Stloc:
 				case Code.Stloc_S:
 					local = instr.InstructionOperandVM.Value as LocalVM;
-					if (local == null)
+					if (local is null)
 						break;
 					if (local.Index == 0)
 						instr.Code = Code.Stloc_0;
@@ -513,7 +501,7 @@ namespace dnSpy.AsmEditor.MethodBody {
 					default: continue;
 					}
 					var targetInstr = instr.InstructionOperandVM.Value as InstructionVM;
-					if (targetInstr == null)
+					if (targetInstr is null)
 						continue;
 
 					int afterShortInstr;
@@ -540,28 +528,27 @@ namespace dnSpy.AsmEditor.MethodBody {
 			}
 		}
 
-		public static void WriteObject(ITextColorWriter output, object obj, WriteObjectFlags flags = WriteObjectFlags.None) {
+		public static void WriteObject(ITextColorWriter output, object? obj, WriteObjectFlags flags = WriteObjectFlags.None) {
+			Debug2.Assert(simpleILPrinter is not null);
 			if (IsNull(obj)) {
 				output.Write(BoxedTextColor.Keyword, "null");
 				return;
 			}
+			Debug2.Assert(obj is not null);
 
-			var mr = obj as IMemberRef;
-			if (mr != null) {
+			if (obj is IMemberRef mr) {
 				if (simpleILPrinter.Write(TextColorWriterToDecompilerOutput.Create(output), mr))
 					return;
 			}
 
-			var local = obj as LocalVM;
-			if (local != null) {
+			if (obj is LocalVM local) {
 				output.Write(BoxedTextColor.Local, IdentifierEscaper.Escape(GetLocalName(local.Name, local.Index)));
 				output.WriteSpace();
 				output.WriteLocalParameterIndex(local.Index);
 				return;
 			}
 
-			var parameter = obj as Parameter;
-			if (parameter != null) {
+			if (obj is Parameter parameter) {
 				if (parameter.IsHiddenThisParameter)
 					output.Write(BoxedTextColor.Keyword, "this");
 				else {
@@ -572,8 +559,7 @@ namespace dnSpy.AsmEditor.MethodBody {
 				return;
 			}
 
-			var instr = obj as InstructionVM;
-			if (instr != null) {
+			if (obj is InstructionVM instr) {
 				if ((flags & WriteObjectFlags.ShortInstruction) != 0)
 					output.WriteShort(instr);
 				else
@@ -581,20 +567,18 @@ namespace dnSpy.AsmEditor.MethodBody {
 				return;
 			}
 
-			var instrs = obj as IList<InstructionVM>;
-			if (instrs != null) {
+			if (obj is IList<InstructionVM> instrs) {
 				output.Write(instrs);
 				return;
 			}
 
-			var methodSig = obj as MethodSig;
-			if (methodSig != null) {
+			if (obj is MethodSig methodSig) {
 				simpleILPrinter.Write(TextColorWriterToDecompilerOutput.Create(output), methodSig);
 				return;
 			}
 
-			if (obj is TypeSig) {
-				simpleILPrinter.Write(TextColorWriterToDecompilerOutput.Create(output), obj as TypeSig);
+			if (obj is TypeSig ts) {
+				simpleILPrinter.Write(TextColorWriterToDecompilerOutput.Create(output), ts);
 				return;
 			}
 
@@ -609,16 +593,16 @@ namespace dnSpy.AsmEditor.MethodBody {
 			output.Write(BoxedTextColor.Text, obj.ToString());
 		}
 
-		static string GetLocalName(string name, int index) {
-			if (!string.IsNullOrEmpty(name))
+		static string GetLocalName(string? name, int index) {
+			if (!string2.IsNullOrEmpty(name))
 				return name;
-			return string.Format("V_{0}", index);
+			return $"V_{index}";
 		}
 
-		static string GetParameterName(string name, int index) {
-			if (!string.IsNullOrEmpty(name))
+		static string GetParameterName(string? name, int index) {
+			if (!string2.IsNullOrEmpty(name))
 				return name;
-			return string.Format("A_{0}", index);
+			return $"A_{index}";
 		}
 
 		static void WriteLocalParameterIndex(this ITextColorWriter output, int index) {
@@ -668,7 +652,7 @@ namespace dnSpy.AsmEditor.MethodBody {
 			output.Write(BoxedTextColor.Number, instr.Index.ToString());
 			output.WriteSpace();
 			output.Write(BoxedTextColor.Punctuation, "(");
-			output.Write(BoxedTextColor.Number, string.Format("{0:X4}", instr.Offset));
+			output.Write(BoxedTextColor.Label, instr.Offset.ToString("X4"));
 			output.Write(BoxedTextColor.Punctuation, ")");
 		}
 

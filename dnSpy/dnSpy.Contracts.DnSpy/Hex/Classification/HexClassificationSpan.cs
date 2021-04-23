@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -25,7 +25,7 @@ namespace dnSpy.Contracts.Hex.Classification {
 	/// <summary>
 	/// Classification type and span
 	/// </summary>
-	public struct HexClassificationSpan {
+	public readonly struct HexClassificationSpan {
 		/// <summary>
 		/// Gets the span
 		/// </summary>
@@ -42,10 +42,8 @@ namespace dnSpy.Contracts.Hex.Classification {
 		/// <param name="span">Span</param>
 		/// <param name="classification">Classification type</param>
 		public HexClassificationSpan(VST.Span span, VSTC.IClassificationType classification) {
-			if (classification == null)
-				throw new ArgumentNullException(nameof(classification));
 			Span = span;
-			ClassificationType = classification;
+			ClassificationType = classification ?? throw new ArgumentNullException(nameof(classification));
 		}
 	}
 }

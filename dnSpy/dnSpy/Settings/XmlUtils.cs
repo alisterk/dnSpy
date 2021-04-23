@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -25,21 +25,21 @@ namespace dnSpy.Settings {
 	static class XmlUtils {
 		const char ESCAPE_CHAR = '©';
 
-		public static string EscapeAttributeValue(string s) {
-			if (s == null)
+		public static string? EscapeAttributeValue(string? s) {
+			if (s is null)
 				return null;
 			var sb = new StringBuilder(s.Length);
 			foreach (var c in s) {
 				if (c < ' ' || c == ESCAPE_CHAR)
-					sb.Append(string.Format("{0}{1:X4}", ESCAPE_CHAR, (int)c));
+					sb.Append($"{ESCAPE_CHAR}{(int)c:X4}");
 				else
 					sb.Append(c);
 			}
 			return sb.ToString();
 		}
 
-		public static string UnescapeAttributeValue(string s) {
-			if (s == null)
+		public static string? UnescapeAttributeValue(string? s) {
+			if (s is null)
 				return null;
 			if (s.IndexOf(ESCAPE_CHAR) < 0)
 				return s;
@@ -68,22 +68,17 @@ namespace dnSpy.Settings {
 				return -1;
 			if (!IsHex(hex[0]) || !IsHex(hex[1]) || !IsHex(hex[2]) || !IsHex(hex[3]))
 				return -1;
-			int val;
-			bool b = int.TryParse(hex, NumberStyles.HexNumber, null, out val);
+			bool b = int.TryParse(hex, NumberStyles.HexNumber, null, out int val);
 			Debug.Assert(b);
 			if (b)
 				return val;
 			return -1;
 		}
 
-		static bool IsHex(char c) {
-			return ('0' <= c && c <= '9') ||
-					('A' <= c && c <= 'F') ||
-					('a' <= c && c <= 'f');
-		}
+		static bool IsHex(char c) => ('0' <= c && c <= '9') || ('A' <= c && c <= 'F') || ('a' <= c && c <= 'f');
 
-		public static string FilterAttributeName(string s) {
-			if (s == null || s.Length == 0)
+		public static string? FilterAttributeName(string s) {
+			if (s is null || s.Length == 0)
 				return null;
 
 			// Only allow a sub set of the valid names. Fix it if this is a problem.
@@ -98,17 +93,15 @@ namespace dnSpy.Settings {
 			return s;
 		}
 
-		static bool IsValidFirstXmlAttrChar(char c) {
-			return c == '-' || c == '_' || c == '.' ||
-					('A' <= c && c <= 'Z') ||
-					('a' <= c && c <= 'z');
-		}
+		static bool IsValidFirstXmlAttrChar(char c) =>
+			c == '-' || c == '_' || c == '.' ||
+			('A' <= c && c <= 'Z') ||
+			('a' <= c && c <= 'z');
 
-		static bool IsValidXmlAttrChar(char c) {
-			return c == '-' || c == '_' || c == '.' ||
-					('0' <= c && c <= '9') ||
-					('A' <= c && c <= 'Z') ||
-					('a' <= c && c <= 'z');
-		}
+		static bool IsValidXmlAttrChar(char c) =>
+			c == '-' || c == '_' || c == '.' ||
+			('0' <= c && c <= '9') ||
+			('A' <= c && c <= 'Z') ||
+			('a' <= c && c <= 'z');
 	}
 }

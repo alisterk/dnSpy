@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -25,12 +25,12 @@ using dnSpy.Properties;
 
 namespace dnSpy.MainApp {
 	static class AboutHelpers {
-		public const string BASE_URL = @"https://github.com/0xd4d/dnSpy/";
-		public const string BUILD_URL = @"https://ci.appveyor.com/project/0xd4d/dnspy/branch/master/artifacts";
+		public const string BASE_URL = @"https://github.com/dnSpy/dnSpy/";
+		public const string BUILD_URL = @"https://github.com/dnSpy/dnSpy/actions";
 
 		public static void OpenWebPage(string url, IMessageBoxService messageBoxService) {
 			try {
-				Process.Start(url);
+				Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
 			}
 			catch {
 				messageBoxService.Show(dnSpy_Resources.CouldNotStartBrowser);
@@ -43,61 +43,51 @@ namespace dnSpy.MainApp {
 		readonly IMessageBoxService messageBoxService;
 
 		[ImportingConstructor]
-		OpenReleasesUrlCommand(IMessageBoxService messageBoxService) {
-			this.messageBoxService = messageBoxService;
-		}
+		OpenReleasesUrlCommand(IMessageBoxService messageBoxService) => this.messageBoxService = messageBoxService;
 
 		public override void Execute(IMenuItemContext context) =>
 			AboutHelpers.OpenWebPage(AboutHelpers.BASE_URL + @"releases", messageBoxService);
 	}
 
-	[ExportMenuItem(OwnerGuid = MenuConstants.APP_MENU_HELP_GUID, Header = "res:About_LatestBuild", Group = MenuConstants.GROUP_APP_MENU_HELP_LINKS, Order = 10)]
+	//[ExportMenuItem(OwnerGuid = MenuConstants.APP_MENU_HELP_GUID, Header = "res:About_LatestBuild", Group = MenuConstants.GROUP_APP_MENU_HELP_LINKS, Order = 10)]
 	sealed class OpenLatestBuildUrlCommand : MenuItemBase {
 		readonly IMessageBoxService messageBoxService;
 
 		[ImportingConstructor]
-		OpenLatestBuildUrlCommand(IMessageBoxService messageBoxService) {
-			this.messageBoxService = messageBoxService;
-		}
+		OpenLatestBuildUrlCommand(IMessageBoxService messageBoxService) => this.messageBoxService = messageBoxService;
 
 		public override void Execute(IMenuItemContext context) =>
 			AboutHelpers.OpenWebPage(AboutHelpers.BUILD_URL, messageBoxService);
 	}
 
-	[ExportMenuItem(OwnerGuid = MenuConstants.APP_MENU_HELP_GUID, Header = "res:About_Issues", Group = MenuConstants.GROUP_APP_MENU_HELP_LINKS, Order = 20)]
+	//[ExportMenuItem(OwnerGuid = MenuConstants.APP_MENU_HELP_GUID, Header = "res:About_Issues", Group = MenuConstants.GROUP_APP_MENU_HELP_LINKS, Order = 20)]
 	sealed class OpenIssuesUrlCommand : MenuItemBase {
 		readonly IMessageBoxService messageBoxService;
 
 		[ImportingConstructor]
-		OpenIssuesUrlCommand(IMessageBoxService messageBoxService) {
-			this.messageBoxService = messageBoxService;
-		}
+		OpenIssuesUrlCommand(IMessageBoxService messageBoxService) => this.messageBoxService = messageBoxService;
 
 		public override void Execute(IMenuItemContext context) =>
 			AboutHelpers.OpenWebPage(AboutHelpers.BASE_URL + @"issues", messageBoxService);
 	}
 
-	[ExportMenuItem(OwnerGuid = MenuConstants.APP_MENU_HELP_GUID, Header = "res:About_Wiki", Group = MenuConstants.GROUP_APP_MENU_HELP_LINKS, Order = 30)]
+	//[ExportMenuItem(OwnerGuid = MenuConstants.APP_MENU_HELP_GUID, Header = "res:About_Wiki", Group = MenuConstants.GROUP_APP_MENU_HELP_LINKS, Order = 30)]
 	sealed class OpenWikiUrlCommand : MenuItemBase {
 		readonly IMessageBoxService messageBoxService;
 
 		[ImportingConstructor]
-		OpenWikiUrlCommand(IMessageBoxService messageBoxService) {
-			this.messageBoxService = messageBoxService;
-		}
+		OpenWikiUrlCommand(IMessageBoxService messageBoxService) => this.messageBoxService = messageBoxService;
 
 		public override void Execute(IMenuItemContext context) =>
 			AboutHelpers.OpenWebPage(AboutHelpers.BASE_URL + @"wiki", messageBoxService);
 	}
 
-	[ExportMenuItem(OwnerGuid = MenuConstants.APP_MENU_HELP_GUID, Header = "res:About_SourceCode", Group = MenuConstants.GROUP_APP_MENU_HELP_LINKS, Order = 40)]
+	//[ExportMenuItem(OwnerGuid = MenuConstants.APP_MENU_HELP_GUID, Header = "res:About_SourceCode", Group = MenuConstants.GROUP_APP_MENU_HELP_LINKS, Order = 40)]
 	sealed class OpenSourceCodeUrlCommand : MenuItemBase {
 		readonly IMessageBoxService messageBoxService;
 
 		[ImportingConstructor]
-		OpenSourceCodeUrlCommand(IMessageBoxService messageBoxService) {
-			this.messageBoxService = messageBoxService;
-		}
+		OpenSourceCodeUrlCommand(IMessageBoxService messageBoxService) => this.messageBoxService = messageBoxService;
 
 		public override void Execute(IMenuItemContext context) =>
 			AboutHelpers.OpenWebPage(AboutHelpers.BASE_URL, messageBoxService);

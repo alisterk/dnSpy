@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -22,19 +22,17 @@ using dnSpy.AsmEditor.DnlibDialogs;
 
 namespace dnSpy.AsmEditor.ViewHelpers {
 	sealed class EditDeclSecurity : IEdit<DeclSecurityVM> {
-		readonly Window ownerWindow;
+		readonly Window? ownerWindow;
 
 		public EditDeclSecurity()
 			: this(null) {
 		}
 
-		public EditDeclSecurity(Window ownerWindow) {
-			this.ownerWindow = ownerWindow;
-		}
+		public EditDeclSecurity(Window? ownerWindow) => this.ownerWindow = ownerWindow;
 
-		public DeclSecurityVM Edit(string title, DeclSecurityVM ds) {
+		public DeclSecurityVM? Edit(string? title, DeclSecurityVM ds) {
 			var win = new DeclSecurityDlg();
-			if (title != null)
+			if (title is not null)
 				win.Title = title;
 			win.DataContext = ds;
 			win.Owner = ownerWindow ?? Application.Current.MainWindow;

@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -38,7 +38,7 @@ namespace dnSpy.Text.Formatting {
 	sealed class LineTransformProviderService : ILineTransformProviderService {
 		readonly IContentTypeRegistryService contentTypeRegistryService;
 		readonly Lazy<ILineTransformSourceProvider, IContentTypeAndTextViewRoleMetadata>[] lineTransformSourceProviders;
-		ProviderSelector<ILineTransformSourceProvider, IContentTypeAndTextViewRoleMetadata> providerSelector;
+		ProviderSelector<ILineTransformSourceProvider, IContentTypeAndTextViewRoleMetadata>? providerSelector;
 
 		[ImportingConstructor]
 		LineTransformProviderService(IContentTypeRegistryService contentTypeRegistryService, [ImportMany] IEnumerable<Lazy<ILineTransformSourceProvider, IContentTypeAndTextViewRoleMetadata>> lineTransformSourceProviders) {
@@ -47,7 +47,7 @@ namespace dnSpy.Text.Formatting {
 		}
 
 		public ILineTransformProvider Create(IWpfTextView textView, bool removeExtraTextLineVerticalPixels) {
-			if (providerSelector == null)
+			if (providerSelector is null)
 				providerSelector = new ProviderSelector<ILineTransformSourceProvider, IContentTypeAndTextViewRoleMetadata>(contentTypeRegistryService, lineTransformSourceProviders);
 			var contentType = textView.TextDataModel.ContentType;
 			var list = new List<ILineTransformSource>();
@@ -55,7 +55,7 @@ namespace dnSpy.Text.Formatting {
 				if (!textView.Roles.ContainsAny(p.Metadata.TextViewRoles))
 					continue;
 				var source = p.Value.Create(textView);
-				if (source != null)
+				if (source is not null)
 					list.Add(source);
 			}
 			return new LineTransformProvider(list.ToArray(), removeExtraTextLineVerticalPixels);
@@ -66,9 +66,7 @@ namespace dnSpy.Text.Formatting {
 			readonly bool removeExtraTextLineVerticalPixels;
 
 			public LineTransformProvider(ILineTransformSource[] lineTransformSources, bool removeExtraTextLineVerticalPixels) {
-				if (lineTransformSources == null)
-					throw new ArgumentNullException(nameof(lineTransformSources));
-				this.lineTransformSources = lineTransformSources;
+				this.lineTransformSources = lineTransformSources ?? throw new ArgumentNullException(nameof(lineTransformSources));
 				this.removeExtraTextLineVerticalPixels = removeExtraTextLineVerticalPixels;
 			}
 

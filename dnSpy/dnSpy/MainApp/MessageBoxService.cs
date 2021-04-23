@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -33,9 +33,7 @@ namespace dnSpy.MainApp {
 	[ExportAutoLoaded(LoadType = AutoLoadedLoadType.BeforeExtensions, Order = double.MinValue)]
 	sealed class MessageBoxServiceLoader : IAutoLoaded {
 		[ImportingConstructor]
-		MessageBoxServiceLoader(IMessageBoxService messageBoxService) {
-			MsgBox.Instance = messageBoxService;
-		}
+		MessageBoxServiceLoader(IMessageBoxService messageBoxService) => MsgBox.Instance = messageBoxService;
 	}
 
 	[Export, Export(typeof(IMessageBoxService))]
@@ -62,8 +60,7 @@ namespace dnSpy.MainApp {
 			var sect = settingsService.GetOrCreateSection(SETTINGS_GUID);
 			foreach (var ignoredSect in sect.SectionsWithName(IGNORED_SECTION)) {
 				var id = ignoredSect.Attribute<string>(IGNORED_ATTR);
-				Guid guid;
-				if (!Guid.TryParse(id, out guid))
+				if (!Guid.TryParse(id, out var guid))
 					continue;
 				ignoredMessages.Add(guid);
 			}
@@ -82,12 +79,10 @@ namespace dnSpy.MainApp {
 			}
 		}
 
-		public MsgBoxButton? ShowIgnorableMessage(Guid guid, string message, MsgBoxButton buttons = MsgBoxButton.OK, Window ownerWindow = null) {
+		public MsgBoxButton? ShowIgnorableMessage(Guid guid, string message, MsgBoxButton buttons, Window? ownerWindow) {
 			if (ignoredMessages.Contains(guid))
 				return null;
-			MsgBoxDlg win;
-			MsgBoxVM vm;
-			Create(message, buttons, true, ownerWindow, out win, out vm);
+			Create(message, buttons, true, ownerWindow, out var win, out var vm);
 			win.ShowDialog();
 			if (win.ClickedButton != MsgBoxButton.None && vm.DontShowAgain) {
 				ignoredMessages.Add(guid);
@@ -96,18 +91,16 @@ namespace dnSpy.MainApp {
 			return win.ClickedButton;
 		}
 
-		public MsgBoxButton Show(string message, MsgBoxButton buttons = MsgBoxButton.OK, Window ownerWindow = null) {
-			MsgBoxDlg win;
-			MsgBoxVM vm;
-			Create(message, buttons, false, ownerWindow, out win, out vm);
+		public MsgBoxButton Show(string message, MsgBoxButton buttons, Window? ownerWindow) {
+			Create(message, buttons, false, ownerWindow, out var win, out var vm);
 			win.ShowDialog();
 			return win.ClickedButton;
 		}
 
-		public void Show(Exception exception, string msg = null, Window ownerWindow = null) {
+		public void Show(Exception exception, string? msg, Window? ownerWindow) {
 			string msgToShow;
-			if (exception != null) {
-				msgToShow = string.Format("{0}\n\n{1}", msg ?? dnSpy_Resources.ExceptionMessage, exception.ToString());
+			if (exception is not null) {
+				msgToShow = $"{msg ?? dnSpy_Resources.ExceptionMessage}\n\n{exception.ToString()}";
 				const int MAX_LEN = 2048;
 				if (msgToShow.Length > MAX_LEN)
 					msgToShow = msgToShow.Substring(0, MAX_LEN) + "[...]";
@@ -117,7 +110,7 @@ namespace dnSpy.MainApp {
 			Show(msgToShow, MsgBoxButton.OK, ownerWindow);
 		}
 
-		void Create(string message, MsgBoxButton buttons, bool hasDontShowAgain, Window ownerWindow, out MsgBoxDlg win, out MsgBoxVM vm) {
+		void Create(string message, MsgBoxButton buttons, bool hasDontShowAgain, Window? ownerWindow, out MsgBoxDlg win, out MsgBoxVM vm) {
 			win = new MsgBoxDlg();
 			var winTmp = win;
 			vm = new MsgBoxVM(message, button => winTmp.Close(button));
@@ -139,11 +132,11 @@ namespace dnSpy.MainApp {
 			catch (ExternalException) { }
 		}
 
-		public T Ask<T>(string labelMessage, string defaultText = null, string title = null, Func<string, T> converter = null, Func<string, string> verifier = null, Window ownerWindow = null) {
+		public T Ask<T>(string labelMessage, string? defaultText, string? title, Func<string, T>? converter, Func<string, string?>? verifier, Window? ownerWindow) {
 			var win = new AskDlg();
-			if (converter == null)
+			if (converter is null)
 				converter = CreateDefaultConverter<T>();
-			if (verifier == null)
+			if (verifier is null)
 				verifier = CreateDefaultVerifier<T>();
 
 			var vm = new AskVM(labelMessage, s => converter(s), verifier);
@@ -153,8 +146,8 @@ namespace dnSpy.MainApp {
 			if (!string.IsNullOrWhiteSpace(title))
 				win.Title = title;
 			if (win.ShowDialog() != true)
-				return default(T);
-			return (T)vm.Value;
+				return default!;
+			return (T)vm.Value!;
 		}
 
 		Func<string, T> CreateDefaultConverter<T>() {
@@ -162,7 +155,7 @@ namespace dnSpy.MainApp {
 			return s => (T)c.ConvertFromInvariantString(s);
 		}
 
-		Func<string, string> CreateDefaultVerifier<T>() {
+		Func<string, string?> CreateDefaultVerifier<T>() {
 			var c = TypeDescriptor.GetConverter(typeof(T));
 			return s => {
 				if (c.IsValid(s))

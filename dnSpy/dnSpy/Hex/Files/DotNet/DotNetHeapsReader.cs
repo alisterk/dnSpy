@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -25,22 +25,16 @@ using dnSpy.Contracts.Hex.Files.DotNet;
 
 namespace dnSpy.Hex.Files.DotNet {
 	sealed class DotNetHeapsReader {
-		public DotNetHeap[] Streams { get; private set; }
+		public DotNetHeap[]? Streams { get; private set; }
 
 		readonly HexBufferFile file;
 		readonly DotNetMetadataHeaderData mdHeader;
 		readonly StorageStreamHeader[] storageStreamHeaders;
 
 		public DotNetHeapsReader(HexBufferFile file, DotNetMetadataHeaderData mdHeader, StorageStreamHeader[] storageStreamHeaders) {
-			if (file == null)
-				throw new ArgumentNullException(nameof(file));
-			if (mdHeader == null)
-				throw new ArgumentNullException(nameof(mdHeader));
-			if (storageStreamHeaders == null)
-				throw new ArgumentNullException(nameof(storageStreamHeaders));
-			this.file = file;
-			this.mdHeader = mdHeader;
-			this.storageStreamHeaders = storageStreamHeaders;
+			this.file = file ?? throw new ArgumentNullException(nameof(file));
+			this.mdHeader = mdHeader ?? throw new ArgumentNullException(nameof(mdHeader));
+			this.storageStreamHeaders = storageStreamHeaders ?? throw new ArgumentNullException(nameof(storageStreamHeaders));
 		}
 
 		public bool Read() {
@@ -59,19 +53,19 @@ namespace dnSpy.Hex.Files.DotNet {
 
 		DotNetHeap[] CreateCompressedHeaps() {
 			var list = new List<DotNetHeap>();
-			StringsHeap stringsHeap = null;
-			USHeap usHeap = null;
-			BlobHeap blobHeap = null;
-			GUIDHeap guidHeap = null;
-			TablesHeap tablesHeap = null;
-			PdbHeap pdbHeap = null;
+			StringsHeap? stringsHeap = null;
+			USHeap? usHeap = null;
+			BlobHeap? blobHeap = null;
+			GUIDHeap? guidHeap = null;
+			TablesHeap? tablesHeap = null;
+			PdbHeap? pdbHeap = null;
 			for (int i = storageStreamHeaders.Length - 1; i >= 0; i--) {
 				var ssh = storageStreamHeaders[i];
 				var span = new HexBufferSpan(file.Buffer, ssh.DataSpan);
 
 				switch (ssh.Name) {
 				case "#Strings":
-					if (stringsHeap == null) {
+					if (stringsHeap is null) {
 						stringsHeap = new StringsHeapImpl(span);
 						list.Add(stringsHeap);
 						continue;
@@ -79,7 +73,7 @@ namespace dnSpy.Hex.Files.DotNet {
 					break;
 
 				case "#US":
-					if (usHeap == null) {
+					if (usHeap is null) {
 						usHeap = new USHeapImpl(span);
 						list.Add(usHeap);
 						continue;
@@ -87,7 +81,7 @@ namespace dnSpy.Hex.Files.DotNet {
 					break;
 
 				case "#Blob":
-					if (blobHeap == null) {
+					if (blobHeap is null) {
 						blobHeap = new BlobHeapImpl(span);
 						list.Add(blobHeap);
 						continue;
@@ -95,7 +89,7 @@ namespace dnSpy.Hex.Files.DotNet {
 					break;
 
 				case "#GUID":
-					if (guidHeap == null) {
+					if (guidHeap is null) {
 						guidHeap = new GUIDHeapImpl(span);
 						list.Add(guidHeap);
 						continue;
@@ -103,7 +97,7 @@ namespace dnSpy.Hex.Files.DotNet {
 					break;
 
 				case "#~":
-					if (tablesHeap == null && span.Length >= TablesHeapImpl.MinimumSize) {
+					if (tablesHeap is null && span.Length >= TablesHeapImpl.MinimumSize) {
 						tablesHeap = new TablesHeapImpl(span, TablesHeapType.Compressed);
 						list.Add(tablesHeap);
 						continue;
@@ -115,7 +109,7 @@ namespace dnSpy.Hex.Files.DotNet {
 					continue;
 
 				case "#Pdb":
-					if (pdbHeap == null && span.Length >= PdbHeapImpl.MinimumSize) {
+					if (pdbHeap is null && span.Length >= PdbHeapImpl.MinimumSize) {
 						pdbHeap = new PdbHeapImpl(span);
 						list.Add(pdbHeap);
 						continue;
@@ -131,17 +125,17 @@ namespace dnSpy.Hex.Files.DotNet {
 
 		DotNetHeap[] CreateENCHeaps() {
 			var list = new List<DotNetHeap>();
-			StringsHeap stringsHeap = null;
-			USHeap usHeap = null;
-			BlobHeap blobHeap = null;
-			GUIDHeap guidHeap = null;
-			TablesHeap tablesHeap = null;
+			StringsHeap? stringsHeap = null;
+			USHeap? usHeap = null;
+			BlobHeap? blobHeap = null;
+			GUIDHeap? guidHeap = null;
+			TablesHeap? tablesHeap = null;
 			foreach (var ssh in storageStreamHeaders) {
 				var span = new HexBufferSpan(file.Buffer, ssh.DataSpan);
 
 				switch (ssh.Name.ToUpperInvariant()) {
 				case "#STRINGS":
-					if (stringsHeap == null) {
+					if (stringsHeap is null) {
 						stringsHeap = new StringsHeapImpl(span);
 						list.Add(stringsHeap);
 						continue;
@@ -149,7 +143,7 @@ namespace dnSpy.Hex.Files.DotNet {
 					break;
 
 				case "#US":
-					if (usHeap == null) {
+					if (usHeap is null) {
 						usHeap = new USHeapImpl(span);
 						list.Add(usHeap);
 						continue;
@@ -157,7 +151,7 @@ namespace dnSpy.Hex.Files.DotNet {
 					break;
 
 				case "#BLOB":
-					if (blobHeap == null) {
+					if (blobHeap is null) {
 						blobHeap = new BlobHeapImpl(span);
 						list.Add(blobHeap);
 						continue;
@@ -165,7 +159,7 @@ namespace dnSpy.Hex.Files.DotNet {
 					break;
 
 				case "#GUID":
-					if (guidHeap == null) {
+					if (guidHeap is null) {
 						guidHeap = new GUIDHeapImpl(span);
 						list.Add(guidHeap);
 						continue;
@@ -174,7 +168,7 @@ namespace dnSpy.Hex.Files.DotNet {
 
 				case "#~":	// Only if #Schema is used
 				case "#-":
-					if (tablesHeap == null && span.Length >= TablesHeapImpl.MinimumSize) {
+					if (tablesHeap is null && span.Length >= TablesHeapImpl.MinimumSize) {
 						tablesHeap = new TablesHeapImpl(span, TablesHeapType.ENC);
 						list.Add(tablesHeap);
 						continue;
@@ -189,7 +183,7 @@ namespace dnSpy.Hex.Files.DotNet {
 		static TablesHeapType GetTablesHeapType(StorageStreamHeader[] storageStreamHeaders) {
 			TablesHeapType? thType = null;
 			foreach (var sh in storageStreamHeaders) {
-				if (thType == null) {
+				if (thType is null) {
 					if (sh.Name == "#~")
 						thType = TablesHeapType.Compressed;
 					else if (sh.Name == "#-")

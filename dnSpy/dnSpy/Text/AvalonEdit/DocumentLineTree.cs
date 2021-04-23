@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2014 AlphaSierraPapa for the SharpDevelop Team
+// Copyright (c) 2014 AlphaSierraPapa for the SharpDevelop Team
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this
 // software and associated documentation files (the "Software"), to deal in the Software
@@ -16,6 +16,7 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+#nullable disable
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -48,11 +49,11 @@ namespace dnSpy.Text.AvalonEdit {
 		internal static void UpdateAfterChildrenChange(LineNode node) {
 			int totalCount = 1;
 			int totalLength = node.TotalLength;
-			if (node.left != null) {
+			if (node.left is not null) {
 				totalCount += node.left.nodeTotalCount;
 				totalLength += node.left.nodeTotalLength;
 			}
-			if (node.right != null) {
+			if (node.right is not null) {
 				totalCount += node.right.nodeTotalCount;
 				totalLength += node.right.nodeTotalLength;
 			}
@@ -60,26 +61,14 @@ namespace dnSpy.Text.AvalonEdit {
 				|| totalLength != node.nodeTotalLength) {
 				node.nodeTotalCount = totalCount;
 				node.nodeTotalLength = totalLength;
-				if (node.parent != null)
+				if (node.parent is not null)
 					UpdateAfterChildrenChange(node.parent);
 			}
 		}
 
-		static void UpdateAfterRotateLeft(LineNode node) {
-			UpdateAfterChildrenChange(node);
+		static void UpdateAfterRotateLeft(LineNode node) => UpdateAfterChildrenChange(node);
 
-			// not required: rotations only happen on insertions/deletions
-			// -> totalCount changes -> the parent is always updated
-			//UpdateAfterChildrenChange(node.parent);
-		}
-
-		static void UpdateAfterRotateRight(LineNode node) {
-			UpdateAfterChildrenChange(node);
-
-			// not required: rotations only happen on insertions/deletions
-			// -> totalCount changes -> the parent is always updated
-			//UpdateAfterChildrenChange(node.parent);
-		}
+		static void UpdateAfterRotateRight(LineNode node) => UpdateAfterChildrenChange(node);
 		#endregion
 
 		#region RebuildDocument
@@ -123,9 +112,9 @@ namespace dnSpy.Text.AvalonEdit {
 			LineNode node = nodes[middle];
 			node.left = BuildTree(nodes, start, middle, subtreeHeight - 1);
 			node.right = BuildTree(nodes, middle + 1, end, subtreeHeight - 1);
-			if (node.left != null)
+			if (node.left is not null)
 				node.left.parent = node;
-			if (node.right != null)
+			if (node.right is not null)
 				node.right.parent = node;
 			if (subtreeHeight == 1)
 				node.color = RED;
@@ -140,11 +129,11 @@ namespace dnSpy.Text.AvalonEdit {
 			Debug.Assert(index < root.nodeTotalCount);
 			LineNode node = root;
 			while (true) {
-				if (node.left != null && index < node.left.nodeTotalCount) {
+				if (node.left is not null && index < node.left.nodeTotalCount) {
 					node = node.left;
 				}
 				else {
-					if (node.left != null) {
+					if (node.left is not null) {
 						index -= node.left.nodeTotalCount;
 					}
 					if (index == 0)
@@ -156,10 +145,10 @@ namespace dnSpy.Text.AvalonEdit {
 		}
 
 		internal static int GetIndexFromNode(LineNode node) {
-			int index = (node.left != null) ? node.left.nodeTotalCount : 0;
-			while (node.parent != null) {
+			int index = (node.left is not null) ? node.left.nodeTotalCount : 0;
+			while (node.parent is not null) {
 				if (node == node.parent.right) {
-					if (node.parent.left != null)
+					if (node.parent.left is not null)
 						index += node.parent.left.nodeTotalCount;
 					index++;
 				}
@@ -176,11 +165,11 @@ namespace dnSpy.Text.AvalonEdit {
 			}
 			LineNode node = root;
 			while (true) {
-				if (node.left != null && offset < node.left.nodeTotalLength) {
+				if (node.left is not null && offset < node.left.nodeTotalLength) {
 					node = node.left;
 				}
 				else {
-					if (node.left != null) {
+					if (node.left is not null) {
 						offset -= node.left.nodeTotalLength;
 					}
 					offset -= node.TotalLength;
@@ -192,10 +181,10 @@ namespace dnSpy.Text.AvalonEdit {
 		}
 
 		internal static int GetOffsetFromNode(LineNode node) {
-			int offset = (node.left != null) ? node.left.nodeTotalLength : 0;
-			while (node.parent != null) {
+			int offset = (node.left is not null) ? node.left.nodeTotalLength : 0;
+			while (node.parent is not null) {
 				if (node == node.parent.right) {
-					if (node.parent.left != null)
+					if (node.parent.left is not null)
 						offset += node.parent.left.nodeTotalLength;
 					offset += node.parent.TotalLength;
 				}
@@ -206,13 +195,9 @@ namespace dnSpy.Text.AvalonEdit {
 		#endregion
 
 		#region GetLineBy
-		public DocumentLine GetByNumber(int number) {
-			return GetNodeByIndex(number - 1);
-		}
+		public DocumentLine GetByNumber(int number) => GetNodeByIndex(number - 1);
 
-		public DocumentLine GetByOffset(int offset) {
-			return GetNodeByOffset(offset);
-		}
+		public DocumentLine GetByOffset(int offset) => GetNodeByOffset(offset);
 		#endregion
 
 		#region LineCount
@@ -238,12 +223,12 @@ namespace dnSpy.Text.AvalonEdit {
 		void CheckProperties(LineNode node) {
 			int totalCount = 1;
 			int totalLength = node.TotalLength;
-			if (node.left != null) {
+			if (node.left is not null) {
 				CheckProperties(node.left);
 				totalCount += node.left.nodeTotalCount;
 				totalLength += node.left.nodeTotalLength;
 			}
-			if (node.right != null) {
+			if (node.right is not null) {
 				CheckProperties(node.right);
 				totalCount += node.right.nodeTotalCount;
 				totalLength += node.right.nodeTotalLength;
@@ -260,7 +245,7 @@ namespace dnSpy.Text.AvalonEdit {
 		5. Every simple path from a node to a descendant leaf contains the same number of black nodes. (Not counting the leaf node.)
 		 */
 		void CheckNodeProperties(LineNode node, LineNode parentNode, bool parentColor, int blackCount, ref int expectedBlackCount) {
-			if (node == null)
+			if (node is null)
 				return;
 
 			Debug.Assert(node.parent == parentNode);
@@ -271,7 +256,7 @@ namespace dnSpy.Text.AvalonEdit {
 			if (node.color == BLACK) {
 				blackCount++;
 			}
-			if (node.left == null && node.right == null) {
+			if (node.left is null && node.right is null) {
 				// node is a leaf node:
 				if (expectedBlackCount == -1)
 					expectedBlackCount = blackCount;
@@ -295,12 +280,12 @@ namespace dnSpy.Text.AvalonEdit {
 				b.Append("BLACK ");
 			b.AppendLine(node.ToString());
 			indent += 2;
-			if (node.left != null) {
+			if (node.left is not null) {
 				b.Append(' ', indent);
 				b.Append("L: ");
 				AppendTreeToString(node.left, b, indent);
 			}
-			if (node.right != null) {
+			if (node.right is not null) {
 				b.Append(' ', indent);
 				b.Append("R: ");
 				AppendTreeToString(node.right, b, indent);
@@ -325,7 +310,7 @@ namespace dnSpy.Text.AvalonEdit {
 
 		void InsertAfter(LineNode node, DocumentLine newLine) {
 			LineNode newNode = newLine.InitLineNode();
-			if (node.right == null) {
+			if (node.right is null) {
 				InsertAsRight(node, newNode);
 			}
 			else {
@@ -339,7 +324,7 @@ namespace dnSpy.Text.AvalonEdit {
 		internal const bool BLACK = false;
 
 		void InsertAsLeft(LineNode parentNode, LineNode newNode) {
-			Debug.Assert(parentNode.left == null);
+			Debug2.Assert(parentNode.left is null);
 			parentNode.left = newNode;
 			newNode.parent = parentNode;
 			newNode.color = RED;
@@ -348,7 +333,7 @@ namespace dnSpy.Text.AvalonEdit {
 		}
 
 		void InsertAsRight(LineNode parentNode, LineNode newNode) {
-			Debug.Assert(parentNode.right == null);
+			Debug2.Assert(parentNode.right is null);
 			parentNode.right = newNode;
 			newNode.parent = parentNode;
 			newNode.color = RED;
@@ -357,13 +342,13 @@ namespace dnSpy.Text.AvalonEdit {
 		}
 
 		void FixTreeOnInsert(LineNode node) {
-			Debug.Assert(node != null);
+			Debug2.Assert(node is not null);
 			Debug.Assert(node.color == RED);
-			Debug.Assert(node.left == null || node.left.color == BLACK);
-			Debug.Assert(node.right == null || node.right.color == BLACK);
+			Debug2.Assert(node.left is null || node.left.color == BLACK);
+			Debug2.Assert(node.right is null || node.right.color == BLACK);
 
 			LineNode parentNode = node.parent;
-			if (parentNode == null) {
+			if (parentNode is null) {
 				// we inserted in the root -> the node must be black
 				// since this is a root node, making the node black increments the number of black nodes
 				// on all paths by one, so it is still the same for all paths.
@@ -381,7 +366,7 @@ namespace dnSpy.Text.AvalonEdit {
 			// because the root is black, parentNode is not the root -> there is a grandparent node
 			LineNode grandparentNode = parentNode.parent;
 			LineNode uncleNode = Sibling(parentNode);
-			if (uncleNode != null && uncleNode.color == RED) {
+			if (uncleNode is not null && uncleNode.color == RED) {
 				parentNode.color = BLACK;
 				uncleNode.color = BLACK;
 				grandparentNode.color = RED;
@@ -417,7 +402,7 @@ namespace dnSpy.Text.AvalonEdit {
 		}
 
 		void RemoveNode(LineNode removedNode) {
-			if (removedNode.left != null && removedNode.right != null) {
+			if (removedNode.left is not null && removedNode.right is not null) {
 				// replace removedNode with it's in-order successor
 
 				LineNode leftMost = removedNode.right.LeftMost;
@@ -426,15 +411,15 @@ namespace dnSpy.Text.AvalonEdit {
 				// and overwrite the removedNode with it
 				ReplaceNode(removedNode, leftMost);
 				leftMost.left = removedNode.left;
-				if (leftMost.left != null)
+				if (leftMost.left is not null)
 					leftMost.left.parent = leftMost;
 				leftMost.right = removedNode.right;
-				if (leftMost.right != null)
+				if (leftMost.right is not null)
 					leftMost.right.parent = leftMost;
 				leftMost.color = removedNode.color;
 
 				UpdateAfterChildrenChange(leftMost);
-				if (leftMost.parent != null)
+				if (leftMost.parent is not null)
 					UpdateAfterChildrenChange(leftMost.parent);
 				return;
 			}
@@ -444,10 +429,10 @@ namespace dnSpy.Text.AvalonEdit {
 			LineNode parentNode = removedNode.parent;
 			LineNode childNode = removedNode.left ?? removedNode.right;
 			ReplaceNode(removedNode, childNode);
-			if (parentNode != null)
+			if (parentNode is not null)
 				UpdateAfterChildrenChange(parentNode);
 			if (removedNode.color == BLACK) {
-				if (childNode != null && childNode.color == RED) {
+				if (childNode is not null && childNode.color == RED) {
 					childNode.color = BLACK;
 				}
 				else {
@@ -457,8 +442,8 @@ namespace dnSpy.Text.AvalonEdit {
 		}
 
 		void FixTreeOnDelete(LineNode node, LineNode parentNode) {
-			Debug.Assert(node == null || node.parent == parentNode);
-			if (parentNode == null)
+			Debug2.Assert(node is null || node.parent == parentNode);
+			if (parentNode is null)
 				return;
 
 			// warning: node may be null
@@ -515,14 +500,14 @@ namespace dnSpy.Text.AvalonEdit {
 			sibling.color = parentNode.color;
 			parentNode.color = BLACK;
 			if (node == parentNode.left) {
-				if (sibling.right != null) {
+				if (sibling.right is not null) {
 					Debug.Assert(sibling.right.color == RED);
 					sibling.right.color = BLACK;
 				}
 				RotateLeft(parentNode);
 			}
 			else {
-				if (sibling.left != null) {
+				if (sibling.left is not null) {
 					Debug.Assert(sibling.left.color == RED);
 					sibling.left.color = BLACK;
 				}
@@ -531,7 +516,7 @@ namespace dnSpy.Text.AvalonEdit {
 		}
 
 		void ReplaceNode(LineNode replacedNode, LineNode newNode) {
-			if (replacedNode.parent == null) {
+			if (replacedNode.parent is null) {
 				Debug.Assert(replacedNode == root);
 				root = newNode;
 			}
@@ -541,7 +526,7 @@ namespace dnSpy.Text.AvalonEdit {
 				else
 					replacedNode.parent.right = newNode;
 			}
-			if (newNode != null) {
+			if (newNode is not null) {
 				newNode.parent = replacedNode.parent;
 			}
 			replacedNode.parent = null;
@@ -550,14 +535,14 @@ namespace dnSpy.Text.AvalonEdit {
 		void RotateLeft(LineNode p) {
 			// let q be p's right child
 			LineNode q = p.right;
-			Debug.Assert(q != null);
+			Debug2.Assert(q is not null);
 			Debug.Assert(q.parent == p);
 			// set q to be the new root
 			ReplaceNode(p, q);
 
 			// set p's right child to be q's left child
 			p.right = q.left;
-			if (p.right != null)
+			if (p.right is not null)
 				p.right.parent = p;
 			// set q's left child to be p
 			q.left = p;
@@ -568,14 +553,14 @@ namespace dnSpy.Text.AvalonEdit {
 		void RotateRight(LineNode p) {
 			// let q be p's left child
 			LineNode q = p.left;
-			Debug.Assert(q != null);
+			Debug2.Assert(q is not null);
 			Debug.Assert(q.parent == p);
 			// set q to be the new root
 			ReplaceNode(p, q);
 
 			// set p's left child to be q's right child
 			p.left = q.right;
-			if (p.left != null)
+			if (p.left is not null)
 				p.left.parent = p;
 			// set q's right child to be p
 			q.right = p;
@@ -591,16 +576,14 @@ namespace dnSpy.Text.AvalonEdit {
 		}
 
 		static LineNode Sibling(LineNode node, LineNode parentNode) {
-			Debug.Assert(node == null || node.parent == parentNode);
+			Debug2.Assert(node is null || node.parent == parentNode);
 			if (node == parentNode.left)
 				return parentNode.right;
 			else
 				return parentNode.left;
 		}
 
-		static bool GetColor(LineNode node) {
-			return node != null ? node.color : BLACK;
-		}
+		static bool GetColor(LineNode node) => node is not null ? node.color : BLACK;
 		#endregion
 
 		#region IList implementation
@@ -621,13 +604,11 @@ namespace dnSpy.Text.AvalonEdit {
 			}
 		}
 
-		bool ICollection<DocumentLine>.IsReadOnly {
-			get { return true; }
-		}
+		bool ICollection<DocumentLine>.IsReadOnly => true;
 
 		int IList<DocumentLine>.IndexOf(DocumentLine item) {
 			document.VerifyAccess();
-			if (item == null || item.IsDeleted)
+			if (item is null || item.IsDeleted)
 				return -1;
 			int index = item.LineNumber - 1;
 			if (index < LineCount && GetNodeByIndex(index) == item)
@@ -636,21 +617,10 @@ namespace dnSpy.Text.AvalonEdit {
 				return -1;
 		}
 
-		void IList<DocumentLine>.Insert(int index, DocumentLine item) {
-			throw new NotSupportedException();
-		}
-
-		void IList<DocumentLine>.RemoveAt(int index) {
-			throw new NotSupportedException();
-		}
-
-		void ICollection<DocumentLine>.Add(DocumentLine item) {
-			throw new NotSupportedException();
-		}
-
-		void ICollection<DocumentLine>.Clear() {
-			throw new NotSupportedException();
-		}
+		void IList<DocumentLine>.Insert(int index, DocumentLine item) => throw new NotSupportedException();
+		void IList<DocumentLine>.RemoveAt(int index) => throw new NotSupportedException();
+		void ICollection<DocumentLine>.Add(DocumentLine item) => throw new NotSupportedException();
+		void ICollection<DocumentLine>.Clear() => throw new NotSupportedException();
 
 		bool ICollection<DocumentLine>.Contains(DocumentLine item) {
 			IList<DocumentLine> self = this;
@@ -658,7 +628,7 @@ namespace dnSpy.Text.AvalonEdit {
 		}
 
 		void ICollection<DocumentLine>.CopyTo(DocumentLine[] array, int arrayIndex) {
-			if (array == null)
+			if (array is null)
 				throw new ArgumentNullException("array");
 			if (array.Length < LineCount)
 				throw new ArgumentException("The array is too small", "array");
@@ -669,9 +639,7 @@ namespace dnSpy.Text.AvalonEdit {
 			}
 		}
 
-		bool ICollection<DocumentLine>.Remove(DocumentLine item) {
-			throw new NotSupportedException();
-		}
+		bool ICollection<DocumentLine>.Remove(DocumentLine item) => throw new NotSupportedException();
 
 		public IEnumerator<DocumentLine> GetEnumerator() {
 			document.VerifyAccess();
@@ -681,15 +649,13 @@ namespace dnSpy.Text.AvalonEdit {
 		IEnumerator<DocumentLine> Enumerate() {
 			document.VerifyAccess();
 			DocumentLine line = root.LeftMost;
-			while (line != null) {
+			while (line is not null) {
 				yield return line;
 				line = line.NextLine;
 			}
 		}
 
-		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() {
-			return GetEnumerator();
-		}
+		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
 		#endregion
 	}
 }

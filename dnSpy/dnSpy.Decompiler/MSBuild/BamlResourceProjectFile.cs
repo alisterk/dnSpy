@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -84,13 +84,13 @@ namespace dnSpy.Decompiler.MSBuild {
 			this.decompiler = decompiler;
 		}
 
-		CilBody GetInitializeComponentBody() {
+		CilBody? GetInitializeComponentBody() {
 			var m = type.FindMethods("InitializeComponent").FirstOrDefault(a => a.Parameters.Count == 1 && !a.IsStatic);
-			return m == null ? null : m.Body;
+			return m?.Body;
 		}
 
-		string GetStartupUri(CilBody body) =>
-			body == null ? null : body.Instructions.Where(a => a.Operand is string && ((string)a.Operand).EndsWith(".xaml", StringComparison.OrdinalIgnoreCase)).Select(a => (string)a.Operand).FirstOrDefault();
+		string? GetStartupUri(CilBody body) =>
+			body?.Instructions.Where(a => a.Operand is string && ((string)a.Operand).EndsWith(".xaml", StringComparison.OrdinalIgnoreCase)).Select(a => (string)a.Operand).FirstOrDefault();
 
 		public override void Create(DecompileContext ctx) {
 			var settings = new XmlWriterSettings {
@@ -110,10 +110,10 @@ namespace dnSpy.Decompiler.MSBuild {
 				}
 
 				var body = GetInitializeComponentBody();
-				Debug.Assert(body != null);
-				if (body != null) {
+				Debug2.Assert(body is not null);
+				if (body is not null) {
 					var startupUri = GetStartupUri(body);
-					if (startupUri != null)
+					if (startupUri is not null)
 						writer.WriteAttributeString("StartupUri", startupUri);
 
 					foreach (var info in GetEvents(body))
@@ -127,24 +127,24 @@ namespace dnSpy.Decompiler.MSBuild {
 			}
 		}
 
-		IEnumerable<Tuple<string,string>> GetEvents(CilBody body) {
+		IEnumerable<(string, string)> GetEvents(CilBody body) {
 			var instrs = body.Instructions;
 			for (int i = 0; i + 2 < instrs.Count; i++) {
 				if (instrs[i].OpCode.Code != Code.Ldftn && instrs[i].OpCode.Code != Code.Ldvirtftn)
 					continue;
 				var m = instrs[i].Operand as MethodDef;
-				if (m == null)
+				if (m is null)
 					continue;
 				if (instrs[i + 1].OpCode.Code != Code.Newobj)
 					continue;
 				if (instrs[i + 2].OpCode.Code != Code.Call)
 					continue;
 				var addMethod = instrs[i + 2].Operand as IMethod;
-				if (addMethod == null || addMethod.MethodSig.GetParamCount() != 1)
+				if (addMethod is null || addMethod.MethodSig.GetParamCount() != 1)
 					continue;
 				if (!addMethod.Name.StartsWith("add_"))
 					continue;
-				yield return Tuple.Create(addMethod.Name.String.Substring(4), m.Name.String);
+				yield return (addMethod.Name.String.Substring(4), m.Name.String);
 			}
 		}
 	}

@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -28,13 +28,11 @@ namespace dnSpy.MVVM {
 		readonly IMenuService menuService;
 
 		[ImportingConstructor]
-		InitializeDataTemplateContextMenu(IMenuService menuService) {
-			this.menuService = menuService;
-		}
+		InitializeDataTemplateContextMenu(IMenuService menuService) => this.menuService = menuService;
 
 		public void Initialize(DependencyObject d) {
 			var fwe = d as FrameworkElement;
-			if (fwe == null)
+			if (fwe is null)
 				return;
 
 			menuService.InitializeContextMenu(fwe, MenuConstants.GUIDOBJ_UNKNOWN_GUID);

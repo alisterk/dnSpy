@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -22,16 +22,15 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
-using dnSpy.Contracts.Language.Intellisense;
 using Microsoft.VisualStudio.Language.Intellisense;
 
 namespace dnSpy.Language.Intellisense {
 	sealed class CompletionCollectionVM : INotifyCollectionChanged, IList {
-		public event NotifyCollectionChangedEventHandler CollectionChanged;
+		public event NotifyCollectionChangedEventHandler? CollectionChanged;
 
-		public object this[int index] {
-			get { return list[index]; }
-			set { throw new NotImplementedException(); }
+		public object? this[int index] {
+			get => list[index];
+			set => throw new NotImplementedException();
 		}
 
 		public int Count => list.Count;
@@ -42,31 +41,26 @@ namespace dnSpy.Language.Intellisense {
 
 		readonly List<CompletionVM> list;
 		readonly IList<Completion> completionList;
-		readonly INotifyCollectionChanged completionListNotifyCollectionChanged;
-		readonly IImageMonikerService imageMonikerService;
+		readonly INotifyCollectionChanged? completionListNotifyCollectionChanged;
 
-		public CompletionCollectionVM(IList<Completion> completionList, IImageMonikerService imageMonikerService) {
-			if (completionList == null)
-				throw new ArgumentNullException(nameof(completionList));
-			if (imageMonikerService == null)
-				throw new ArgumentNullException(nameof(imageMonikerService));
-			this.completionList = completionList;
-			this.imageMonikerService = imageMonikerService;
+		public CompletionCollectionVM(IList<Completion> completionList) {
+			this.completionList = completionList ?? throw new ArgumentNullException(nameof(completionList));
 			completionListNotifyCollectionChanged = completionList as INotifyCollectionChanged;
-			if (completionListNotifyCollectionChanged != null)
+			if (completionListNotifyCollectionChanged is not null)
 				completionListNotifyCollectionChanged.CollectionChanged += CompletionList_CollectionChanged;
 			list = new List<CompletionVM>(completionList.Count);
 			ReinitializeList();
 		}
 
-		void CompletionList_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e) {
+		void CompletionList_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) {
 			int i;
 			switch (e.Action) {
 			case NotifyCollectionChangedAction.Add:
-				Debug.Assert(e.NewItems != null);
+				Debug2.Assert(e.NewItems is not null);
 				i = e.NewStartingIndex;
 				var newList = new List<CompletionVM>();
-				foreach (Completion c in e.NewItems) {
+				foreach (Completion? c in e.NewItems) {
+					Debug2.Assert(c is not null);
 					var vm = GetOrCreateVM(c);
 					newList.Add(vm);
 					list.Insert(i++, vm);
@@ -75,11 +69,13 @@ namespace dnSpy.Language.Intellisense {
 				break;
 
 			case NotifyCollectionChangedAction.Remove:
-				Debug.Assert(e.OldItems != null);
+				Debug2.Assert(e.OldItems is not null);
 				var oldList = new List<CompletionVM>();
-				foreach (Completion c in e.OldItems) {
+				foreach (Completion? c in e.OldItems) {
+					Debug2.Assert(c is not null);
 					var vm = CompletionVM.TryGet(c);
-					oldList.Add(vm);
+					if (vm is not null)
+						oldList.Add(vm);
 					Debug.Assert(list[e.OldStartingIndex].Completion == vm?.Completion);
 					list.RemoveAt(e.OldStartingIndex);
 				}
@@ -103,7 +99,7 @@ namespace dnSpy.Language.Intellisense {
 			}
 		}
 
-		CompletionVM GetOrCreateVM(Completion completion) => CompletionVM.TryGet(completion) ?? new CompletionVM(completion, imageMonikerService);
+		CompletionVM GetOrCreateVM(Completion completion) => CompletionVM.TryGet(completion) ?? new CompletionVM(completion);
 
 		void ReinitializeList() {
 			list.Clear();
@@ -111,19 +107,18 @@ namespace dnSpy.Language.Intellisense {
 				list.Add(GetOrCreateVM(c));
 		}
 
-		public bool Contains(object value) => list.Contains(value as CompletionVM);
-		public int IndexOf(object value) => list.IndexOf(value as CompletionVM);
+		public bool Contains(object? value) => list.Contains((value as CompletionVM)!);
+		public int IndexOf(object? value) => list.IndexOf((value as CompletionVM)!);
 		public void CopyTo(Array array, int index) => Array.Copy(list.ToArray(), 0, array, index, list.Count);
 		public IEnumerator GetEnumerator() => list.GetEnumerator();
 
-		public int Add(object value) { throw new NotSupportedException(); }
-		public void Clear() { throw new NotSupportedException(); }
-		public void Insert(int index, object value) { throw new NotSupportedException(); }
-		public void Remove(object value) { throw new NotSupportedException(); }
-		public void RemoveAt(int index) { throw new NotSupportedException(); }
-
+		public int Add(object? value) => throw new NotSupportedException();
+		public void Clear() => throw new NotSupportedException();
+		public void Insert(int index, object? value) => throw new NotSupportedException();
+		public void Remove(object? value) => throw new NotSupportedException();
+		public void RemoveAt(int index) => throw new NotSupportedException();
 		public void Dispose() {
-			if (completionListNotifyCollectionChanged != null)
+			if (completionListNotifyCollectionChanged is not null)
 				completionListNotifyCollectionChanged.CollectionChanged -= CompletionList_CollectionChanged;
 			list.Clear();
 		}

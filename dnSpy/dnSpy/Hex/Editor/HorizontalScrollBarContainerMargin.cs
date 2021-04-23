@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -33,18 +33,14 @@ namespace dnSpy.Hex.Editor {
 		readonly WpfHexViewMarginProviderCollectionProvider wpfHexViewMarginProviderCollectionProvider;
 
 		[ImportingConstructor]
-		HorizontalScrollBarContainerMarginProvider(WpfHexViewMarginProviderCollectionProvider wpfHexViewMarginProviderCollectionProvider) {
-			this.wpfHexViewMarginProviderCollectionProvider = wpfHexViewMarginProviderCollectionProvider;
-		}
+		HorizontalScrollBarContainerMarginProvider(WpfHexViewMarginProviderCollectionProvider wpfHexViewMarginProviderCollectionProvider) => this.wpfHexViewMarginProviderCollectionProvider = wpfHexViewMarginProviderCollectionProvider;
 
-		public override WpfHexViewMargin CreateMargin(WpfHexViewHost wpfHexViewHost, WpfHexViewMargin marginContainer) =>
+		public override WpfHexViewMargin? CreateMargin(WpfHexViewHost wpfHexViewHost, WpfHexViewMargin marginContainer) =>
 			new HorizontalScrollBarContainerMargin(wpfHexViewMarginProviderCollectionProvider, wpfHexViewHost);
 	}
 
 	sealed class HorizontalScrollBarContainerMargin : WpfHexViewContainerMargin {
 		public HorizontalScrollBarContainerMargin(WpfHexViewMarginProviderCollectionProvider wpfHexViewMarginProviderCollectionProvider, WpfHexViewHost wpfHexViewHost)
-			: base(wpfHexViewMarginProviderCollectionProvider, wpfHexViewHost, PredefinedHexMarginNames.HorizontalScrollBarContainer, true) {
-			VisualElement.VerticalAlignment = VerticalAlignment.Bottom;
-		}
+			: base(wpfHexViewMarginProviderCollectionProvider, wpfHexViewHost, PredefinedHexMarginNames.HorizontalScrollBarContainer, true) => VisualElement.VerticalAlignment = VerticalAlignment.Bottom;
 	}
 }

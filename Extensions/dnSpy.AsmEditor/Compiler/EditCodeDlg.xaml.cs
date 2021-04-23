@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -27,6 +27,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
+using dnSpy.AsmEditor.Properties;
 using dnSpy.Contracts.Controls;
 using dnSpy.Contracts.Utilities;
 
@@ -38,8 +39,7 @@ namespace dnSpy.AsmEditor.Compiler {
 			decompilingControl.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, new Duration(TimeSpan.FromSeconds(0.5)), FillBehavior.Stop));
 
 			DataContextChanged += (s, e) => {
-				var vm = DataContext as EditCodeVM;
-				if (vm != null) {
+				if (DataContext is EditCodeVM vm) {
 					vm.PropertyChanged += EditCodeVM_PropertyChanged;
 					vm.OwnerWindow = this;
 					vm.CodeCompiled += EditCodeVM_CodeCompiled;
@@ -53,6 +53,7 @@ namespace dnSpy.AsmEditor.Compiler {
 					}
 					InputBindings.Add(new KeyBinding(vm.AddGacReferenceCommand, Key.O, ModifierKeys.Control | ModifierKeys.Shift));
 					InputBindings.Add(new KeyBinding(vm.AddAssemblyReferenceCommand, Key.O, ModifierKeys.Control));
+					InputBindings.Add(new KeyBinding(vm.AddDocumentsCommand, Key.A, ModifierKeys.Control | ModifierKeys.Shift));
 					InputBindings.Add(new KeyBinding(vm.GoToNextDiagnosticCommand, Key.F4, ModifierKeys.None));
 					InputBindings.Add(new KeyBinding(vm.GoToNextDiagnosticCommand, Key.F8, ModifierKeys.None));
 					InputBindings.Add(new KeyBinding(vm.GoToPreviousDiagnosticCommand, Key.F4, ModifierKeys.Shift));
@@ -65,15 +66,15 @@ namespace dnSpy.AsmEditor.Compiler {
 			diagnosticsListView.SelectionChanged += DiagnosticsListView_SelectionChanged;
 		}
 
-		void EditCodeVM_CodeCompiled(object sender, EventArgs e) {
-			((EditCodeVM)sender).CodeCompiled -= EditCodeVM_CodeCompiled;
+		void EditCodeVM_CodeCompiled(object? sender, EventArgs e) {
+			((EditCodeVM)sender!).CodeCompiled -= EditCodeVM_CodeCompiled;
 			ClickOK();
 		}
 
 		protected override void OnClosed(EventArgs e) {
+			progressBar.IsIndeterminate = false;
 			base.OnClosed(e);
-			var vm = DataContext as EditCodeVM;
-			if (vm != null)
+			if (DataContext is EditCodeVM vm)
 				vm.CodeCompiled -= EditCodeVM_CodeCompiled;
 		}
 
@@ -84,28 +85,28 @@ namespace dnSpy.AsmEditor.Compiler {
 			decompilingControl.Visibility = Visibility.Collapsed;
 		}
 
-		void diagnosticsListView_MouseDoubleClick(object sender, MouseButtonEventArgs e) {
+		void diagnosticsListView_MouseDoubleClick(object? sender, MouseButtonEventArgs e) {
 			if (!UIUtilities.IsLeftDoubleClick<ListViewItem>(diagnosticsListView, e))
 				return;
 
 			var vm = DataContext as EditCodeVM;
 			var diag = diagnosticsListView.SelectedItem as CompilerDiagnosticVM;
-			Debug.Assert(vm != null && diag != null);
-			if (vm == null || diag == null)
+			Debug2.Assert(vm is not null && diag is not null);
+			if (vm is null || diag is null)
 				return;
 
 			vm.MoveTo(diag);
 		}
 
-		void EditCodeVM_PropertyChanged(object sender, PropertyChangedEventArgs e) {
-			var vm = (EditCodeVM)sender;
+		void EditCodeVM_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
+			var vm = (EditCodeVM)sender!;
 			if (e.PropertyName == nameof(vm.SelectedDocument))
 				UIUtilities.Focus(vm.SelectedDocument?.TextView.VisualElement);
 		}
 
-		void DiagnosticsListView_SelectionChanged(object sender, SelectionChangedEventArgs e) {
+		void DiagnosticsListView_SelectionChanged(object? sender, SelectionChangedEventArgs e) {
 			var item = diagnosticsListView.SelectedItem;
-			if (item == null)
+			if (item is null)
 				return;
 			diagnosticsListView.ScrollIntoView(item);
 		}
@@ -115,10 +116,19 @@ namespace dnSpy.AsmEditor.Compiler {
 				return;
 
 			var sb = new StringBuilder();
+
+			foreach (var header in viewHeaders) {
+				if (sb.Length > 0)
+					sb.Append('\t');
+				sb.Append(header);
+			}
+			sb.AppendLine();
+
 			foreach (var d in diags) {
 				d.WriteTo(sb);
 				sb.AppendLine();
 			}
+
 			if (sb.Length > 0) {
 				try {
 					Clipboard.SetText(sb.ToString());
@@ -126,5 +136,12 @@ namespace dnSpy.AsmEditor.Compiler {
 				catch (ExternalException) { }
 			}
 		}
+		static readonly string[] viewHeaders = new string[] {
+			dnSpy_AsmEditor_Resources.CompileDiagnostics_Header_Severity,
+			dnSpy_AsmEditor_Resources.CompileDiagnostics_Header_Code,
+			dnSpy_AsmEditor_Resources.CompileDiagnostics_Header_Description,
+			dnSpy_AsmEditor_Resources.CompileDiagnostics_Header_File,
+			dnSpy_AsmEditor_Resources.CompileDiagnostics_Header_Line,
+		};
 	}
 }

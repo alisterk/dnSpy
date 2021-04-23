@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -26,26 +26,18 @@ namespace dnSpy.Hex.Files.DotNet {
 	sealed class DotNetHeadersImpl : DotNetHeaders {
 		public override PeHeaders PeHeaders { get; }
 		public override DotNetCor20Data Cor20 { get; }
-		public override DotNetMetadataHeaders MetadataHeaders { get; }
-		public override VirtualArrayData<ByteData> StrongNameSignature { get; }
+		public override DotNetMetadataHeaders? MetadataHeaders { get; }
+		public override VirtualArrayData<ByteData>? StrongNameSignature { get; }
 		public override DotNetMethodProvider MethodProvider { get; }
 		public override DotNetResourceProvider ResourceProvider { get; }
 
-		public DotNetHeadersImpl(PeHeaders peHeaders, DotNetCor20Data cor20, DotNetMetadataHeaders metadataHeaders, VirtualArrayData<ByteData> strongNameSignature, DotNetMethodProvider methodProvider, DotNetResourceProvider resourceProvider) {
-			if (peHeaders == null)
-				throw new ArgumentNullException(nameof(peHeaders));
-			if (cor20 == null)
-				throw new ArgumentNullException(nameof(cor20));
-			if (methodProvider == null)
-				throw new ArgumentNullException(nameof(methodProvider));
-			if (resourceProvider == null)
-				throw new ArgumentNullException(nameof(resourceProvider));
-			PeHeaders = peHeaders;
-			Cor20 = cor20;
+		public DotNetHeadersImpl(PeHeaders peHeaders, DotNetCor20Data cor20, DotNetMetadataHeaders? metadataHeaders, VirtualArrayData<ByteData>? strongNameSignature, DotNetMethodProvider methodProvider, DotNetResourceProvider resourceProvider) {
+			PeHeaders = peHeaders ?? throw new ArgumentNullException(nameof(peHeaders));
+			Cor20 = cor20 ?? throw new ArgumentNullException(nameof(cor20));
 			MetadataHeaders = metadataHeaders;
 			StrongNameSignature = strongNameSignature;
-			MethodProvider = methodProvider;
-			ResourceProvider = resourceProvider;
+			MethodProvider = methodProvider ?? throw new ArgumentNullException(nameof(methodProvider));
+			ResourceProvider = resourceProvider ?? throw new ArgumentNullException(nameof(resourceProvider));
 		}
 	}
 }

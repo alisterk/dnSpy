@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -36,14 +36,12 @@ namespace dnSpy.Documents.Tabs.DocViewer {
 	sealed class DocumentViewerService : IDocumentViewerServiceImpl {
 		readonly Lazy<IDocumentViewerListener, IDocumentViewerListenerMetadata>[] documentViewerListeners;
 
-		public event EventHandler<DocumentViewerAddedEventArgs> Added;
-		public event EventHandler<DocumentViewerRemovedEventArgs> Removed;
-		public event EventHandler<DocumentViewerGotNewContentEventArgs> GotNewContent;
+		public event EventHandler<DocumentViewerAddedEventArgs>? Added;
+		public event EventHandler<DocumentViewerRemovedEventArgs>? Removed;
+		public event EventHandler<DocumentViewerGotNewContentEventArgs>? GotNewContent;
 
 		[ImportingConstructor]
-		DocumentViewerService([ImportMany] IEnumerable<Lazy<IDocumentViewerListener, IDocumentViewerListenerMetadata>> documentViewerListeners) {
-			this.documentViewerListeners = documentViewerListeners.OrderBy(a => a.Metadata.Order).ToArray();
-		}
+		DocumentViewerService([ImportMany] IEnumerable<Lazy<IDocumentViewerListener, IDocumentViewerListenerMetadata>> documentViewerListeners) => this.documentViewerListeners = documentViewerListeners.OrderBy(a => a.Metadata.Order).ToArray();
 
 		void NotifyListeners(DocumentViewerEventArgs e) {
 			foreach (var lazy in documentViewerListeners)
@@ -51,7 +49,7 @@ namespace dnSpy.Documents.Tabs.DocViewer {
 		}
 
 		public void RaiseAddedEvent(IDocumentViewer documentViewer) {
-			if (documentViewer == null)
+			if (documentViewer is null)
 				throw new ArgumentNullException(nameof(documentViewer));
 			var e = new DocumentViewerAddedEventArgs(documentViewer);
 			NotifyListeners(e);
@@ -59,7 +57,7 @@ namespace dnSpy.Documents.Tabs.DocViewer {
 		}
 
 		public void RaiseRemovedEvent(IDocumentViewer documentViewer) {
-			if (documentViewer == null)
+			if (documentViewer is null)
 				throw new ArgumentNullException(nameof(documentViewer));
 			var e = new DocumentViewerRemovedEventArgs(documentViewer);
 			NotifyListeners(e);
@@ -67,11 +65,11 @@ namespace dnSpy.Documents.Tabs.DocViewer {
 		}
 
 		public void RaiseNewContentEvent(IDocumentViewer documentViewer, DocumentViewerContent content, IContentType contentType) {
-			if (documentViewer == null)
+			if (documentViewer is null)
 				throw new ArgumentNullException(nameof(documentViewer));
-			if (content == null)
+			if (content is null)
 				throw new ArgumentNullException(nameof(content));
-			if (contentType == null)
+			if (contentType is null)
 				throw new ArgumentNullException(nameof(contentType));
 			var e = new DocumentViewerGotNewContentEventArgs(documentViewer, content, contentType);
 			NotifyListeners(e);

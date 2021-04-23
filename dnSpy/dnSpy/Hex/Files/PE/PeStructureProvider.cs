@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -33,26 +33,20 @@ namespace dnSpy.Hex.Files.PE {
 		readonly Lazy<PeFileLayoutProvider, VSUTIL.IOrderable>[] peFileLayoutProviders;
 
 		[ImportingConstructor]
-		PeStructureProviderFactory([ImportMany] IEnumerable<Lazy<PeFileLayoutProvider, VSUTIL.IOrderable>> peFileLayoutProviders) {
-			this.peFileLayoutProviders = VSUTIL.Orderer.Order(peFileLayoutProviders).ToArray();
-		}
+		PeStructureProviderFactory([ImportMany] IEnumerable<Lazy<PeFileLayoutProvider, VSUTIL.IOrderable>> peFileLayoutProviders) => this.peFileLayoutProviders = VSUTIL.Orderer.Order(peFileLayoutProviders).ToArray();
 
-		public override StructureProvider Create(HexBufferFile file) => new PeStructureProvider(file, peFileLayoutProviders);
+		public override StructureProvider? Create(HexBufferFile file) => new PeStructureProvider(file, peFileLayoutProviders);
 	}
 
 	sealed class PeStructureProvider : StructureProvider {
 		readonly HexBufferFile file;
 		readonly Lazy<PeFileLayoutProvider, VSUTIL.IOrderable>[] peFileLayoutProviders;
-		PeHeadersImpl peHeadersImpl;
+		PeHeadersImpl? peHeadersImpl;
 		HexSpan peHeadersSpan;
 
 		public PeStructureProvider(HexBufferFile file, Lazy<PeFileLayoutProvider, VSUTIL.IOrderable>[] peFileLayoutProviders) {
-			if (file == null)
-				throw new ArgumentNullException(nameof(file));
-			if (peFileLayoutProviders == null)
-				throw new ArgumentNullException(nameof(peFileLayoutProviders));
-			this.file = file;
-			this.peFileLayoutProviders = peFileLayoutProviders;
+			this.file = file ?? throw new ArgumentNullException(nameof(file));
+			this.peFileLayoutProviders = peFileLayoutProviders ?? throw new ArgumentNullException(nameof(peFileLayoutProviders));
 		}
 
 		public override bool Initialize() {
@@ -61,7 +55,7 @@ namespace dnSpy.Hex.Files.PE {
 				peHeadersImpl = new PeHeadersImpl(reader, file.Span);
 				peHeadersSpan = GetSpan(peHeadersImpl.DosHeader.Span.Span, peHeadersImpl.FileHeader.Span.Span, peHeadersImpl.OptionalHeader.Span.Span, peHeadersImpl.Sections.Span.Span);
 			}
-			return peHeadersImpl != null;
+			return peHeadersImpl is not null;
 		}
 
 		HexSpan GetSpan(params HexSpan[] spans) {
@@ -75,15 +69,15 @@ namespace dnSpy.Hex.Files.PE {
 			}
 			if (start < end)
 				return HexSpan.FromBounds(start, end);
-			return default(HexSpan);
+			return default;
 		}
 
-		public override ComplexData GetStructure(HexPosition position) {
+		public override ComplexData? GetStructure(HexPosition position) {
 			if (!peHeadersSpan.Contains(position))
 				return null;
 
 			var peHeaders = peHeadersImpl;
-			if (peHeaders == null)
+			if (peHeaders is null)
 				return null;
 
 			if (peHeaders.DosHeader.Span.Span.Contains(position))
@@ -98,9 +92,9 @@ namespace dnSpy.Hex.Files.PE {
 			return null;
 		}
 
-		public override ComplexData GetStructure(string id) {
+		public override ComplexData? GetStructure(string id) {
 			var peHeaders = peHeadersImpl;
-			if (peHeaders == null)
+			if (peHeaders is null)
 				return null;
 
 			switch (id) {
@@ -120,7 +114,7 @@ namespace dnSpy.Hex.Files.PE {
 			return null;
 		}
 
-		public override THeader GetHeaders<THeader>() =>
+		public override THeader? GetHeaders<THeader>() where THeader : class =>
 			peHeadersImpl as THeader;
 	}
 }

@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -33,8 +33,7 @@ namespace dnSpy.AsmEditor.DnlibDialogs {
 		public MemberPickerDlg(IDocumentTreeView globalDocumentTreeView, IDocumentTreeView newDocumentTreeView) {
 			InitializeComponent();
 			DataContextChanged += (s, e) => {
-				var data = DataContext as MemberPickerVM;
-				if (data != null) {
+				if (DataContext is MemberPickerVM data) {
 					data.OpenAssembly = new OpenAssembly(globalDocumentTreeView.DocumentService);
 					data.PropertyChanged += MemberPickerVM_PropertyChanged;
 				}
@@ -63,8 +62,8 @@ namespace dnSpy.AsmEditor.DnlibDialogs {
 			InputBindings.Add(new KeyBinding(cmd, Key.F, ModifierKeys.Control));
 		}
 
-		void MemberPickerVM_PropertyChanged(object sender, PropertyChangedEventArgs e) {
-			var vm = (MemberPickerVM)sender;
+		void MemberPickerVM_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
+			var vm = (MemberPickerVM)sender!;
 			if (e.PropertyName == nameof(MemberPickerVM.TooManyResults)) {
 				if (vm.TooManyResults)
 					listBox.SetResourceReference(Control.BorderBrushProperty, "CommonControlsTextBoxBorderError");

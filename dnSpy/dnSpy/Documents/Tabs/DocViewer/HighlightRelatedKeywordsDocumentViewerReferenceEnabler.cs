@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -27,25 +27,23 @@ using Microsoft.VisualStudio.Text.Editor;
 namespace dnSpy.Documents.Tabs.DocViewer {
 	[ExportDocumentViewerReferenceEnablerProvider(PredefinedSpanReferenceIds.HighlightRelatedKeywords)]
 	sealed class HighlightRelatedKeywordsDocumentViewerReferenceEnablerProvider : IDocumentViewerReferenceEnablerProvider {
-		public IDocumentViewerReferenceEnabler Create(IDocumentViewer documentViewer) =>
+		public IDocumentViewerReferenceEnabler? Create(IDocumentViewer documentViewer) =>
 			new HighlightRelatedKeywordsDocumentViewerReferenceEnabler(documentViewer);
 	}
 
 	sealed class HighlightRelatedKeywordsDocumentViewerReferenceEnabler : IDocumentViewerReferenceEnabler {
 		public bool IsEnabled { get; private set; }
-		public event EventHandler IsEnabledChanged;
+		public event EventHandler? IsEnabledChanged;
 
 		readonly IDocumentViewer documentViewer;
 
 		public HighlightRelatedKeywordsDocumentViewerReferenceEnabler(IDocumentViewer documentViewer) {
-			if (documentViewer == null)
-				throw new ArgumentNullException(nameof(documentViewer));
-			this.documentViewer = documentViewer;
+			this.documentViewer = documentViewer ?? throw new ArgumentNullException(nameof(documentViewer));
 			IsEnabled = documentViewer.TextView.Options.IsHighlightRelatedKeywordsEnabled();
 			documentViewer.TextView.Options.OptionChanged += Options_OptionChanged;
 		}
 
-		void Options_OptionChanged(object sender, EditorOptionChangedEventArgs e) {
+		void Options_OptionChanged(object? sender, EditorOptionChangedEventArgs e) {
 			if (e.OptionId == DefaultDsTextViewOptions.HighlightRelatedKeywordsName) {
 				IsEnabled = documentViewer.TextView.Options.IsHighlightRelatedKeywordsEnabled();
 				IsEnabledChanged?.Invoke(this, EventArgs.Empty);

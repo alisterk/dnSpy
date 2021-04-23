@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -30,18 +30,16 @@ namespace dnSpy.Hex.Files.ToolTips {
 		readonly HexFieldFormatterFactory hexFieldFormatterFactory;
 
 		[ImportingConstructor]
-		HexToolTipContentCreatorFactoryImpl(HexFieldFormatterFactory hexFieldFormatterFactory) {
-			this.hexFieldFormatterFactory = hexFieldFormatterFactory;
-		}
+		HexToolTipContentCreatorFactoryImpl(HexFieldFormatterFactory hexFieldFormatterFactory) => this.hexFieldFormatterFactory = hexFieldFormatterFactory;
 
 		public override HexToolTipContentCreator Create() =>
 			new HexToolTipContentCreatorImpl(hexFieldFormatterFactory);
 	}
 
 	sealed class HexToolTipContentCreatorImpl : HexToolTipContentCreator {
-		public override object Image { get; set; }
+		public override object? Image { get; set; }
 
-		struct WriterState {
+		readonly struct WriterState {
 			public HexTextWriterImpl Writer { get; }
 			public HexFieldFormatter Formatter { get; }
 			public WriterState(HexTextWriterImpl writer, HexFieldFormatter formatter) {
@@ -56,9 +54,7 @@ namespace dnSpy.Hex.Files.ToolTips {
 		readonly List<WriterState> writerStateList;
 
 		public HexToolTipContentCreatorImpl(HexFieldFormatterFactory hexFieldFormatterFactory) {
-			if (hexFieldFormatterFactory == null)
-				throw new ArgumentNullException(nameof(hexFieldFormatterFactory));
-			this.hexFieldFormatterFactory = hexFieldFormatterFactory;
+			this.hexFieldFormatterFactory = hexFieldFormatterFactory ?? throw new ArgumentNullException(nameof(hexFieldFormatterFactory));
 			writerStateList = new List<WriterState>();
 			CreateNewWriter();
 		}

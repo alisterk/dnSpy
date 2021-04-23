@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -23,16 +23,14 @@ using dnSpy.Contracts.Utilities;
 
 namespace dnSpy.AsmEditor.SaveModule {
 	sealed partial class SaveMultiModuleDlg : SaveModuleWindow {
-		public SaveMultiModuleDlg() {
-			InitializeComponent();
-		}
+		public SaveMultiModuleDlg() => InitializeComponent();
 
-		void Options_CanExecute(object sender, CanExecuteRoutedEventArgs e) =>
+		void Options_CanExecute(object? sender, CanExecuteRoutedEventArgs e) =>
 			e.CanExecute = e.Parameter is SaveOptionsVM;
-		void Options_Executed(object sender, ExecutedRoutedEventArgs e) =>
+		void Options_Executed(object? sender, ExecutedRoutedEventArgs e) =>
 			ShowOptions((SaveOptionsVM)e.Parameter);
 
-		void listBox_MouseDoubleClick(object sender, MouseButtonEventArgs e) {
+		void listBox_MouseDoubleClick(object? sender, MouseButtonEventArgs e) {
 			if (!UIUtilities.IsLeftDoubleClick<ListBoxItem>(listBox, e))
 				return;
 			ShowOptions((SaveOptionsVM)listBox.SelectedItem);

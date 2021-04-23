@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -32,15 +32,15 @@ namespace dnSpy.Hex.Editor {
 		public override HexView HexView { get; }
 		public override HexBufferPoint AnchorPoint => anchorPoint;
 		public override HexBufferPoint ActivePoint => activePoint;
-		public override event EventHandler SelectionChanged;
+		public override event EventHandler? SelectionChanged;
 
 		public override bool IsActive {
-			get { return hexSelectionLayer.IsActive; }
-			set { hexSelectionLayer.IsActive = value; }
+			get => hexSelectionLayer.IsActive;
+			set => hexSelectionLayer.IsActive = value;
 		}
 
 		public override bool ActivationTracksFocus {
-			get { return activationTracksFocus; }
+			get => activationTracksFocus;
 			set {
 				if (activationTracksFocus == value)
 					return;
@@ -57,13 +57,11 @@ namespace dnSpy.Hex.Editor {
 		HexBufferPoint anchorPoint, activePoint;
 
 		public HexSelectionImpl(WpfHexView hexView, HexAdornmentLayer selectionLayer, VSTC.IEditorFormatMap editorFormatMap) {
-			if (hexView == null)
-				throw new ArgumentNullException(nameof(hexView));
-			if (selectionLayer == null)
+			if (selectionLayer is null)
 				throw new ArgumentNullException(nameof(selectionLayer));
-			if (editorFormatMap == null)
+			if (editorFormatMap is null)
 				throw new ArgumentNullException(nameof(editorFormatMap));
-			HexView = hexView;
+			HexView = hexView ?? throw new ArgumentNullException(nameof(hexView));
 			HexView.GotAggregateFocus += HexView_GotAggregateFocus;
 			HexView.LostAggregateFocus += HexView_LostAggregateFocus;
 			hexSelectionLayer = new HexSelectionLayer(this, selectionLayer, editorFormatMap);
@@ -75,7 +73,7 @@ namespace dnSpy.Hex.Editor {
 			HexView.BufferLinesChanged += HexView_BufferLinesChanged;
 		}
 
-		void HexView_BufferLinesChanged(object sender, BufferLinesChangedEventArgs e) {
+		void HexView_BufferLinesChanged(object? sender, BufferLinesChangedEventArgs e) {
 			var newActivePoint = Filter(activePoint);
 			var newAnchorPoint = Filter(anchorPoint);
 			if (newActivePoint != activePoint || newAnchorPoint != anchorPoint)
@@ -90,12 +88,12 @@ namespace dnSpy.Hex.Editor {
 			return position;
 		}
 
-		void HexView_GotAggregateFocus(object sender, EventArgs e) {
+		void HexView_GotAggregateFocus(object? sender, EventArgs e) {
 			if (ActivationTracksFocus)
 				IsActive = true;
 		}
 
-		void HexView_LostAggregateFocus(object sender, EventArgs e) {
+		void HexView_LostAggregateFocus(object? sender, EventArgs e) {
 			if (ActivationTracksFocus)
 				IsActive = false;
 		}
@@ -109,7 +107,7 @@ namespace dnSpy.Hex.Editor {
 		}
 
 		public override IEnumerable<VST.Span> GetSelectionOnHexViewLine(HexViewLine line) {
-			if (line == null)
+			if (line is null)
 				throw new ArgumentNullException(nameof(line));
 			if (line.BufferLine.LineProvider != HexView.BufferLines)
 				throw new ArgumentException();
@@ -145,7 +143,7 @@ namespace dnSpy.Hex.Editor {
 					if (anchorPoint < activePoint) {
 						var anchorCell = GetCell(bufferLines, anchorPoint);
 						var activeCell = GetCell(bufferLines, activePoint - 1);
-						if (anchorCell != null && activeCell != null) {
+						if (anchorCell is not null && activeCell is not null) {
 							anchorPoint = anchorCell.BufferStart;
 							activePoint = activeCell.BufferEnd;
 						}
@@ -153,7 +151,7 @@ namespace dnSpy.Hex.Editor {
 					else {
 						var activeCell = GetCell(bufferLines, activePoint);
 						var anchorCell = GetCell(bufferLines, anchorPoint - 1);
-						if (anchorCell != null && activeCell != null) {
+						if (anchorCell is not null && activeCell is not null) {
 							activePoint = activeCell.BufferStart;
 							anchorPoint = anchorCell.BufferEnd;
 						}
@@ -169,10 +167,10 @@ namespace dnSpy.Hex.Editor {
 			}
 		}
 
-		static HexCell GetCell(HexBufferLineFormatter bufferLines, HexBufferPoint position) {
+		static HexCell? GetCell(HexBufferLineFormatter bufferLines, HexBufferPoint position) {
 			var line = bufferLines.GetLineFromPosition(position);
 			var cell = line.ValueCells.GetCell(position);
-			if (cell == null && position == line.BufferEnd && position > line.BufferStart)
+			if (cell is null && position == line.BufferEnd && position > line.BufferStart)
 				cell = line.ValueCells.GetCell(position - 1);
 			return cell;
 		}

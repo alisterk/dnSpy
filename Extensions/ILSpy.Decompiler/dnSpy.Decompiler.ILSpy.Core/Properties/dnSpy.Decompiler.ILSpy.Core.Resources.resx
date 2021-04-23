@@ -168,6 +168,9 @@
   <data name="DecompilerSettings_FullyQualifyAmbiguousTypeNames" xml:space="preserve">
     <value>Add a namespace to types with the same name</value>
   </data>
+  <data name="DecompilerSettings_HexadecimalNumbers" xml:space="preserve">
+    <value>Hexadecimal numbers</value>
+  </data>
   <data name="DecompilerSettings_IntroduceIncrementAndDecrement" xml:space="preserve">
     <value>Use increment and decrement operators</value>
   </data>
@@ -176,6 +179,9 @@
   </data>
   <data name="DecompilerSettings_MaxArrayElements" xml:space="preserve">
     <value>Max number of array elements to show</value>
+  </data>
+  <data name="DecompilerSettings_MaxStringLength" xml:space="preserve">
+    <value>Max string length</value>
   </data>
   <data name="DecompilerSettings_MemberAddPrivateModifier" xml:space="preserve">
     <value>Add 'private' modifier to type members</value>
@@ -188,6 +194,9 @@
   </data>
   <data name="DecompilerSettings_RemoveEmptyDefaultCtors" xml:space="preserve">
     <value>Remove empty default constructors</value>
+  </data>
+  <data name="DecompilerSettings_RemoveNewDelegateClass" xml:space="preserve">
+    <value>Replace 'new delegate-class(xxx)' with 'xxx'</value>
   </data>
   <data name="DecompilerSettings_ShowCompilerGeneratedTypes" xml:space="preserve">
     <value>Show hidden compiler generated types and methods</value>

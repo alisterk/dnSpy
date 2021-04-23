@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -19,6 +19,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using dnSpy.Contracts.Hex;
 
 namespace dnSpy.Hex {
@@ -34,7 +35,7 @@ namespace dnSpy.Hex {
 		readonly bool isVolatile;
 		readonly HexPosition endAddress;
 
-		public HexProcessSimpleBufferStream(IntPtr hProcess, string name, bool isReadOnly, bool isVolatile) {
+		public HexProcessSimpleBufferStream(IntPtr hProcess, string? name, bool isReadOnly, bool isVolatile) {
 			this.hProcess = hProcess;
 			Span = GetDefaultSpan(hProcess);
 			Name = name ?? GetDefaultName(hProcess);
@@ -54,8 +55,7 @@ namespace dnSpy.Hex {
 			uint state, protect;
 			int res;
 			if (IntPtr.Size == 4) {
-				NativeMethods.MEMORY_BASIC_INFORMATION32 info;
-				res = NativeMethods.VirtualQueryEx32(hProcess, new IntPtr((void*)position.ToUInt64()), out info, NativeMethods.MEMORY_BASIC_INFORMATION32_SIZE);
+				res = NativeMethods.VirtualQueryEx32(hProcess, new IntPtr((void*)position.ToUInt64()), out var info, NativeMethods.MEMORY_BASIC_INFORMATION32_SIZE);
 				baseAddress = info.BaseAddress;
 				regionSize = info.RegionSize;
 				state = info.State;
@@ -63,8 +63,7 @@ namespace dnSpy.Hex {
 				Debug.Assert(res == 0 || res == NativeMethods.MEMORY_BASIC_INFORMATION32_SIZE);
 			}
 			else {
-				NativeMethods.MEMORY_BASIC_INFORMATION64 info;
-				res = NativeMethods.VirtualQueryEx64(hProcess, new IntPtr((void*)position.ToUInt64()), out info, NativeMethods.MEMORY_BASIC_INFORMATION64_SIZE);
+				res = NativeMethods.VirtualQueryEx64(hProcess, new IntPtr((void*)position.ToUInt64()), out var info, NativeMethods.MEMORY_BASIC_INFORMATION64_SIZE);
 				baseAddress = info.BaseAddress;
 				regionSize = info.RegionSize;
 				state = info.State;
@@ -86,8 +85,7 @@ namespace dnSpy.Hex {
 		}
 
 		static HexPosition GetEndAddress(IntPtr hProcess) {
-			NativeMethods.SYSTEM_INFO info;
-			NativeMethods.GetSystemInfo(out info);
+			NativeMethods.GetSystemInfo(out var info);
 			ulong mask = IntPtr.Size == 4 ? uint.MaxValue : ulong.MaxValue;
 			return new HexPosition((ulong)info.lpMaximumApplicationAddress.ToInt64() & mask) + 1;
 		}
@@ -98,40 +96,38 @@ namespace dnSpy.Hex {
 		}
 
 		static HexSpan GetDefaultSpan(IntPtr hProcess) {
-			int bitSize = GetProcessAddressBitSize(hProcess);
-			if (bitSize == 32)
+			int bitness = GetBitness(hProcess);
+			if (bitness == 32)
 				return HexSpan.FromBounds(0, uint.MaxValue + 1UL);
-			if (bitSize == 64) {
+			if (bitness == 64) {
 				// If we're a 32-bit process, we can't read anything >= 2^32 from the other process
 				// so return span [0,2^32)
 				if (IntPtr.Size != 8)
 					return HexSpan.FromBounds(0, new HexPosition(uint.MaxValue + 1UL));
-				NativeMethods.SYSTEM_INFO info;
-				NativeMethods.GetSystemInfo(out info);
+				NativeMethods.GetSystemInfo(out var info);
 				var lastAddr = (ulong)info.lpMaximumApplicationAddress.ToInt64();
 				// Include the last part so we get a nice even address
 				if ((lastAddr & 0xFFFFF) == 0xEFFFF)
 					lastAddr += 0x10000;
 				return HexSpan.FromBounds(0, new HexPosition(lastAddr) + 1);
 			}
-			Debug.Fail($"Unsupported bit size: {bitSize}");
+			Debug.Fail($"Unsupported bitness: {bitness}");
 			return HexSpan.FromBounds(0, HexPosition.MaxEndPosition);
 		}
 
 		static ulong GetDefaultPageSize(IntPtr hProcess) => (ulong)Environment.SystemPageSize;
 
-		static int GetProcessAddressBitSize(IntPtr hProcess) {
+		static int GetBitness(IntPtr hProcess) {
 			if (!Environment.Is64BitOperatingSystem) {
 				Debug.Assert(IntPtr.Size == 4);
 				return IntPtr.Size * 8;
 			}
-			bool isWow64Process;
-			if (NativeMethods.IsWow64Process(hProcess, out isWow64Process)) {
+			if (NativeMethods.IsWow64Process(hProcess, out bool isWow64Process)) {
 				if (isWow64Process)
 					return 32;
 				return 64;
 			}
-			Debug.Fail("IsWow64Process failed");
+			Debug.Fail($"IsWow64Process failed: 0x{Marshal.GetLastWin32Error():X8}");
 			return IntPtr.Size * 8;
 		}
 
@@ -152,8 +148,7 @@ namespace dnSpy.Hex {
 			if (position >= Span.End)
 				return 0;
 			int bytesToWrite = (int)Math.Min(length, int.MaxValue);
-			uint oldProtect;
-			bool restoreOldProtect = NativeMethods.VirtualProtectEx(hProcess, new IntPtr((void*)position.ToUInt64()), new IntPtr(bytesToWrite), NativeMethods.PAGE_EXECUTE_READWRITE, out oldProtect);
+			bool restoreOldProtect = NativeMethods.VirtualProtectEx(hProcess, new IntPtr((void*)position.ToUInt64()), new IntPtr(bytesToWrite), NativeMethods.PAGE_EXECUTE_READWRITE, out uint oldProtect);
 			IntPtr sizeWritten;
 			bool b;
 			fixed (void* p = &source[sourceIndex])

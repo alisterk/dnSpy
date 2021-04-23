@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -30,12 +30,10 @@ namespace dnSpy.Documents.Tabs.Hex {
 		readonly IDocumentTabService documentTabService;
 
 		[ImportingConstructor]
-		HexReferenceHandlerImpl(IDocumentTabService documentTabService) {
-			this.documentTabService = documentTabService;
-		}
+		HexReferenceHandlerImpl(IDocumentTabService documentTabService) => this.documentTabService = documentTabService;
 
-		public override bool Handle(HexView hexView, object reference, IList<string> tags) {
-			bool newTab = tags.Contains(PredefinedHexReferenceHandlerTags.NewTab);
+		public override bool Handle(HexView hexView, object reference, IList<string>? tags) {
+			bool newTab = tags?.Contains(PredefinedHexReferenceHandlerTags.NewTab) == true;
 			documentTabService.FollowReference(reference, newTab: newTab);
 			return true;
 		}

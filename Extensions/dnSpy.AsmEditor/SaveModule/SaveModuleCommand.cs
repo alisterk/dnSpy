@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -33,6 +33,7 @@ using dnSpy.Contracts.Extension;
 using dnSpy.Contracts.Images;
 using dnSpy.Contracts.Menus;
 using dnSpy.Contracts.ToolBars;
+using dnSpy.Contracts.Utilities;
 
 namespace dnSpy.AsmEditor.SaveModule {
 	[ExportAutoLoaded]
@@ -55,11 +56,12 @@ namespace dnSpy.AsmEditor.SaveModule {
 		void SaveAll_Execute() => documentSaver.Value.Save(GetDirtyDocs());
 	}
 
-	[ExportToolBarButton(Icon = DsImagesAttribute.SaveAll, ToolTip = "res:SaveAllToolBarToolTip", Group = ToolBarConstants.GROUP_APP_TB_MAIN_OPEN, Order = 10)]
+	[ExportToolBarButton(Icon = DsImagesAttribute.SaveAll, Group = ToolBarConstants.GROUP_APP_TB_MAIN_OPEN, Order = 10)]
 	sealed class SaveAllToolbarCommand : ToolBarButtonCommand {
 		SaveAllToolbarCommand()
 			: base(SaveModuleCommandLoader.SaveAllCommand) {
 		}
+		public override string? GetToolTip(IToolBarItemContext context) => ToolTipHelper.AddKeyboardShortcut(dnSpy_AsmEditor_Resources.SaveAllToolBarToolTip, dnSpy_AsmEditor_Resources.ShortCutKeyCtrlShiftS);
 	}
 
 	[ExportMenuItem(OwnerGuid = MenuConstants.APP_MENU_FILE_GUID, Header = "res:SaveAllCommand", Icon = DsImagesAttribute.SaveAll, InputGestureText = "res:ShortCutKeyCtrlShiftS", Group = MenuConstants.GROUP_APP_MENU_FILE_SAVE, Order = 30)]
@@ -90,19 +92,19 @@ namespace dnSpy.AsmEditor.SaveModule {
 
 			foreach (var node in nodes) {
 				var fileNode = node.GetDocumentNode();
-				if (fileNode == null)
+				if (fileNode is null)
 					continue;
 
 				// Removed nodes could still be used, don't use them.
 				var topNode = fileNode.GetTopNode();
-				if (topNode == null || topNode.TreeNode.Parent == null)
+				if (topNode is null || topNode.TreeNode.Parent is null)
 					continue;
 
 				bool added = false;
 
-				if (fileNode.Document.ModuleDef != null) {
+				if (fileNode.Document.ModuleDef is not null) {
 					var file = fileNode.Document;
-					var uo = undoCommandService.Value.GetUndoObject(file);
+					var uo = undoCommandService.Value.GetUndoObject(file)!;
 					if (undoCommandService.Value.IsModified(uo)) {
 						hash.Add(file);
 						added = true;
@@ -110,8 +112,8 @@ namespace dnSpy.AsmEditor.SaveModule {
 				}
 
 				var doc = hexBufferService.Value.TryGet(fileNode.Document.Filename);
-				if (doc != null) {
-					var uo = undoCommandService.Value.GetUndoObject(doc);
+				if (doc is not null) {
+					var uo = undoCommandService.Value.GetUndoObject(doc)!;
 					if (undoCommandService.Value.IsModified(uo)) {
 						hash.Add(doc);
 						added = true;
@@ -119,7 +121,7 @@ namespace dnSpy.AsmEditor.SaveModule {
 				}
 
 				// If nothing was modified, just include the selected module
-				if (!added && fileNode.Document.ModuleDef != null)
+				if (!added && fileNode.Document.ModuleDef is not null)
 					hash.Add(fileNode.Document);
 			}
 			return new HashSet<object>(undoCommandService.Value.GetUniqueDocuments(hash));
@@ -133,6 +135,6 @@ namespace dnSpy.AsmEditor.SaveModule {
 			documentSaver.Value.Save(asmNodes);
 		}
 
-		public override string GetHeader(AsmEditorContext context) => GetDocuments(context.Nodes).Count <= 1 ? dnSpy_AsmEditor_Resources.SaveModuleCommand : dnSpy_AsmEditor_Resources.SaveModulesCommand;
+		public override string? GetHeader(AsmEditorContext context) => GetDocuments(context.Nodes).Count <= 1 ? dnSpy_AsmEditor_Resources.SaveModuleCommand : dnSpy_AsmEditor_Resources.SaveModulesCommand;
 	}
 }

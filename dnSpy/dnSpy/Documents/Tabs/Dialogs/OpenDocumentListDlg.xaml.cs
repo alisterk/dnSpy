@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -40,36 +40,35 @@ namespace dnSpy.Documents.Tabs.Dialogs {
 			InputBindings.Add(new KeyBinding(cmd, Key.F, ModifierKeys.Control));
 		}
 
-		void ListView_KeyDown(object sender, KeyEventArgs e) {
+		void ListView_KeyDown(object? sender, KeyEventArgs e) {
 			if (e.Key == Key.Delete && Keyboard.Modifiers == ModifierKeys.None) {
-				var vm = DataContext as OpenDocumentListVM;
-				if (vm != null && vm.CanRemove)
+				if (DataContext is OpenDocumentListVM vm && vm.CanRemove)
 					vm.Remove();
 				e.Handled = true;
 				return;
 			}
 		}
 
-		void ListView_SelectionChanged(object sender, SelectionChangedEventArgs e) {
-			var vm = DataContext as OpenDocumentListVM;
-			if (vm != null)
+		void ListView_SelectionChanged(object? sender, SelectionChangedEventArgs e) {
+			if (DataContext is OpenDocumentListVM vm)
 				vm.SelectedItems = listView.SelectedItems.OfType<DocumentListVM>().ToArray();
 		}
 
 		public IEnumerable<DocumentListVM> SelectedItems {
 			get {
-				foreach (DocumentListVM vm in listView.SelectedItems)
-					yield return vm;
+				foreach (DocumentListVM? vm in listView.SelectedItems)
+					yield return vm!;
 			}
 		}
 
 		protected override void OnClosed(EventArgs e) {
-			var id = DataContext as IDisposable;
-			if (id != null)
+			progressBar.IsIndeterminate = false;
+			base.OnClosed(e);
+			if (DataContext is IDisposable id)
 				id.Dispose();
 		}
 
-		void listView_MouseDoubleClick(object sender, MouseButtonEventArgs e) {
+		void ListView_MouseDoubleClick(object? sender, MouseButtonEventArgs e) {
 			if (!UIUtilities.IsLeftDoubleClick<ListViewItem>(listView, e))
 				return;
 			ClickOK();

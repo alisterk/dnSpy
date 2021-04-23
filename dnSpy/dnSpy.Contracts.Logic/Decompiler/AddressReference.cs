@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -23,7 +23,7 @@ namespace dnSpy.Contracts.Decompiler {
 	/// <summary>
 	/// An address reference
 	/// </summary>
-	public sealed class AddressReference : IEquatable<AddressReference> {
+	public sealed class AddressReference : IEquatable<AddressReference?> {
 		/// <summary>
 		/// Filename
 		/// </summary>
@@ -47,11 +47,11 @@ namespace dnSpy.Contracts.Decompiler {
 		/// <summary>
 		/// Constructor
 		/// </summary>
-		/// <param name="filename">Filename</param>
+		/// <param name="filename">Filename or null</param>
 		/// <param name="isRva">true if <paramref name="address"/> is an RVA, false if it's a file offset</param>
 		/// <param name="address">Address</param>
 		/// <param name="length">Length</param>
-		public AddressReference(string filename, bool isRva, ulong address, ulong length) {
+		public AddressReference(string? filename, bool isRva, ulong address, ulong length) {
 			Filename = filename ?? string.Empty;
 			IsRVA = isRva;
 			Address = address;
@@ -63,30 +63,28 @@ namespace dnSpy.Contracts.Decompiler {
 		/// </summary>
 		/// <param name="other"></param>
 		/// <returns></returns>
-		public bool Equals(AddressReference other) {
-			return other != null &&
-				IsRVA == other.IsRVA &&
-				Address == other.Address &&
-				Length == other.Length &&
-				StringComparer.OrdinalIgnoreCase.Equals(Filename, other.Filename);
-		}
+		public bool Equals(AddressReference? other) =>
+			other is not null &&
+			IsRVA == other.IsRVA &&
+			Address == other.Address &&
+			Length == other.Length &&
+			StringComparer.OrdinalIgnoreCase.Equals(Filename, other.Filename);
 
 		/// <summary>
 		/// Equals()
 		/// </summary>
 		/// <param name="obj"></param>
 		/// <returns></returns>
-		public override bool Equals(object obj) => Equals(obj as AddressReference);
+		public override bool Equals(object? obj) => Equals(obj as AddressReference);
 
 		/// <summary>
 		/// GetHashCode()
 		/// </summary>
 		/// <returns></returns>
-		public override int GetHashCode() {
-			return StringComparer.OrdinalIgnoreCase.GetHashCode(Filename) ^
-				(IsRVA ? 0 : int.MinValue) ^
-				(int)Address ^ (int)(Address >> 32) ^
-				(int)Length ^ (int)(Length >> 32);
-		}
+		public override int GetHashCode() =>
+			StringComparer.OrdinalIgnoreCase.GetHashCode(Filename) ^
+			(IsRVA ? 0 : int.MinValue) ^
+			(int)Address ^ (int)(Address >> 32) ^
+			(int)Length ^ (int)(Length >> 32);
 	}
 }

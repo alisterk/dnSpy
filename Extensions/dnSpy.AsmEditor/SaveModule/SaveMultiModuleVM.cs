@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -30,6 +30,7 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using dnSpy.AsmEditor.Properties;
 using dnSpy.Contracts.Documents;
+using dnSpy.Contracts.ETW;
 using dnSpy.Contracts.Hex;
 using dnSpy.Contracts.MVVM;
 
@@ -58,7 +59,7 @@ namespace dnSpy.AsmEditor.SaveModule {
 		}
 
 		SaveState State {
-			get { return saveState; }
+			get => saveState;
 			set {
 				if (value != saveState) {
 					saveState = value;
@@ -72,7 +73,7 @@ namespace dnSpy.AsmEditor.SaveModule {
 					OnPropertyChanged(nameof(IsSavingOrCanceling));
 					OnModuleSettingsSaved();
 
-					if (saveState == SaveState.Saved && OnSavedEvent != null)
+					if (saveState == SaveState.Saved && OnSavedEvent is not null)
 						OnSavedEvent(this, EventArgs.Empty);
 				}
 			}
@@ -80,8 +81,8 @@ namespace dnSpy.AsmEditor.SaveModule {
 		SaveState saveState = SaveState.Loaded;
 
 		public ICommand SaveCommand => new RelayCommand(a => Save(), a => CanExecuteSave);
-		public ICommand CancelSaveCommand => new RelayCommand(a => CancelSave(), a => IsSaving && moduleSaver != null);
-		public event EventHandler OnSavedEvent;
+		public ICommand CancelSaveCommand => new RelayCommand(a => CancelSave(), a => IsSaving && moduleSaver is not null);
+		public event EventHandler? OnSavedEvent;
 		public bool IsLoaded => State == SaveState.Loaded;
 		public bool IsSaving => State == SaveState.Saving;
 		public bool IsCanceling => State == SaveState.Canceling;
@@ -93,7 +94,7 @@ namespace dnSpy.AsmEditor.SaveModule {
 		public bool CanExecuteSave => string.IsNullOrEmpty(CanExecuteSaveError);
 		public bool CanShowModuleErrors => IsLoaded && !CanExecuteSave;
 
-		public string CanExecuteSaveError {
+		public string? CanExecuteSaveError {
 			get {
 				if (!IsLoaded)
 					return "It's only possible to save when loaded";
@@ -115,7 +116,7 @@ namespace dnSpy.AsmEditor.SaveModule {
 		}
 
 		public bool HasError {
-			get { return hasError; }
+			get => hasError;
 			private set {
 				if (hasError != value) {
 					hasError = value;
@@ -129,7 +130,7 @@ namespace dnSpy.AsmEditor.SaveModule {
 		public bool HasNoError => !HasError;
 
 		public int ErrorCount {
-			get { return errorCount; }
+			get => errorCount;
 			set {
 				if (errorCount != value) {
 					errorCount = value;
@@ -147,7 +148,7 @@ namespace dnSpy.AsmEditor.SaveModule {
 		public double ProgressMaximum => 100;
 
 		public double TotalProgress {
-			get { return totalProgress; }
+			get => totalProgress;
 			private set {
 				if (totalProgress != value) {
 					totalProgress = value;
@@ -158,7 +159,7 @@ namespace dnSpy.AsmEditor.SaveModule {
 		double totalProgress = 0;
 
 		public double CurrentFileProgress {
-			get { return currentFileProgress; }
+			get => currentFileProgress;
 			private set {
 				if (currentFileProgress != value) {
 					currentFileProgress = value;
@@ -169,7 +170,7 @@ namespace dnSpy.AsmEditor.SaveModule {
 		double currentFileProgress = 0;
 
 		public string CurrentFileName {
-			get { return currentFileName; }
+			get => currentFileName;
 			set {
 				if (currentFileName != value) {
 					currentFileName = value;
@@ -197,29 +198,26 @@ namespace dnSpy.AsmEditor.SaveModule {
 		}
 
 		static SaveOptionsVM Create(object obj) {
-			var document = obj as IDsDocument;
-			if (document != null)
+			if (obj is IDsDocument document)
 				return new SaveModuleOptionsVM(document);
 
-			var buffer = obj as HexBuffer;
-			if (buffer != null)
+			if (obj is HexBuffer buffer)
 				return new SaveHexOptionsVM(buffer);
 
 			throw new InvalidOperationException();
 		}
 
-		SaveOptionsVM GetSaveOptionsVM(object obj) => Modules.FirstOrDefault(a => a.UndoDocument == obj);
+		SaveOptionsVM? GetSaveOptionsVM(object obj) => Modules.FirstOrDefault(a => a.UndoDocument == obj);
 
 		public bool WasSaved(object obj) {
 			var data = GetSaveOptionsVM(obj);
-			if (data == null)
+			if (data is null)
 				return false;
-			bool saved;
-			savedFile.TryGetValue(data, out saved);
+			savedFile.TryGetValue(data, out bool saved);
 			return saved;
 		}
 
-		public string GetSavedFileName(object obj) => GetSaveOptionsVM(obj)?.FileName;
+		public string? GetSavedFileName(object obj) => GetSaveOptionsVM(obj)?.FileName;
 
 		public void Save() {
 			if (!CanExecuteSave)
@@ -241,8 +239,9 @@ namespace dnSpy.AsmEditor.SaveModule {
 			dispatcher.BeginInvoke(DispatcherPriority.Background, action);
 		}
 
-		ModuleSaver moduleSaver;
+		ModuleSaver? moduleSaver;
 		void SaveAsync(SaveOptionsVM[] mods) {
+			DnSpyEventSource.Log.SaveDocumentsStart();
 			try {
 				moduleSaver = new ModuleSaver(mods);
 				moduleSaver.OnProgressUpdated += moduleSaver_OnProgressUpdated;
@@ -265,13 +264,14 @@ namespace dnSpy.AsmEditor.SaveModule {
 			}
 			moduleSaver = null;
 
+			DnSpyEventSource.Log.SaveDocumentsStop();
 			ExecInOldThread(() => {
 				CurrentFileName = string.Empty;
 				State = SaveState.Saved;
 			});
 		}
 
-		void moduleSaver_OnWritingFile(object sender, ModuleSaverWriteEventArgs e) {
+		void moduleSaver_OnWritingFile(object? sender, ModuleSaverWriteEventArgs e) {
 			if (e.Starting) {
 				ExecInOldThread(() => {
 					CurrentFileName = e.File.FileName;
@@ -285,8 +285,8 @@ namespace dnSpy.AsmEditor.SaveModule {
 		}
 		Dictionary<SaveOptionsVM, bool> savedFile = new Dictionary<SaveOptionsVM, bool>();
 
-		void moduleSaver_OnProgressUpdated(object sender, EventArgs e) {
-			var moduleSaver = (ModuleSaver)sender;
+		void moduleSaver_OnProgressUpdated(object? sender, EventArgs e) {
+			var moduleSaver = (ModuleSaver)sender!;
 			double totalProgress = 100 * moduleSaver.TotalProgress;
 			double currentFileProgress = 100 * moduleSaver.CurrentFileProgress;
 			ExecInOldThread(() => {
@@ -295,7 +295,7 @@ namespace dnSpy.AsmEditor.SaveModule {
 			});
 		}
 
-		void moduleSaver_OnLogMessage(object sender, ModuleSaverLogEventArgs e) =>
+		void moduleSaver_OnLogMessage(object? sender, ModuleSaverLogEventArgs e) =>
 			AsyncAddMessage(e.Message, e.Event == ModuleSaverLogEvent.Error || e.Event == ModuleSaverLogEvent.Warning, true);
 
 		void AsyncAddMessage(string msg, bool isError, bool canIgnore) {
@@ -339,14 +339,14 @@ namespace dnSpy.AsmEditor.SaveModule {
 			if (!IsSaving)
 				return;
 			var ms = moduleSaver;
-			if (ms == null)
+			if (ms is null)
 				return;
 
 			State = SaveState.Canceling;
 			ms.CancelAsync();
 		}
 
-		public event PropertyChangedEventHandler PropertyChanged;
+		public event PropertyChangedEventHandler? PropertyChanged;
 		void OnPropertyChanged(string propName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
 	}
 }

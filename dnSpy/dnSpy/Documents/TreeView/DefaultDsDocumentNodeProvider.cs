@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -24,16 +24,15 @@ using dnSpy.Contracts.Documents.TreeView;
 namespace dnSpy.Documents.TreeView {
 	[ExportDsDocumentNodeProvider(Order = double.MaxValue)]
 	sealed class DefaultDsDocumentNodeProvider : IDsDocumentNodeProvider {
-		public DsDocumentNode Create(IDocumentTreeView documentTreeView, DsDocumentNode owner, IDsDocument document) {
-			var dnDocument = document as IDsDotNetDocument;
-			if (dnDocument != null) {
-				Debug.Assert(document.ModuleDef != null);
-				if (document.AssemblyDef == null || owner != null)
+		public DsDocumentNode? Create(IDocumentTreeView documentTreeView, DsDocumentNode? owner, IDsDocument document) {
+			if (document is IDsDotNetDocument dnDocument) {
+				Debug2.Assert(document.ModuleDef is not null);
+				if (document.AssemblyDef is null || owner is not null)
 					return new ModuleDocumentNodeImpl(dnDocument);
 				return new AssemblyDocumentNodeImpl(dnDocument);
 			}
-			Debug.Assert(document.AssemblyDef == null && document.ModuleDef == null);
-			if (document.PEImage != null)
+			Debug2.Assert(document.AssemblyDef is null && document.ModuleDef is null);
+			if (document.PEImage is not null)
 				return new PEDocumentNodeImpl(document);
 
 			return null;

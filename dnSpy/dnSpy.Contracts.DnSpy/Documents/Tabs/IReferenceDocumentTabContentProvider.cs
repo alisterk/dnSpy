@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -34,7 +34,7 @@ namespace dnSpy.Contracts.Documents.Tabs {
 		/// in a new tab. This would then be the older tab's content.</param>
 		/// <param name="ref">Reference</param>
 		/// <returns></returns>
-		DocumentTabReferenceResult Create(IDocumentTabService documentTabService, DocumentTabContent sourceContent, object @ref);
+		DocumentTabReferenceResult? Create(IDocumentTabService documentTabService, DocumentTabContent? sourceContent, object? @ref);
 	}
 
 	/// <summary>Metadata</summary>
@@ -50,9 +50,7 @@ namespace dnSpy.Contracts.Documents.Tabs {
 	public sealed class ExportReferenceDocumentTabContentProviderAttribute : ExportAttribute, IReferenceDocumentTabContentProviderMetadata {
 		/// <summary>Constructor</summary>
 		public ExportReferenceDocumentTabContentProviderAttribute()
-			: base(typeof(IReferenceDocumentTabContentProvider)) {
-			Order = double.MaxValue;
-		}
+			: base(typeof(IReferenceDocumentTabContentProvider)) => Order = double.MaxValue;
 
 		/// <summary>
 		/// Order of this instance

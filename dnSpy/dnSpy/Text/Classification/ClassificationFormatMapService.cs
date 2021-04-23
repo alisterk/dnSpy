@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -41,11 +41,10 @@ namespace dnSpy.Text.Classification {
 		}
 
 		public IClassificationFormatMap GetClassificationFormatMap(string category) {
-			if (category == null)
+			if (category is null)
 				throw new ArgumentNullException(nameof(category));
 			var editorFormatMap = editorFormatMapService.GetEditorFormatMap(category);
-			IClassificationFormatMap map;
-			if (toCategoryMap.TryGetValue(editorFormatMap, out map))
+			if (toCategoryMap.TryGetValue(editorFormatMap, out var map))
 				return map;
 			map = new CategoryClassificationFormatMap(themeService, editorFormatMap, editorFormatDefinitionService, classificationTypeRegistryService);
 			toCategoryMap.Add(editorFormatMap, map);
@@ -61,7 +60,7 @@ namespace dnSpy.Text.Classification {
 		}
 
 		public IClassificationFormatMap GetClassificationFormatMap(ITextView textView) {
-			if (textView == null)
+			if (textView is null)
 				throw new ArgumentNullException(nameof(textView));
 			return textView.Properties.GetOrCreateSingletonProperty(typeof(ViewClassificationFormatMap), () => CreateViewClassificationFormatMap(textView));
 		}
@@ -71,8 +70,8 @@ namespace dnSpy.Text.Classification {
 			return new TextViewClassificationFormatMap(this, textView);
 		}
 
-		static void TextView_Closed(object sender, EventArgs e) {
-			var textView = (ITextView)sender;
+		static void TextView_Closed(object? sender, EventArgs e) {
+			var textView = (ITextView)sender!;
 			textView.Closed -= TextView_Closed;
 			var map = (ViewClassificationFormatMap)textView.Properties[typeof(ViewClassificationFormatMap)];
 			textView.Properties.RemoveProperty(typeof(ViewClassificationFormatMap));

@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -27,13 +27,15 @@ namespace dnSpy.AsmEditor.Assembly {
 		public Version Version;
 		public AssemblyAttributes Attributes;
 		public PublicKey PublicKey;
-		public UTF8String Name;
-		public string Culture;
+		public UTF8String? Name;
+		public string? Culture;
 		public Module.ClrVersion ClrVersion;
 		public List<CustomAttribute> CustomAttributes = new List<CustomAttribute>();
 		public List<DeclSecurity> DeclSecurities = new List<DeclSecurity>();
 
 		public AssemblyOptions() {
+			Version = null!;
+			PublicKey = null!;
 		}
 
 		public AssemblyOptions(AssemblyDef asm) {
@@ -64,16 +66,14 @@ namespace dnSpy.AsmEditor.Assembly {
 
 		public AssemblyDef CreateAssemblyDef(ModuleDef ownerModule) => ownerModule.UpdateRowId(CopyTo(new AssemblyDefUser()));
 
-		public static AssemblyOptions Create(string name) {
-			return new AssemblyOptions {
-				HashAlgorithm = AssemblyHashAlgorithm.SHA1,
-				Version = new Version(0, 0, 0, 0),
-				Attributes = AssemblyAttributes.None,
-				PublicKey = new PublicKey(Array.Empty<byte>()),
-				Name = name,
-				Culture = string.Empty,
-				ClrVersion = Module.ClrVersion.DefaultVersion,
-			};
-		}
+		public static AssemblyOptions Create(string name) => new AssemblyOptions {
+			HashAlgorithm = AssemblyHashAlgorithm.SHA1,
+			Version = new Version(0, 0, 0, 0),
+			Attributes = AssemblyAttributes.None,
+			PublicKey = new PublicKey(Array.Empty<byte>()),
+			Name = name,
+			Culture = string.Empty,
+			ClrVersion = Module.ClrVersion.DefaultVersion,
+		};
 	}
 }

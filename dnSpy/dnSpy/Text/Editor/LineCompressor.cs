@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -54,9 +54,7 @@ namespace dnSpy.Text.Editor {
 		}
 
 		public LineCompressor(IWpfTextView textView) {
-			if (textView == null)
-				throw new ArgumentNullException(nameof(textView));
-			this.textView = textView;
+			this.textView = textView ?? throw new ArgumentNullException(nameof(textView));
 			textView.Closed += TextView_Closed;
 			textView.Options.OptionChanged += Options_OptionChanged;
 			InitializeOptions(false);
@@ -71,7 +69,7 @@ namespace dnSpy.Text.Editor {
 			}
 		}
 
-		void Options_OptionChanged(object sender, EditorOptionChangedEventArgs e) {
+		void Options_OptionChanged(object? sender, EditorOptionChangedEventArgs e) {
 			if (e.OptionId == DefaultDsTextViewOptions.CompressEmptyOrWhitespaceLinesName || e.OptionId == DefaultDsTextViewOptions.CompressNonLetterLinesName)
 				InitializeOptions(true);
 		}
@@ -101,8 +99,8 @@ namespace dnSpy.Text.Editor {
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		LineKind GetLineType(ITextViewLine line) {
 			var dsLine = line as IDsTextViewLine;
-			Debug.Assert(dsLine != null);
-			if (dsLine != null && dsLine.HasAdornments)
+			Debug2.Assert(dsLine is not null);
+			if (dsLine is not null && dsLine.HasAdornments)
 				return LineKind.Normal;
 			if (line.Length == 0)
 				return LineKind.EmptyOrWhitespace;
@@ -124,7 +122,7 @@ namespace dnSpy.Text.Editor {
 			return isBlank ? LineKind.EmptyOrWhitespace : LineKind.NoLettersDigits;
 		}
 
-		void TextView_Closed(object sender, EventArgs e) {
+		void TextView_Closed(object? sender, EventArgs e) {
 			textView.Closed -= TextView_Closed;
 			textView.Options.OptionChanged -= Options_OptionChanged;
 		}

@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -43,7 +43,7 @@ namespace dnSpy.Text.Formatting {
 		public ITextAndAdornmentSequencer TextAndAdornmentSequencer { get; }
 		public TextRunProperties DefaultTextProperties => classificationFormatMap.DefaultTextProperties;
 
-		readonly ITextParagraphPropertiesFactoryService textParagraphPropertiesFactoryService;
+		readonly ITextParagraphPropertiesFactoryService? textParagraphPropertiesFactoryService;
 		readonly IClassifier aggregateClassifier;
 		readonly IClassificationFormatMap classificationFormatMap;
 		readonly FormattedTextCache formattedTextCache;
@@ -54,18 +54,14 @@ namespace dnSpy.Text.Formatting {
 		// Should be enough...
 		const int MAX_LINE_LENGTH = 5000;
 
-		public FormattedLineSource(ITextFormatterProvider textFormatterProvider, ITextParagraphPropertiesFactoryService textParagraphPropertiesFactoryService, ITextSnapshot sourceTextSnapshot, ITextSnapshot visualBufferSnapshot, int tabSize, double baseIndent, double wordWrapWidth, double maxAutoIndent, bool useDisplayMode, IClassifier aggregateClassifier, ITextAndAdornmentSequencer sequencer, IClassificationFormatMap classificationFormatMap, bool isViewWrapEnabled) {
-			if (textFormatterProvider == null)
+		public FormattedLineSource(ITextFormatterProvider textFormatterProvider, ITextParagraphPropertiesFactoryService? textParagraphPropertiesFactoryService, ITextSnapshot sourceTextSnapshot, ITextSnapshot visualBufferSnapshot, int tabSize, double baseIndent, double wordWrapWidth, double maxAutoIndent, bool useDisplayMode, IClassifier aggregateClassifier, ITextAndAdornmentSequencer sequencer, IClassificationFormatMap classificationFormatMap, bool isViewWrapEnabled) {
+			if (textFormatterProvider is null)
 				throw new ArgumentNullException(nameof(textFormatterProvider));
-			if (sourceTextSnapshot == null)
+			if (sourceTextSnapshot is null)
 				throw new ArgumentNullException(nameof(sourceTextSnapshot));
-			if (visualBufferSnapshot == null)
+			if (visualBufferSnapshot is null)
 				throw new ArgumentNullException(nameof(visualBufferSnapshot));
-			if (aggregateClassifier == null)
-				throw new ArgumentNullException(nameof(aggregateClassifier));
-			if (sequencer == null)
-				throw new ArgumentNullException(nameof(sequencer));
-			if (classificationFormatMap == null)
+			if (classificationFormatMap is null)
 				throw new ArgumentNullException(nameof(classificationFormatMap));
 			if (tabSize <= 0)
 				throw new ArgumentOutOfRangeException(nameof(tabSize));
@@ -87,8 +83,8 @@ namespace dnSpy.Text.Formatting {
 			LineHeight = WpfTextViewLine.DEFAULT_TOP_SPACE + WpfTextViewLine.DEFAULT_BOTTOM_SPACE + formattedTextCache.GetLineHeight(classificationFormatMap.DefaultTextProperties);
 			TextHeightAboveBaseline = formattedTextCache.GetTextHeightAboveBaseline(classificationFormatMap.DefaultTextProperties);
 			TextHeightBelowBaseline = formattedTextCache.GetTextHeightBelowBaseline(classificationFormatMap.DefaultTextProperties);
-			TextAndAdornmentSequencer = sequencer;
-			this.aggregateClassifier = aggregateClassifier;
+			TextAndAdornmentSequencer = sequencer ?? throw new ArgumentNullException(nameof(sequencer));
+			this.aggregateClassifier = aggregateClassifier ?? throw new ArgumentNullException(nameof(aggregateClassifier));
 			this.classificationFormatMap = classificationFormatMap;
 			defaultTextParagraphProperties = new TextFormattingParagraphProperties(classificationFormatMap.DefaultTextProperties, ColumnWidth * TabSize);
 		}
@@ -97,7 +93,7 @@ namespace dnSpy.Text.Formatting {
 			coll[0].Span.GetSpans(SourceTextSnapshot)[0].Start.GetContainingLine();
 
 		public Collection<IFormattedLine> FormatLineInVisualBuffer(ITextSnapshotLine visualLine) {
-			if (visualLine == null)
+			if (visualLine is null)
 				throw new ArgumentNullException(nameof(visualLine));
 			if (visualLine.Snapshot != TopTextSnapshot)
 				throw new ArgumentException();
@@ -108,7 +104,7 @@ namespace dnSpy.Text.Formatting {
 			var textSource = new LinePartsTextSource(linePartsCollection);
 			var lines = new Collection<IFormattedLine>();
 
-			TextLineBreak previousLineBreak = null;
+			TextLineBreak? previousLineBreak = null;
 			double autoIndent = BaseIndentation;
 			int column = 0;
 			int linePartsIndex = 0;
@@ -217,8 +213,7 @@ namespace dnSpy.Text.Formatting {
 					}
 				}
 				else {
-					var adornmentElement = seqElem as IAdornmentElement;
-					if (adornmentElement != null && seqSpans.Count == 1) {
+					if (seqElem is IAdornmentElement adornmentElement && seqSpans.Count == 1) {
 						var span = seqSpans[0].Span;
 						list.Add(new LinePart(list.Count, column, new Span(span.Start - startOffs, span.Length), adornmentElement, DefaultTextProperties));
 						column += list[list.Count - 1].ColumnLength;
@@ -238,8 +233,8 @@ namespace dnSpy.Text.Formatting {
 			var props = classificationFormatMap.GetTextProperties(cspan.ClassificationType);
 			if (list.Count > 0) {
 				var last = list[list.Count - 1];
-				if (last.AdornmentElement == null && last.TextRunProperties == props && last.Span.End == cspan.Span.Start) {
-					list[list.Count - 1] = new LinePart(list.Count - 1, last.Column, Span.FromBounds(last.Span.Start - startOffs, cspan.Span.End - startOffs), last.TextRunProperties);
+				if (last.AdornmentElement is null && last.TextRunProperties == props && last.Span.End == cspan.Span.Start) {
+					list[list.Count - 1] = new LinePart(list.Count - 1, last.Column, Span.FromBounds(last.Span.Start - startOffs, cspan.Span.End - startOffs), last.TextRunProperties!);
 					return;
 				}
 			}

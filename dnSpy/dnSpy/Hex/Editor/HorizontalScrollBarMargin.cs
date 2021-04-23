@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -33,7 +33,7 @@ namespace dnSpy.Hex.Editor {
 	[VSUTIL.Name(PredefinedHexMarginNames.HorizontalScrollBar)]
 	[VSTE.TextViewRole(PredefinedHexViewRoles.Interactive)]
 	sealed class HorizontalScrollBarMarginProvider : WpfHexViewMarginProvider {
-		public override WpfHexViewMargin CreateMargin(WpfHexViewHost wpfHexViewHost, WpfHexViewMargin marginContainer) =>
+		public override WpfHexViewMargin? CreateMargin(WpfHexViewHost wpfHexViewHost, WpfHexViewMargin marginContainer) =>
 			new HorizontalScrollBarMargin(wpfHexViewHost);
 	}
 
@@ -44,9 +44,7 @@ namespace dnSpy.Hex.Editor {
 
 		sealed class TheScrollBar : TE.DsScrollBar {
 			readonly HorizontalScrollBarMargin owner;
-			public TheScrollBar(HorizontalScrollBarMargin owner) {
-				this.owner = owner;
-			}
+			public TheScrollBar(HorizontalScrollBarMargin owner) => this.owner = owner;
 			protected override void OnScroll(ScrollEventArgs e) => owner.OnScroll(Value);
 		}
 
@@ -54,10 +52,8 @@ namespace dnSpy.Hex.Editor {
 		readonly WpfHexViewHost wpfHexViewHost;
 
 		public HorizontalScrollBarMargin(WpfHexViewHost wpfHexViewHost) {
-			if (wpfHexViewHost == null)
-				throw new ArgumentNullException(nameof(wpfHexViewHost));
 			theScrollBar = new TheScrollBar(this);
-			this.wpfHexViewHost = wpfHexViewHost;
+			this.wpfHexViewHost = wpfHexViewHost ?? throw new ArgumentNullException(nameof(wpfHexViewHost));
 			theScrollBar.IsVisibleChanged += HorizontalScrollBarMargin_IsVisibleChanged;
 			wpfHexViewHost.HexView.Options.OptionChanged += Options_OptionChanged;
 			theScrollBar.SetResourceReference(FrameworkElement.StyleProperty, typeof(ScrollBar));
@@ -70,7 +66,7 @@ namespace dnSpy.Hex.Editor {
 
 		void UpdateVisibility() => theScrollBar.Visibility = Enabled ? Visibility.Visible : Visibility.Collapsed;
 
-		public override HexViewMargin GetHexViewMargin(string marginName) =>
+		public override HexViewMargin? GetHexViewMargin(string marginName) =>
 			StringComparer.OrdinalIgnoreCase.Equals(PredefinedHexMarginNames.HorizontalScrollBar, marginName) ? this : null;
 
 		void OnScroll(double value) {
@@ -79,12 +75,12 @@ namespace dnSpy.Hex.Editor {
 			wpfHexViewHost.HexView.ViewportLeft = value;
 		}
 
-		void Options_OptionChanged(object sender, VSTE.EditorOptionChangedEventArgs e) {
+		void Options_OptionChanged(object? sender, VSTE.EditorOptionChangedEventArgs e) {
 			if (e.OptionId == DefaultHexViewHostOptions.HorizontalScrollBarName)
 				UpdateVisibility();
 		}
 
-		void HorizontalScrollBarMargin_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e) {
+		void HorizontalScrollBarMargin_IsVisibleChanged(object? sender, DependencyPropertyChangedEventArgs e) {
 			if (theScrollBar.Visibility == Visibility.Visible) {
 				RegisterEvents();
 				theScrollBar.IsEnabled = true;
@@ -97,7 +93,7 @@ namespace dnSpy.Hex.Editor {
 				UnregisterEvents();
 		}
 
-		void HexView_LayoutChanged(object sender, HexViewLayoutChangedEventArgs e) {
+		void HexView_LayoutChanged(object? sender, HexViewLayoutChangedEventArgs e) {
 			theScrollBar.LargeChange = wpfHexViewHost.HexView.ViewportWidth;
 			theScrollBar.ViewportSize = wpfHexViewHost.HexView.ViewportWidth;
 			UpdateMaximum();

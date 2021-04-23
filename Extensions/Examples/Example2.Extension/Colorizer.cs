@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Windows.Media;
@@ -24,18 +24,18 @@ namespace Example2.Extension {
 
 		// Disable compiler warnings. The fields aren't referenced, just exported so
 		// the metadata can be added to some table. The fields will always be null.
-#pragma warning disable 0169
+#pragma warning disable CS0169
 		// Export the classes that define the name, and base types
 		[Export(typeof(ClassificationTypeDefinition))]
 		[Name(Color1_ClassificationTypeName)]
 		[BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)]
-		static ClassificationTypeDefinition Color1ClassificationTypeDefinition;
+		static ClassificationTypeDefinition? Color1ClassificationTypeDefinition;
 
 		[Export(typeof(ClassificationTypeDefinition))]
 		[Name(Color2_ClassificationTypeName)]
 		[BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)]
-		static ClassificationTypeDefinition Color2ClassificationTypeDefinition;
-#pragma warning restore 0169
+		static ClassificationTypeDefinition? Color2ClassificationTypeDefinition;
+#pragma warning restore CS0169
 
 		// Export the classes that define the colors and order
 		[Export(typeof(EditorFormatDefinition))]
@@ -44,9 +44,7 @@ namespace Example2.Extension {
 		[UserVisible(true)]
 		[Order(After = Priority.High)]
 		sealed class Color1ClassificationFormatDefinition : ClassificationFormatDefinition {
-			Color1ClassificationFormatDefinition() {
-				BackgroundBrush = Brushes.Green;
-			}
+			Color1ClassificationFormatDefinition() => BackgroundBrush = Brushes.Green;
 		}
 
 		[Export(typeof(EditorFormatDefinition))]
@@ -71,16 +69,13 @@ namespace Example2.Extension {
 		readonly IClassificationTypeRegistryService classificationTypeRegistryService;
 
 		[ImportingConstructor]
-		TextTaggerProvider(IClassificationTypeRegistryService classificationTypeRegistryService) {
-			this.classificationTypeRegistryService = classificationTypeRegistryService;
-		}
+		TextTaggerProvider(IClassificationTypeRegistryService classificationTypeRegistryService) => this.classificationTypeRegistryService = classificationTypeRegistryService;
 
-		public ITagger<T> CreateTagger<T>(ITextBuffer buffer) where T : ITag {
+		public ITagger<T>? CreateTagger<T>(ITextBuffer buffer) where T : ITag =>
 			// All text content types (including C#/VB code) derive from the TEXT content
 			// type, so our tagger will get called to colorize every text file that's shown
 			// in a text editor.
-			return new TextTagger(classificationTypeRegistryService) as ITagger<T>;
-		}
+			new TextTagger(classificationTypeRegistryService) as ITagger<T>;
 	}
 
 	// This class gets called to colorize supported files
@@ -89,7 +84,7 @@ namespace Example2.Extension {
 		// This event must be raised when you detect changes to spans in the document. If
 		// your GetTags() method does async work, you should raise it when the async work
 		// is completed.
-		public event EventHandler<SnapshotSpanEventArgs> TagsChanged {
+		public event EventHandler<SnapshotSpanEventArgs>? TagsChanged {
 			add { }
 			remove { }
 		}
@@ -118,14 +113,14 @@ namespace Example2.Extension {
 				foreach (var word in GetWords(span.GetText())) {
 					// Create a new span. word.Item2 is the offset within the string, so add span.Start to
 					// get the offset in the snapshot.
-					var wordSpan = new SnapshotSpan(snapshot, new Span(span.Span.Start + word.Item2, word.Item1.Length));
-					if (word.Item1 == "if")
+					var wordSpan = new SnapshotSpan(snapshot, new Span(span.Span.Start + word.offset, word.word.Length));
+					if (word.word == "if")
 						yield return new TagSpan<IClassificationTag>(wordSpan, new ClassificationTag(color3));
-					else if (word.Item1.Length == 2)
+					else if (word.word.Length == 2)
 						yield return new TagSpan<IClassificationTag>(wordSpan, new ClassificationTag(color1));
-					else if (word.Item1.Length == 3)
+					else if (word.word.Length == 3)
 						yield return new TagSpan<IClassificationTag>(wordSpan, new ClassificationTag(color2));
-					else if (word.Item1.Length == 4)
+					else if (word.word.Length == 4)
 						yield return new TagSpan<IClassificationTag>(wordSpan, new ClassificationTag(color4));
 					else {
 						// Ignore the rest
@@ -134,7 +129,7 @@ namespace Example2.Extension {
 			}
 		}
 
-		IEnumerable<Tuple<string, int>> GetWords(string s) {
+		IEnumerable<(string word, int offset)> GetWords(string s) {
 			int offset = 0;
 			for (;;) {
 				while (offset < s.Length && char.IsWhiteSpace(s[offset]))
@@ -144,7 +139,7 @@ namespace Example2.Extension {
 					offset++;
 				if (wordOffset == offset)
 					break;
-				yield return Tuple.Create(s.Substring(wordOffset, offset - wordOffset), wordOffset);
+				yield return (s.Substring(wordOffset, offset - wordOffset), wordOffset);
 			}
 		}
 	}

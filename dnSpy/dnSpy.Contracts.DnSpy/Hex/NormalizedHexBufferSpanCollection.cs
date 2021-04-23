@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -20,19 +20,20 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace dnSpy.Contracts.Hex {
 	/// <summary>
 	/// Normalized <see cref="HexBufferSpan"/> collection
 	/// </summary>
-	public sealed class NormalizedHexBufferSpanCollection : IList<HexBufferSpan>, IList, IEquatable<NormalizedHexBufferSpanCollection> {
+	public sealed class NormalizedHexBufferSpanCollection : IList<HexBufferSpan>, IList, IEquatable<NormalizedHexBufferSpanCollection?> {
 		/// <summary>
 		/// An empty collection
 		/// </summary>
 		public static readonly NormalizedHexBufferSpanCollection Empty = new NormalizedHexBufferSpanCollection();
 
 		readonly NormalizedHexSpanCollection coll;
-		readonly HexBuffer buffer;
+		readonly HexBuffer? buffer;
 
 		/// <summary>
 		/// Constructor
@@ -48,12 +49,8 @@ namespace dnSpy.Contracts.Hex {
 		/// <param name="buffer">Buffer</param>
 		/// <param name="spans">Spans</param>
 		public NormalizedHexBufferSpanCollection(HexBuffer buffer, NormalizedHexSpanCollection spans) {
-			if (buffer == null)
-				throw new ArgumentNullException(nameof(buffer));
-			if (spans == null)
-				throw new ArgumentNullException(nameof(spans));
-			coll = spans;
-			this.buffer = buffer;
+			coll = spans ?? throw new ArgumentNullException(nameof(spans));
+			this.buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
 		}
 
 		/// <summary>
@@ -62,12 +59,10 @@ namespace dnSpy.Contracts.Hex {
 		/// <param name="buffer">Buffer</param>
 		/// <param name="spans">Spans</param>
 		public NormalizedHexBufferSpanCollection(HexBuffer buffer, IEnumerable<HexSpan> spans) {
-			if (buffer == null)
-				throw new ArgumentNullException(nameof(buffer));
-			if (spans == null)
+			if (spans is null)
 				throw new ArgumentNullException(nameof(spans));
 			coll = new NormalizedHexSpanCollection(spans);
-			this.buffer = buffer;
+			this.buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
 		}
 
 		/// <summary>
@@ -76,10 +71,8 @@ namespace dnSpy.Contracts.Hex {
 		/// <param name="buffer">Buffer</param>
 		/// <param name="span">Span</param>
 		public NormalizedHexBufferSpanCollection(HexBuffer buffer, HexSpan span) {
-			if (buffer == null)
-				throw new ArgumentNullException(nameof(buffer));
 			coll = new NormalizedHexSpanCollection(span);
-			this.buffer = buffer;
+			this.buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
 		}
 
 		/// <summary>
@@ -98,14 +91,14 @@ namespace dnSpy.Contracts.Hex {
 		/// </summary>
 		/// <param name="spans">Spans</param>
 		public NormalizedHexBufferSpanCollection(IEnumerable<HexBufferSpan> spans) {
-			if (spans == null)
+			if (spans is null)
 				throw new ArgumentNullException(nameof(spans));
 			var list = new List<HexSpan>();
-			HexBuffer buffer = null;
+			HexBuffer? buffer = null;
 			foreach (var span in spans) {
 				if (span.IsDefault)
 					throw new ArgumentException();
-				if (buffer != null && buffer != span.Buffer)
+				if (buffer is not null && buffer != span.Buffer)
 					throw new ArgumentException();
 				buffer = span.Buffer;
 				list.Add(span.Span);
@@ -119,7 +112,7 @@ namespace dnSpy.Contracts.Hex {
 		/// </summary>
 		/// <param name="spans"></param>
 		public static implicit operator NormalizedHexSpanCollection(NormalizedHexBufferSpanCollection spans) {
-			if (spans == null)
+			if (spans is null)
 				throw new ArgumentNullException(nameof(spans));
 			return spans.coll;
 		}
@@ -162,13 +155,13 @@ namespace dnSpy.Contracts.Hex {
 		/// <param name="index">Index</param>
 		/// <returns></returns>
 		public HexBufferSpan this[int index] {
-			get { return new HexBufferSpan(buffer, coll[index]); }
-			set { throw new NotSupportedException(); }
+			get => new HexBufferSpan(buffer!, coll[index]);// if buffer's null, coll is empty and throws
+			set => throw new NotSupportedException();
 		}
 
-		object IList.this[int index] {
-			get { return this[index]; }
-			set { throw new NotSupportedException(); }
+		object? IList.this[int index] {
+			get => this[index];
+			set => throw new NotSupportedException();
 		}
 
 		/// <summary>
@@ -189,29 +182,31 @@ namespace dnSpy.Contracts.Hex {
 		/// </summary>
 		/// <returns></returns>
 		public IEnumerator<HexBufferSpan> GetEnumerator() {
-			foreach (var span in coll)
+			foreach (var span in coll) {
+				Debug2.Assert(buffer is not null);// Can't be null if coll is non-empty
 				yield return new HexBufferSpan(buffer, span);
+			}
 		}
 
 		// These don't seem very useful
-		bool ICollection<HexBufferSpan>.Contains(HexBufferSpan item) { throw new NotImplementedException(); }
-		void ICollection<HexBufferSpan>.CopyTo(HexBufferSpan[] array, int arrayIndex) { throw new NotImplementedException(); }
-		int IList<HexBufferSpan>.IndexOf(HexBufferSpan item) { throw new NotImplementedException(); }
-		void ICollection.CopyTo(Array array, int index) { throw new NotImplementedException(); }
-		bool IList.Contains(object value) { throw new NotImplementedException(); }
-		int IList.IndexOf(object value) { throw new NotImplementedException(); }
+		bool ICollection<HexBufferSpan>.Contains(HexBufferSpan item) => throw new NotImplementedException();
+		void ICollection<HexBufferSpan>.CopyTo(HexBufferSpan[] array, int arrayIndex) => throw new NotImplementedException();
+		int IList<HexBufferSpan>.IndexOf(HexBufferSpan item) => throw new NotImplementedException();
+		void ICollection.CopyTo(Array array, int index) => throw new NotImplementedException();
+		bool IList.Contains(object? value) => throw new NotImplementedException();
+		int IList.IndexOf(object? value) => throw new NotImplementedException();
 
 		// It's a read-only collection
-		int IList.Add(object value) { throw new NotSupportedException(); }
-		void ICollection<HexBufferSpan>.Add(HexBufferSpan item) { throw new NotSupportedException(); }
-		void IList.Clear() { throw new NotSupportedException(); }
-		void ICollection<HexBufferSpan>.Clear() { throw new NotSupportedException(); }
-		void IList.Insert(int index, object value) { throw new NotSupportedException(); }
-		void IList<HexBufferSpan>.Insert(int index, HexBufferSpan item) { throw new NotSupportedException(); }
-		void IList.Remove(object value) { throw new NotSupportedException(); }
-		bool ICollection<HexBufferSpan>.Remove(HexBufferSpan item) { throw new NotSupportedException(); }
-		void IList.RemoveAt(int index) { throw new NotSupportedException(); }
-		void IList<HexBufferSpan>.RemoveAt(int index) { throw new NotSupportedException(); }
+		int IList.Add(object? value) => throw new NotSupportedException();
+		void ICollection<HexBufferSpan>.Add(HexBufferSpan item) => throw new NotSupportedException();
+		void IList.Clear() => throw new NotSupportedException();
+		void ICollection<HexBufferSpan>.Clear() => throw new NotSupportedException();
+		void IList.Insert(int index, object? value) => throw new NotSupportedException();
+		void IList<HexBufferSpan>.Insert(int index, HexBufferSpan item) => throw new NotSupportedException();
+		void IList.Remove(object? value) => throw new NotSupportedException();
+		bool ICollection<HexBufferSpan>.Remove(HexBufferSpan item) => throw new NotSupportedException();
+		void IList.RemoveAt(int index) => throw new NotSupportedException();
+		void IList<HexBufferSpan>.RemoveAt(int index) => throw new NotSupportedException();
 
 		/// <summary>
 		/// operator ==()
@@ -219,10 +214,10 @@ namespace dnSpy.Contracts.Hex {
 		/// <param name="left"></param>
 		/// <param name="right"></param>
 		/// <returns></returns>
-		public static bool operator ==(NormalizedHexBufferSpanCollection left, NormalizedHexBufferSpanCollection right) {
-			if ((object)left == right)
+		public static bool operator ==(NormalizedHexBufferSpanCollection? left, NormalizedHexBufferSpanCollection? right) {
+			if ((object?)left == right)
 				return true;
-			if ((object)left == null || (object)right == null)
+			if (left is null || right is null)
 				return false;
 			return left.Equals(right);
 		}
@@ -233,15 +228,15 @@ namespace dnSpy.Contracts.Hex {
 		/// <param name="left"></param>
 		/// <param name="right"></param>
 		/// <returns></returns>
-		public static bool operator !=(NormalizedHexBufferSpanCollection left, NormalizedHexBufferSpanCollection right) => !(left == right);
+		public static bool operator !=(NormalizedHexBufferSpanCollection? left, NormalizedHexBufferSpanCollection? right) => !(left == right);
 
 		/// <summary>
 		/// Equals()
 		/// </summary>
 		/// <param name="other">Other instance</param>
 		/// <returns></returns>
-		public bool Equals(NormalizedHexBufferSpanCollection other) {
-			if ((object)other == null)
+		public bool Equals(NormalizedHexBufferSpanCollection? other) {
+			if (other is null)
 				return false;
 			if (Count != other.Count)
 				return false;
@@ -259,14 +254,14 @@ namespace dnSpy.Contracts.Hex {
 		/// </summary>
 		/// <param name="obj">Object</param>
 		/// <returns></returns>
-		public override bool Equals(object obj) => Equals(obj as NormalizedHexBufferSpanCollection);
+		public override bool Equals(object? obj) => Equals(obj as NormalizedHexBufferSpanCollection);
 
 		/// <summary>
 		/// GetHashCode()
 		/// </summary>
 		/// <returns></returns>
 		public override int GetHashCode() {
-			int hc = buffer.GetHashCode();
+			int hc = buffer?.GetHashCode() ?? 0;
 			for (int i = 0; i < Count; i++)
 				hc ^= this[i].GetHashCode();
 			return hc;

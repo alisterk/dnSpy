@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -43,7 +43,7 @@ namespace dnSpy.Themes {
 		readonly Dictionary<Guid, Theme> themes;
 
 		public ITheme Theme {
-			get { return theme; }
+			get => theme!;
 			set {
 				if (theme != value) {
 					theme = value;
@@ -55,7 +55,7 @@ namespace dnSpy.Themes {
 				}
 			}
 		}
-		ITheme theme;
+		ITheme? theme;
 
 		public IEnumerable<ITheme> AllThemes => themes.Values.OrderBy(x => x.Order);
 
@@ -70,7 +70,7 @@ namespace dnSpy.Themes {
 		}
 
 		public bool IsHighContrast {
-			get { return isHighContrast; }
+			get => isHighContrast;
 			set {
 				if (isHighContrast != value) {
 					isHighContrast = value;
@@ -81,20 +81,20 @@ namespace dnSpy.Themes {
 		bool isHighContrast;
 
 		public event EventHandler<ThemeChangedEventArgs> ThemeChangedHighPriority {
-			add { themeChangedHighPriority.Add(value); }
-			remove { themeChangedHighPriority.Remove(value); }
+			add => themeChangedHighPriority.Add(value);
+			remove => themeChangedHighPriority.Remove(value);
 		}
 		readonly WeakEventList<ThemeChangedEventArgs> themeChangedHighPriority;
 
 		public event EventHandler<ThemeChangedEventArgs> ThemeChanged {
-			add { themeChanged.Add(value); }
-			remove { themeChanged.Remove(value); }
+			add => themeChanged.Add(value);
+			remove => themeChanged.Remove(value);
 		}
 		readonly WeakEventList<ThemeChangedEventArgs> themeChanged;
 
 		public event EventHandler<ThemeChangedEventArgs> ThemeChangedLowPriority {
-			add { themeChangedLowPriority.Add(value); }
-			remove { themeChangedLowPriority.Remove(value); }
+			add => themeChangedLowPriority.Add(value);
+			remove => themeChangedLowPriority.Remove(value);
 		}
 		readonly WeakEventList<ThemeChangedEventArgs> themeChangedLowPriority;
 
@@ -117,8 +117,8 @@ namespace dnSpy.Themes {
 
 		void InitializeResources() {
 			var app = Application.Current;
-			Debug.Assert(app != null);
-			if (app != null)
+			Debug2.Assert(app is not null);
+			if (app is not null)
 				((Theme)Theme).UpdateResources(app.Resources);
 		}
 
@@ -127,16 +127,15 @@ namespace dnSpy.Themes {
 		static readonly Guid DefaultHighContrastThemeGuid = ThemeConstants.THEME_HIGHCONTRAST_GUID;
 
 		ITheme GetThemeOrDefault(Guid guid) {
-			Theme theme;
-			if (themes.TryGetValue(guid, out theme))
+			if (themes.TryGetValue(guid, out var theme))
 				return theme;
 			if (themes.TryGetValue(DefaultThemeGuid, out theme))
 				return theme;
-			return AllThemes.FirstOrDefault();
+			return AllThemes.First();
 		}
 
 		void SwitchThemeIfNecessary() {
-			if (Theme == null || Theme.IsHighContrast != IsHighContrast)
+			if (theme is null || theme.IsHighContrast != IsHighContrast)
 				Theme = GetThemeOrDefault(CurrentDefaultThemeGuid);
 		}
 
@@ -165,10 +164,10 @@ namespace dnSpy.Themes {
 
 		IEnumerable<string> GetDnthemePaths() => AppDirectories.GetDirectories("Themes");
 
-		Theme Load(string filename) {
+		Theme? Load(string filename) {
 			try {
 				var root = XDocument.Load(filename).Root;
-				if (root.Name != "theme")
+				if (root?.Name != "theme")
 					return null;
 
 				var theme = new Theme(root);
@@ -179,7 +178,7 @@ namespace dnSpy.Themes {
 				return theme;
 			}
 			catch (Exception) {
-				Debug.Fail(string.Format("Failed to load file '{0}'", filename));
+				Debug.Fail($"Failed to load file '{filename}'");
 			}
 			return null;
 		}

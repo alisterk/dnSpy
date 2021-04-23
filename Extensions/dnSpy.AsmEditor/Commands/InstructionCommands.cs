@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -54,9 +55,9 @@ namespace dnSpy.AsmEditor.Commands {
 			cmds.Add(CopyILBytesCommand, CopyILBytesExecuted, CopyILBytesCanExecute, ModifierKeys.Control, Key.B);
 		}
 
-		void CopyILBytesCanExecute(object sender, CanExecuteRoutedEventArgs e) =>
+		void CopyILBytesCanExecute(object? sender, CanExecuteRoutedEventArgs e) =>
 			e.CanExecute = CopyILBytesCodeCommand.CanExecute(documentTabService.ActiveTab.TryGetDocumentViewer());
-		void CopyILBytesExecuted(object sender, ExecutedRoutedEventArgs e) =>
+		void CopyILBytesExecuted(object? sender, ExecutedRoutedEventArgs e) =>
 			CopyILBytesCodeCommand.Execute(documentTabService.ActiveTab.TryGetDocumentViewer(), methodAnnotations);
 	}
 
@@ -65,9 +66,7 @@ namespace dnSpy.AsmEditor.Commands {
 		readonly Lazy<IMethodAnnotations> methodAnnotations;
 
 		[ImportingConstructor]
-		CopyILBytesCodeCommand(Lazy<IMethodAnnotations> methodAnnotations) {
-			this.methodAnnotations = methodAnnotations;
-		}
+		CopyILBytesCodeCommand(Lazy<IMethodAnnotations> methodAnnotations) => this.methodAnnotations = methodAnnotations;
 
 		public override bool IsVisible(IMenuItemContext context) {
 			if (context.CreatorObject.Guid != new Guid(MenuConstants.GUIDOBJ_DOCUMENTVIEWERCONTROL_GUID))
@@ -80,12 +79,13 @@ namespace dnSpy.AsmEditor.Commands {
 				Execute(context.Find<IDocumentViewer>(), methodAnnotations);
 		}
 
-		public static bool CanExecute(IDocumentViewer documentViewer) =>
-			documentViewer != null && FindInstructions(documentViewer).Any();
+		public static bool CanExecute(IDocumentViewer? documentViewer) =>
+			documentViewer is not null && FindInstructions(documentViewer).Any();
 
-		public static void Execute(IDocumentViewer documentViewer, Lazy<IMethodAnnotations> methodAnnotations) {
+		public static void Execute(IDocumentViewer? documentViewer, Lazy<IMethodAnnotations> methodAnnotations) {
 			if (!CanExecute(documentViewer))
 				return;
+			Debug2.Assert(documentViewer is not null);
 
 			var copier = new InstructionILBytesCopier();
 			var text = copier.Copy(FindInstructions(documentViewer), methodAnnotations);
@@ -116,49 +116,41 @@ namespace dnSpy.AsmEditor.Commands {
 		public string Copy(IEnumerable<SpanData<ReferenceInfo>> refs, Lazy<IMethodAnnotations> methodAnnotations) {
 			var sb = new StringBuilder();
 
-			IInstructionBytesReader reader = null;
-			try {
-				MethodDef method = null;
-				int index = 0;
-				foreach (var r in refs) {
-					var ir = (InstructionReference)r.Data.Reference;
-					var instr = ir.Instruction;
-					if (ir.Method != method) {
-						if (reader != null)
-							reader.Dispose();
-						method = ir.Method;
-						reader = InstructionBytesReader.Create(method, methodAnnotations.Value.IsBodyModified(method));
-						index = method.Body.Instructions.IndexOf(instr);
-						if (index < 0)
-							throw new InvalidOperationException();
-						reader.SetInstruction(index, instr.Offset);
-					}
-					else if (index >= method.Body.Instructions.Count)
+			IInstructionBytesReader? reader = null;
+			MethodDef? method = null;
+			int index = 0;
+			foreach (var r in refs) {
+				var ir = (InstructionReference)r.Data.Reference!;
+				var instr = ir.Instruction;
+				if (ir.Method != method) {
+					method = ir.Method;
+					reader = InstructionBytesReader.Create(method, methodAnnotations.Value.IsBodyModified(method));
+					index = method.Body.Instructions.IndexOf(instr);
+					if (index < 0)
 						throw new InvalidOperationException();
-					else if (method.Body.Instructions[index + 1] != ir.Instruction) {
-						index = method.Body.Instructions.IndexOf(instr);
-						if (index < 0)
-							throw new InvalidOperationException();
-						reader.SetInstruction(index, instr.Offset);
+					reader.SetInstruction(index, instr.Offset);
+				}
+				else if (index >= method!.Body.Instructions.Count)
+					throw new InvalidOperationException();
+				else if (method.Body.Instructions[index + 1] != ir.Instruction) {
+					index = method.Body.Instructions.IndexOf(instr);
+					if (index < 0)
+						throw new InvalidOperationException();
+					reader!.SetInstruction(index, instr.Offset);
+				}
+				else
+					index++;
+
+				int size = instr.GetSize();
+				for (int i = 0; i < size; i++) {
+					int b = reader!.ReadByte();
+					if (b < 0) {
+						sb.Append("??");
+						FoundUnknownBytes = true;
 					}
 					else
-						index++;
-
-					int size = instr.GetSize();
-					for (int i = 0; i < size; i++) {
-						int b = reader.ReadByte();
-						if (b < 0) {
-							sb.Append("??");
-							FoundUnknownBytes = true;
-						}
-						else
-							sb.Append(string.Format("{0:X2}", b));
-					}
+						sb.Append(b.ToString("X2"));
 				}
-			}
-			finally {
-				if (reader != null)
-					reader.Dispose();
 			}
 
 			return sb.ToString();

@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -212,7 +212,7 @@ namespace dnSpy.Contracts.Hex {
 				throw new ArgumentException();
 
 			var overlapSpan = BufferSpan.Overlap(span);
-			if (overlapSpan == null)
+			if (overlapSpan is null)
 				yield break;
 
 			foreach (var column in ColumnOrder) {
@@ -282,7 +282,7 @@ namespace dnSpy.Contracts.Hex {
 				yield break;
 
 			var overlapSpan = BufferSpan.Overlap(span);
-			if (overlapSpan == null)
+			if (overlapSpan is null)
 				yield break;
 
 			if ((flags & (HexSpanSelectionFlags.Group0 | HexSpanSelectionFlags.Group1)) != 0) {
@@ -300,24 +300,24 @@ namespace dnSpy.Contracts.Hex {
 				}
 				else
 					cells = collection.GetCells(overlapSpan.Value);
-				HexCell firstCell = null;
-				HexCell lastCell = null;
+				HexCell? firstCell = null;
+				HexCell? lastCell = null;
 				foreach (var cell in cells) {
 					if (!((cell.GroupIndex == 0 && group0) || (cell.GroupIndex == 1 && group1)))
 						continue;
-					if (firstCell == null) {
+					if (firstCell is null) {
 						firstCell = cell;
 						lastCell = cell;
 					}
-					else if (lastCell.Index + 1 == cell.Index && lastCell.GroupIndex == cell.GroupIndex)
+					else if (lastCell!.Index + 1 == cell.Index && lastCell.GroupIndex == cell.GroupIndex)
 						lastCell = cell;
 					else {
 						yield return Create(collection, firstCell, lastCell, overlapSpan.Value);
 						firstCell = lastCell = cell;
 					}
 				}
-				if (firstCell != null)
-					yield return Create(collection, firstCell, lastCell, overlapSpan.Value);
+				if (firstCell is not null)
+					yield return Create(collection, firstCell, lastCell!, overlapSpan.Value);
 				yield break;
 			}
 			if ((flags & HexSpanSelectionFlags.AllVisibleCells) != 0) {
@@ -378,7 +378,7 @@ namespace dnSpy.Contracts.Hex {
 			}
 
 			var cell = collection.GetCell(position.BufferPosition);
-			if (cell == null)
+			if (cell is null)
 				return null;
 			if (position.CellPosition >= cell.CellSpan.Length)
 				return null;
@@ -453,6 +453,7 @@ namespace dnSpy.Contracts.Hex {
 				break;
 
 			case HexLinePositionInfoType.ValueCellSeparator:
+				Debug2.Assert(position.Cell is not null);
 				Debug.Assert(position.Cell.CellSpan.End == position.Position);
 				position = HexLinePositionInfo.CreateValue(position.Cell.CellSpan.End - 1, position.Cell);
 				break;
@@ -461,7 +462,7 @@ namespace dnSpy.Contracts.Hex {
 			case HexLinePositionInfoType.ColumnSeparator:
 			case HexLinePositionInfoType.VirtualSpace:
 				var closestPos = GetClosestCellPosition(position.Position);
-				if (closestPos == null)
+				if (closestPos is null)
 					return null;
 				Debug.Assert(closestPos.Value.IsAsciiCell || closestPos.Value.IsValueCell);
 				position = closestPos.Value;
@@ -477,24 +478,26 @@ namespace dnSpy.Contracts.Hex {
 			case HexLinePositionInfoType.AsciiCell:
 				if (!IsAsciiColumnPresent)
 					return null;
+				Debug2.Assert(cell is not null);
 				if (onlyVisibleCells && !cell.HasData) {
 					var visible = GetVisible(AsciiCells, cell);
-					if (visible == null)
+					if (visible is null)
 						return null;
-					cell = visible.Value.Key;
-					cellPosition = visible.Value.Value;
+					cell = visible.Value.cell;
+					cellPosition = visible.Value.cellPosition;
 				}
 				return new HexCellPosition(HexColumnType.Ascii, cell.BufferStart, cellPosition);
 
 			case HexLinePositionInfoType.ValueCell:
+				Debug2.Assert(cell is not null);
 				if (!IsValuesColumnPresent)
 					return null;
 				if (onlyVisibleCells && !cell.HasData) {
 					var visible = GetVisible(ValueCells, cell);
-					if (visible == null)
+					if (visible is null)
 						return null;
-					cell = visible.Value.Key;
-					cellPosition = visible.Value.Value;
+					cell = visible.Value.cell;
+					cellPosition = visible.Value.cellPosition;
 				}
 				return new HexCellPosition(HexColumnType.Values, LineProvider.GetValueBufferSpan(cell, cellPosition).Start, cellPosition);
 
@@ -507,47 +510,47 @@ namespace dnSpy.Contracts.Hex {
 			}
 		}
 
-		static KeyValuePair<HexCell, int>? GetVisible(HexCellCollection collection, HexCell cell) {
+		static (HexCell cell, int cellPosition)? GetVisible(HexCellCollection collection, HexCell cell) {
 			if (cell.HasData)
 				throw new ArgumentException();
 			for (int i = cell.Index + 1; i < collection.Count; i++) {
 				var c = collection[i];
 				if (!c.HasData)
 					continue;
-				return new KeyValuePair<HexCell, int>(c, 0);
+				return (c, 0);
 			}
 			for (int i = cell.Index - 1; i >= 0; i--) {
 				var c = collection[i];
 				if (!c.HasData)
 					continue;
-				return new KeyValuePair<HexCell, int>(c, c.CellSpan.Length - 1);
+				return (c, c.CellSpan.Length - 1);
 			}
 			return null;
 		}
 
 		HexLinePositionInfo? GetClosestCellPosition(int linePosition) {
-			KeyValuePair<HexColumnType, HexCell>? closest = null;
+			(HexColumnType columnType, HexCell cell)? closest = null;
 			int cellPosition = -1;
 			foreach (var info in GetCells()) {
-				var cell = info.Value;
-				if (closest == null || Compare(linePosition, cell, closest.Value.Value) < 0) {
+				var cell = info.cell;
+				if (closest is null || Compare(linePosition, cell, closest.Value.cell) < 0) {
 					closest = info;
-					cellPosition = linePosition - info.Value.CellSpan.Start;
+					cellPosition = linePosition - info.cell.CellSpan.Start;
 					if (cellPosition < 0)
 						cellPosition = 0;
-					else if (cellPosition >= info.Value.CellSpan.Length)
-						cellPosition = info.Value.CellSpan.Length - 1;
+					else if (cellPosition >= info.cell.CellSpan.Length)
+						cellPosition = info.cell.CellSpan.Length - 1;
 				}
 			}
-			if (closest == null)
+			if (closest is null)
 				return null;
-			if (cellPosition < 0 || cellPosition >= closest.Value.Value.CellSpan.Length)
+			if (cellPosition < 0 || cellPosition >= closest.Value.cell.CellSpan.Length)
 				throw new InvalidOperationException();
-			int pos = closest.Value.Value.CellSpan.Start + cellPosition;
-			if (closest.Value.Key == HexColumnType.Values)
-				return HexLinePositionInfo.CreateValue(pos, closest.Value.Value);
-			if (closest.Value.Key == HexColumnType.Ascii)
-				return HexLinePositionInfo.CreateAscii(pos, closest.Value.Value);
+			int pos = closest.Value.cell.CellSpan.Start + cellPosition;
+			if (closest.Value.columnType == HexColumnType.Values)
+				return HexLinePositionInfo.CreateValue(pos, closest.Value.cell);
+			if (closest.Value.columnType == HexColumnType.Ascii)
+				return HexLinePositionInfo.CreateAscii(pos, closest.Value.cell);
 			throw new InvalidOperationException();
 		}
 
@@ -563,7 +566,7 @@ namespace dnSpy.Contracts.Hex {
 			return Math.Min(sl, el);
 		}
 
-		IEnumerable<KeyValuePair<HexColumnType, HexCell>> GetCells() {
+		IEnumerable<(HexColumnType columnType, HexCell cell)> GetCells() {
 			foreach (var column in ColumnOrder) {
 				switch (column) {
 				case HexColumnType.Offset:
@@ -572,14 +575,14 @@ namespace dnSpy.Contracts.Hex {
 				case HexColumnType.Values:
 					if (IsValuesColumnPresent) {
 						foreach (var cell in ValueCells.GetCells())
-							yield return new KeyValuePair<HexColumnType, HexCell>(HexColumnType.Values, cell);
+							yield return (HexColumnType.Values, cell);
 					}
 					break;
 
 				case HexColumnType.Ascii:
 					if (IsAsciiColumnPresent) {
 						foreach (var cell in AsciiCells.GetCells())
-							yield return new KeyValuePair<HexColumnType, HexCell>(HexColumnType.Ascii, cell);
+							yield return (HexColumnType.Ascii, cell);
 					}
 					break;
 

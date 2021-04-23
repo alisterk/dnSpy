@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -23,11 +23,11 @@ using dnlib.DotNet;
 namespace dnSpy.AsmEditor.Event {
 	sealed class EventDefOptions {
 		public EventAttributes Attributes;
-		public UTF8String Name;
-		public ITypeDefOrRef EventType;
-		public MethodDef AddMethod;
-		public MethodDef InvokeMethod;
-		public MethodDef RemoveMethod;
+		public UTF8String? Name;
+		public ITypeDefOrRef? EventType;
+		public MethodDef? AddMethod;
+		public MethodDef? InvokeMethod;
+		public MethodDef? RemoveMethod;
 		public List<MethodDef> OtherMethods = new List<MethodDef>();
 		public List<CustomAttribute> CustomAttributes = new List<CustomAttribute>();
 
@@ -61,12 +61,10 @@ namespace dnSpy.AsmEditor.Event {
 
 		public EventDef CreateEventDef(ModuleDef ownerModule) => ownerModule.UpdateRowId(CopyTo(new EventDefUser()));
 
-		public static EventDefOptions Create(UTF8String name, ITypeDefOrRef eventType) {
-			return new EventDefOptions {
-				Attributes = 0,
-				Name = name,
-				EventType = eventType,
-			};
-		}
+		public static EventDefOptions Create(UTF8String name, ITypeDefOrRef eventType) => new EventDefOptions {
+			Attributes = 0,
+			Name = name,
+			EventType = eventType,
+		};
 	}
 }

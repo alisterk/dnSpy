@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -24,16 +24,19 @@ namespace dnSpy.Contracts.Documents {
 	/// <summary>
 	/// Compares filenames
 	/// </summary>
-	public sealed class FilenameKey : IDsDocumentNameKey, IEquatable<FilenameKey> {
+	public sealed class FilenameKey : IDsDocumentNameKey, IEquatable<FilenameKey?> {
 		readonly string filename;
 
 		/// <summary>
 		/// Constructor
 		/// </summary>
 		/// <param name="filename">Filename</param>
-		public FilenameKey(string filename) {
-			this.filename = GetFullPath(filename);
-		}
+		public FilenameKey(string filename) => this.filename = GetFullPath(filename);
+
+		FilenameKey(string filename, bool dummy) => this.filename = filename;
+
+		// PERF: Path.GetFullPath() is slow so if we know that FilenameKey.GetFullPath() == filename, use this method instead
+		internal static FilenameKey CreateFullPath(string filename) => new FilenameKey(filename, false);
 
 		static string GetFullPath(string filename) {
 			try {
@@ -52,14 +55,14 @@ namespace dnSpy.Contracts.Documents {
 		/// </summary>
 		/// <param name="other">Other instance</param>
 		/// <returns></returns>
-		public bool Equals(FilenameKey other) => other != null && StringComparer.OrdinalIgnoreCase.Equals(filename, other.filename);
+		public bool Equals(FilenameKey? other) => other is not null && StringComparer.OrdinalIgnoreCase.Equals(filename, other.filename);
 
 		/// <summary>
 		/// Equals()
 		/// </summary>
 		/// <param name="obj">Other instance</param>
 		/// <returns></returns>
-		public override bool Equals(object obj) => Equals(obj as FilenameKey);
+		public override bool Equals(object? obj) => Equals(obj as FilenameKey);
 
 		/// <summary>
 		/// GetHashCode()

@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -24,7 +24,7 @@ namespace dnSpy.Contracts.Decompiler {
 	/// <summary>
 	/// Token reference
 	/// </summary>
-	public class TokenReference : IEquatable<TokenReference> {
+	public class TokenReference : IEquatable<TokenReference?> {
 		/// <summary>
 		/// Owner module
 		/// </summary>
@@ -49,9 +49,7 @@ namespace dnSpy.Contracts.Decompiler {
 		/// <param name="module">Owner module</param>
 		/// <param name="token">Token</param>
 		public TokenReference(ModuleDef module, uint token) {
-			if (module == null)
-				throw new ArgumentNullException(nameof(module));
-			ModuleDef = module;
+			ModuleDef = module ?? throw new ArgumentNullException(nameof(module));
 			Token = token;
 		}
 
@@ -60,20 +58,20 @@ namespace dnSpy.Contracts.Decompiler {
 		/// </summary>
 		/// <param name="other"></param>
 		/// <returns></returns>
-		public bool Equals(TokenReference other) => other != null && Token == other.Token && ModuleDef == other.ModuleDef;
+		public bool Equals(TokenReference? other) => other is not null && Token == other.Token && ModuleDef == other.ModuleDef;
 
 		/// <summary>
 		/// Equals()
 		/// </summary>
 		/// <param name="obj"></param>
 		/// <returns></returns>
-		public override bool Equals(object obj) => Equals(obj as TokenReference);
+		public override bool Equals(object? obj) => Equals(obj as TokenReference);
 
 		/// <summary>
 		/// Equals()
 		/// </summary>
 		/// <returns></returns>
-		public override int GetHashCode() => (ModuleDef == null ? 0 : ModuleDef.GetHashCode()) ^ (int)Token;
+		public override int GetHashCode() => (ModuleDef is null ? 0 : ModuleDef.GetHashCode()) ^ (int)Token;
 
 		/// <summary>
 		/// ToString()

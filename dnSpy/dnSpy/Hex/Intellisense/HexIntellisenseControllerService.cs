@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -33,9 +33,7 @@ namespace dnSpy.Hex.Intellisense {
 		readonly Lazy<HexIntellisenseControllerProvider>[] intellisenseControllerProviders;
 
 		[ImportingConstructor]
-		HexIntellisenseControllerService([ImportMany] IEnumerable<Lazy<HexIntellisenseControllerProvider>> intellisenseControllerProviders) {
-			this.intellisenseControllerProviders = intellisenseControllerProviders.ToArray();
-		}
+		HexIntellisenseControllerService([ImportMany] IEnumerable<Lazy<HexIntellisenseControllerProvider>> intellisenseControllerProviders) => this.intellisenseControllerProviders = intellisenseControllerProviders.ToArray();
 
 		sealed class HexViewState {
 			readonly WpfHexView hexView;
@@ -46,7 +44,7 @@ namespace dnSpy.Hex.Intellisense {
 				var list = new List<HexIntellisenseController>(intellisenseControllerProviders.Length);
 				foreach (var provider in intellisenseControllerProviders) {
 					var controller = provider.Value.TryCreateIntellisenseController(hexView);
-					if (controller != null)
+					if (controller is not null)
 						list.Add(controller);
 				}
 				intellisenseControllers = list.ToArray();
@@ -54,7 +52,7 @@ namespace dnSpy.Hex.Intellisense {
 					hexView.Closed += HexView_Closed;
 			}
 
-			void HexView_Closed(object sender, EventArgs e) {
+			void HexView_Closed(object? sender, EventArgs e) {
 				hexView.Closed -= HexView_Closed;
 				foreach (var controller in intellisenseControllers)
 					controller.Detach(hexView);

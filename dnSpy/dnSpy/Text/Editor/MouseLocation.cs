@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -33,9 +33,7 @@ namespace dnSpy.Text.Editor {
 		public Point Point { get; }
 
 		MouseLocation(ITextViewLine textViewLine, VirtualSnapshotPoint position, Point point) {
-			if (textViewLine == null)
-				throw new ArgumentNullException(nameof(textViewLine));
-			TextViewLine = textViewLine;
+			TextViewLine = textViewLine ?? throw new ArgumentNullException(nameof(textViewLine));
 			Position = position;
 			Affinity = textViewLine.IsLastTextViewLineForSnapshotLine || position.Position != textViewLine.End ? PositionAffinity.Successor : PositionAffinity.Predecessor;
 			Debug.Assert(position.VirtualSpaces == 0 || Affinity == PositionAffinity.Successor);
@@ -53,7 +51,7 @@ namespace dnSpy.Text.Editor {
 
 			var point = GetTextPoint(wpfTextView, e);
 			var line = wpfTextView.TextViewLines.GetTextViewLineContainingYCoordinate(point.Y);
-			if (line != null)
+			if (line is not null)
 				textViewLine = line;
 			else if (point.Y <= wpfTextView.ViewportTop)
 				textViewLine = wpfTextView.TextViewLines.FirstVisibleLine;
@@ -67,10 +65,10 @@ namespace dnSpy.Text.Editor {
 			return new MouseLocation(textViewLine, position, point);
 		}
 
-		public static MouseLocation TryCreateTextOnly(IWpfTextView wpfTextView, MouseEventArgs e, bool fullLineHeight) {
+		public static MouseLocation? TryCreateTextOnly(IWpfTextView wpfTextView, MouseEventArgs e, bool fullLineHeight) {
 			var point = GetTextPoint(wpfTextView, e);
 			var line = wpfTextView.TextViewLines.GetTextViewLineContainingYCoordinate(point.Y);
-			if (line == null)
+			if (line is null)
 				return null;
 			if (fullLineHeight) {
 				if (!(line.Top <= point.Y && point.Y < line.Bottom))
@@ -85,7 +83,7 @@ namespace dnSpy.Text.Editor {
 					return null;
 			}
 			var position = line.GetBufferPositionFromXCoordinate(point.X, true);
-			if (position == null)
+			if (position is null)
 				return null;
 
 			return new MouseLocation(line, new VirtualSnapshotPoint(position.Value), point);

@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -24,14 +24,14 @@ using dnlib.PE;
 namespace dnSpy.AsmEditor.Field {
 	sealed class FieldDefOptions {
 		public FieldAttributes Attributes;
-		public UTF8String Name;
-		public FieldSig FieldSig;
+		public UTF8String? Name;
+		public FieldSig? FieldSig;
 		public uint? FieldOffset;
-		public MarshalType MarshalType;
+		public MarshalType? MarshalType;
 		public RVA RVA;
-		public byte[] InitialValue;
-		public ImplMap ImplMap;
-		public Constant Constant;
+		public byte[]? InitialValue;
+		public ImplMap? ImplMap;
+		public Constant? Constant;
 		public List<CustomAttribute> CustomAttributes = new List<CustomAttribute>();
 
 		public FieldDefOptions() {
@@ -67,18 +67,16 @@ namespace dnSpy.AsmEditor.Field {
 
 		public FieldDef CreateFieldDef(ModuleDef ownerModule) => ownerModule.UpdateRowId(CopyTo(new FieldDefUser()));
 
-		public static FieldDefOptions Create(UTF8String name, FieldSig fieldSig) {
-			return new FieldDefOptions {
-				Attributes = FieldAttributes.Public,
-				Name = name,
-				FieldSig = fieldSig,
-				FieldOffset = null,
-				MarshalType = null,
-				RVA = 0,
-				InitialValue = null,
-				ImplMap = null,
-				Constant = null,
-			};
-		}
+		public static FieldDefOptions Create(UTF8String name, FieldSig fieldSig) => new FieldDefOptions {
+			Attributes = FieldAttributes.Public,
+			Name = name,
+			FieldSig = fieldSig,
+			FieldOffset = null,
+			MarshalType = null,
+			RVA = 0,
+			InitialValue = null,
+			ImplMap = null,
+			Constant = null,
+		};
 	}
 }

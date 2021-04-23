@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2011 AlphaSierraPapa for the SharpDevelop Team
+// Copyright (c) 2011 AlphaSierraPapa for the SharpDevelop Team
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this
 // software and associated documentation files (the "Software"), to deal in the Software
@@ -31,12 +31,7 @@ namespace dnSpy.Analyzer.TreeNodes {
 	sealed class MethodOverridesNode : SearchNode {
 		readonly MethodDef analyzedMethod;
 
-		public MethodOverridesNode(MethodDef analyzedMethod) {
-			if (analyzedMethod == null)
-				throw new ArgumentNullException(nameof(analyzedMethod));
-
-			this.analyzedMethod = analyzedMethod;
-		}
+		public MethodOverridesNode(MethodDef analyzedMethod) => this.analyzedMethod = analyzedMethod ?? throw new ArgumentNullException(nameof(analyzedMethod));
 
 		protected override void Write(ITextColorWriter output, IDecompiler decompiler) =>
 			output.Write(BoxedTextColor.Text, dnSpy_Analyzer_Resources.OverriddenByTreeNode);
@@ -47,24 +42,15 @@ namespace dnSpy.Analyzer.TreeNodes {
 		}
 
 		IEnumerable<AnalyzerTreeNodeData> FindReferencesInType(TypeDef type) {
-			AnalyzerTreeNodeData newNode = null;
-			try {
-				if (!TypesHierarchyHelpers.IsBaseType(analyzedMethod.DeclaringType, type, resolveTypeArguments: false))
+			if (!TypesHierarchyHelpers.IsBaseType(analyzedMethod.DeclaringType, type, resolveTypeArguments: false))
+				yield break;
+			foreach (var method in type.Methods) {
+				if (TypesHierarchyHelpers.IsBaseMethod(analyzedMethod, method)) {
+					bool hidesParent = !method.IsVirtual ^ method.IsNewSlot;
+					yield return new MethodNode(method, hidesParent) { Context = Context };
 					yield break;
-
-				foreach (MethodDef method in type.Methods) {
-					if (TypesHierarchyHelpers.IsBaseMethod(analyzedMethod, method)) {
-						bool hidesParent = !method.IsVirtual ^ method.IsNewSlot;
-						newNode = new MethodNode(method, hidesParent) { Context = Context };
-					}
 				}
 			}
-			catch (ResolveException) {
-				// ignore this type definition. maybe add a notification about such cases.
-			}
-
-			if (newNode != null)
-				yield return newNode;
 		}
 
 		public static bool CanShow(MethodDef method) =>

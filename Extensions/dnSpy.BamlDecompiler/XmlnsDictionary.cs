@@ -1,4 +1,4 @@
-﻿/*
+/*
 	Copyright (c) 2015 Ki
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -49,23 +49,15 @@ namespace dnSpy.BamlDecompiler {
 	internal class XmlnsDictionary {
 		Dictionary<string, NamespaceMap> piMappings = new Dictionary<string, NamespaceMap>();
 
-		public XmlnsDictionary() {
-			CurrentScope = null;
-		}
+		public XmlnsDictionary() => CurrentScope = null;
 
 		public XmlnsScope CurrentScope { get; set; }
 
-		public void PushScope(BamlElement element) {
-			CurrentScope = new XmlnsScope(CurrentScope, element);
-		}
+		public void PushScope(BamlElement element) => CurrentScope = new XmlnsScope(CurrentScope, element);
 
-		public void PopScope() {
-			CurrentScope = CurrentScope.PreviousScope;
-		}
+		public void PopScope() => CurrentScope = CurrentScope.PreviousScope;
 
-		public void Add(NamespaceMap map) {
-			CurrentScope.Add(map);
-		}
+		public void Add(NamespaceMap map) => CurrentScope.Add(map);
 
 		public void SetPIMapping(string xmlNs, string clrNs, IAssembly assembly) {
 			if (!piMappings.ContainsKey(xmlNs)) {
@@ -75,8 +67,7 @@ namespace dnSpy.BamlDecompiler {
 		}
 
 		NamespaceMap PIFixup(NamespaceMap map) {
-			NamespaceMap piMap;
-			if (piMappings.TryGetValue(map.XMLNamespace, out piMap)) {
+			if (piMappings.TryGetValue(map.XMLNamespace, out var piMap)) {
 				map.Assembly = piMap.Assembly;
 				map.CLRNamespace = piMap.CLRNamespace;
 			}
@@ -85,7 +76,7 @@ namespace dnSpy.BamlDecompiler {
 
 		public NamespaceMap LookupNamespaceFromPrefix(string prefix) {
 			var scope = CurrentScope;
-			while (scope != null) {
+			while (scope is not null) {
 				foreach (var ns in scope) {
 					if (ns.XmlnsPrefix == prefix)
 						return PIFixup(ns);
@@ -99,7 +90,7 @@ namespace dnSpy.BamlDecompiler {
 
 		public NamespaceMap LookupNamespaceFromXmlns(string xmlNs) {
 			var scope = CurrentScope;
-			while (scope != null) {
+			while (scope is not null) {
 				foreach (var ns in scope) {
 					if (ns.XMLNamespace == xmlNs)
 						return ns;
@@ -119,7 +110,7 @@ namespace dnSpy.BamlDecompiler {
 			}
 
 			var scope = CurrentScope;
-			while (scope != null) {
+			while (scope is not null) {
 				foreach (var ns in scope) {
 					if (comparer.Equals(ns.Assembly, asm) && ns.CLRNamespace == clrNs)
 						return ns.XMLNamespace;

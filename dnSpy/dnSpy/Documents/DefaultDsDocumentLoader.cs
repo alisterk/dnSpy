@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -24,9 +24,7 @@ namespace dnSpy.Documents {
 	sealed class DefaultDsDocumentLoader : IDsDocumentLoader {
 		readonly IDsDocumentService documentService;
 
-		public DefaultDsDocumentLoader(IDsDocumentService documentService) {
-			this.documentService = documentService;
-		}
+		public DefaultDsDocumentLoader(IDsDocumentService documentService) => this.documentService = documentService;
 
 		public IDsDocument[] Load(IEnumerable<DocumentToLoad> documents) {
 			var loadedDocuments = new List<IDsDocument>();
@@ -35,7 +33,7 @@ namespace dnSpy.Documents {
 				if (doc.Info.Type == DocumentConstants.DOCUMENTTYPE_FILE && string.IsNullOrEmpty(doc.Info.Name))
 					continue;
 				var document = documentService.TryGetOrCreate(doc.Info, doc.IsAutoLoaded);
-				if (document != null && !hash.Contains(document)) {
+				if (document is not null && !hash.Contains(document)) {
 					hash.Add(document);
 					loadedDocuments.Add(document);
 				}

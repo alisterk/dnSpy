@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -26,8 +26,7 @@ namespace dnSpy.AsmEditor.DnlibDialogs {
 		public MemberRefControl() {
 			InitializeComponent();
 			DataContextChanged += (s, e) => {
-				var data = DataContext as MemberRefVM;
-				if (data != null) {
+				if (DataContext is MemberRefVM data) {
 					var ownerWindow = Window.GetWindow(this);
 					data.DnlibTypePicker = new DnlibTypePicker(ownerWindow);
 					data.TypeSigCreator = new TypeSigCreator(ownerWindow);
@@ -36,6 +35,6 @@ namespace dnSpy.AsmEditor.DnlibDialogs {
 			Loaded += MemberRefControl_Loaded;
 		}
 
-		void MemberRefControl_Loaded(object sender, RoutedEventArgs e) => nameTextBox.Focus();
+		void MemberRefControl_Loaded(object? sender, RoutedEventArgs e) => nameTextBox.Focus();
 	}
 }

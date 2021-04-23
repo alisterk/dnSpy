@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -33,27 +33,27 @@ namespace dnSpy.Hex.HexGroups {
 		const string OptionNameAttr = "name";
 		const string OptionValueAttr = "value";
 
-		struct SubGroupKey : IEquatable<SubGroupKey> {
+		readonly struct SubGroupKey : IEquatable<SubGroupKey> {
 			readonly string groupName, subGroup;
 			public SubGroupKey(string groupName, string subGroup) {
 				this.groupName = groupName;
 				this.subGroup = subGroup;
 			}
 			public bool Equals(SubGroupKey other) => StringComparer.Ordinal.Equals(groupName, other.groupName) && StringComparer.OrdinalIgnoreCase.Equals(subGroup, other.subGroup);
-			public override bool Equals(object obj) => obj is SubGroupKey && Equals((SubGroupKey)obj);
+			public override bool Equals(object? obj) => obj is SubGroupKey && Equals((SubGroupKey)obj);
 			public override int GetHashCode() => StringComparer.Ordinal.GetHashCode(groupName) ^ StringComparer.OrdinalIgnoreCase.GetHashCode(subGroup);
 			public override string ToString() => $"({groupName},{subGroup})";
 		}
 
-		struct OptionKey : IEquatable<OptionKey> {
-			/*readonly*/ SubGroupKey subGroupKey;
+		readonly struct OptionKey : IEquatable<OptionKey> {
+			readonly SubGroupKey subGroupKey;
 			readonly string name;
 			public OptionKey(SubGroupKey subGroupKey, string name) {
 				this.subGroupKey = subGroupKey;
 				this.name = name;
 			}
 			public bool Equals(OptionKey other) => subGroupKey.Equals(other.subGroupKey) && StringComparer.Ordinal.Equals(name, other.name);
-			public override bool Equals(object obj) => obj is OptionKey && Equals((OptionKey)obj);
+			public override bool Equals(object? obj) => obj is OptionKey && Equals((OptionKey)obj);
 			public override int GetHashCode() => subGroupKey.GetHashCode() ^ StringComparer.Ordinal.GetHashCode(name);
 			public override string ToString() => subGroupKey.ToString() + ": " + name;
 		}
@@ -64,7 +64,7 @@ namespace dnSpy.Hex.HexGroups {
 		readonly Dictionary<OptionKey, ISettingsSection> toOptionSection;
 
 		public OptionsStorage(ISettingsService settingsService) {
-			if (settingsService == null)
+			if (settingsService is null)
 				throw new ArgumentNullException(nameof(settingsService));
 			toGroupSection = new Dictionary<string, ISettingsSection>(StringComparer.Ordinal);
 			toSubGroupSection = new Dictionary<SubGroupKey, ISettingsSection>();
@@ -73,7 +73,7 @@ namespace dnSpy.Hex.HexGroups {
 
 			foreach (var groupSect in settingsSection.SectionsWithName(GroupName)) {
 				var groupName = groupSect.Attribute<string>(GroupNameAttr);
-				if (groupName == null)
+				if (groupName is null)
 					continue;
 				if (toGroupSection.ContainsKey(groupName))
 					continue;
@@ -81,7 +81,7 @@ namespace dnSpy.Hex.HexGroups {
 
 				foreach (var ctSect in groupSect.SectionsWithName(SubGroupName)) {
 					var subGroup = ctSect.Attribute<string>(SubGroupNameAttr);
-					if (subGroup == null)
+					if (subGroup is null)
 						continue;
 					var key = new SubGroupKey(groupName, subGroup);
 					if (toSubGroupSection.ContainsKey(key))
@@ -90,7 +90,7 @@ namespace dnSpy.Hex.HexGroups {
 
 					foreach (var optSect in ctSect.SectionsWithName(OptionName)) {
 						var name = optSect.Attribute<string>(OptionNameAttr);
-						if (name == null)
+						if (name is null)
 							continue;
 						var optKey = new OptionKey(key, name);
 						if (toOptionSection.ContainsKey(optKey))
@@ -102,13 +102,12 @@ namespace dnSpy.Hex.HexGroups {
 		}
 
 		public void InitializeOptions(string groupName, HexViewGroupOptionCollection collection) {
-			if (groupName == null)
+			if (groupName is null)
 				throw new ArgumentNullException(nameof(groupName));
-			if (collection == null)
+			if (collection is null)
 				throw new ArgumentNullException(nameof(collection));
 
-			ISettingsSection ctSect;
-			if (!toSubGroupSection.TryGetValue(new SubGroupKey(groupName, collection.SubGroup), out ctSect))
+			if (!toSubGroupSection.TryGetValue(new SubGroupKey(groupName, collection.SubGroup), out var ctSect))
 				return;
 
 			var toOption = new Dictionary<string, HexViewGroupOption>(StringComparer.Ordinal);
@@ -117,35 +116,33 @@ namespace dnSpy.Hex.HexGroups {
 
 			foreach (var sect in ctSect.SectionsWithName(OptionName)) {
 				var name = sect.Attribute<string>(OptionNameAttr);
-				if (name == null)
+				if (name is null)
 					continue;
 
 				var textValue = sect.Attribute<string>(OptionValueAttr);
-				if (textValue == null)
+				if (textValue is null)
 					continue;
 
-				HexViewGroupOption option;
-				if (!toOption.TryGetValue(name, out option))
+				if (!toOption.TryGetValue(name, out var option))
 					continue;
 				if (!option.Definition.CanBeSaved)
 					continue;
 
-				object value;
-				if (!TryGetValue(option, textValue, out value))
+				if (!TryGetValue(option, textValue, out var value))
 					continue;
 
 				option.Value = value;
 			}
 		}
 
-		bool TryGetValue(HexViewGroupOption option, string textValue, out object value) {
+		bool TryGetValue(HexViewGroupOption option, string textValue, out object? value) {
 			var type = option.Definition.Type;
 			var c = TypeDescriptor.GetConverter(type);
 			try {
 				value = c.ConvertFromInvariantString(textValue);
-				if (type.IsValueType && value == null)
+				if (type.IsValueType && value is null)
 					return false;
-				if (value != null && !type.IsAssignableFrom(value.GetType()))
+				if (value is not null && !type.IsAssignableFrom(value.GetType()))
 					return false;
 				return true;
 			}
@@ -157,7 +154,7 @@ namespace dnSpy.Hex.HexGroups {
 			return false;
 		}
 
-		bool TryGetValueString(HexViewGroupOption option, out string valueString) {
+		bool TryGetValueString(HexViewGroupOption option, out string? valueString) {
 			if (!option.Definition.CanBeSaved) {
 				valueString = null;
 				return false;
@@ -177,8 +174,7 @@ namespace dnSpy.Hex.HexGroups {
 		}
 
 		ISettingsSection GetOrCreateGroupSection(string groupName) {
-			ISettingsSection sect;
-			if (toGroupSection.TryGetValue(groupName, out sect))
+			if (toGroupSection.TryGetValue(groupName, out var sect))
 				return sect;
 			sect = settingsSection.CreateSection(GroupName);
 			toGroupSection.Add(groupName, sect);
@@ -188,8 +184,7 @@ namespace dnSpy.Hex.HexGroups {
 
 		ISettingsSection GetOrCreateSubGroupSection(string groupName, string subGroup) {
 			var key = new SubGroupKey(groupName, subGroup);
-			ISettingsSection sect;
-			if (toSubGroupSection.TryGetValue(key, out sect))
+			if (toSubGroupSection.TryGetValue(key, out var sect))
 				return sect;
 			var groupSect = GetOrCreateGroupSection(groupName);
 			sect = groupSect.CreateSection(SubGroupName);
@@ -200,8 +195,7 @@ namespace dnSpy.Hex.HexGroups {
 
 		ISettingsSection GetOrCreateOptionSection(string groupName, HexViewGroupOption option) {
 			var key = new OptionKey(new SubGroupKey(groupName, option.Definition.SubGroup), option.OptionId);
-			ISettingsSection sect;
-			if (toOptionSection.TryGetValue(key, out sect))
+			if (toOptionSection.TryGetValue(key, out var sect))
 				return sect;
 			var ctSect = GetOrCreateSubGroupSection(groupName, option.Definition.SubGroup);
 			sect = ctSect.CreateSection(OptionName);
@@ -211,15 +205,14 @@ namespace dnSpy.Hex.HexGroups {
 		}
 
 		public void Write(string groupName, HexViewGroupOption option) {
-			if (groupName == null)
+			if (groupName is null)
 				throw new ArgumentNullException(nameof(groupName));
-			if (option == null)
+			if (option is null)
 				throw new ArgumentNullException(nameof(option));
 			if (!option.Definition.CanBeSaved)
 				return;
 			var sect = GetOrCreateOptionSection(groupName, option);
-			string valueString;
-			if (!TryGetValueString(option, out valueString))
+			if (!TryGetValueString(option, out var valueString))
 				return;
 			sect.Attribute(OptionValueAttr, valueString);
 		}

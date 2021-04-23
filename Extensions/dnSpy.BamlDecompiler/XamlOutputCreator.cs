@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -25,19 +25,15 @@ using System.Xml.Linq;
 using dnSpy.Contracts.Decompiler;
 
 namespace dnSpy.BamlDecompiler {
-	struct XamlOutputCreator {
+	readonly struct XamlOutputCreator {
 		readonly XamlOutputOptions options;
 
-		public XamlOutputCreator(XamlOutputOptions options) {
-			if (options == null)
-				throw new ArgumentNullException(nameof(options));
-			this.options = options;
-		}
+		public XamlOutputCreator(XamlOutputOptions options) => this.options = options ?? throw new ArgumentNullException(nameof(options));
 
 		public string CreateText(XDocument document) {
-			if (options == null)
+			if (options is null)
 				throw new InvalidOperationException();
-			if (document == null)
+			if (document is null)
 				throw new ArgumentNullException(nameof(document));
 
 			var settings = new XmlWriterSettings {

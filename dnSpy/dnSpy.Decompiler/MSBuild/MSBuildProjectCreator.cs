@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -36,13 +36,19 @@ namespace dnSpy.Decompiler.MSBuild {
 		int totalProgress;
 
 		public IEnumerable<string> ProjectFilenames => projects.Select(a => a.Filename);
-		public string SolutionFilename => Path.Combine(options.Directory, options.SolutionFilename);
+
+		public string SolutionFilename {
+			get {
+				Debug2.Assert(options.SolutionFilename is not null);
+				return Path.Combine(options.Directory, options.SolutionFilename);
+			}
+		}
 
 		sealed class MyLogger : IMSBuildProjectWriterLogger {
 			readonly MSBuildProjectCreator owner;
 			readonly IMSBuildProjectWriterLogger logger;
 
-			public MyLogger(MSBuildProjectCreator owner, IMSBuildProjectWriterLogger logger) {
+			public MyLogger(MSBuildProjectCreator owner, IMSBuildProjectWriterLogger? logger) {
 				this.owner = owner;
 				this.logger = logger ?? NoMSBuildProjectWriterLogger.Instance;
 			}
@@ -54,16 +60,14 @@ namespace dnSpy.Decompiler.MSBuild {
 		}
 
 		public MSBuildProjectCreator(ProjectCreatorOptions options) {
-			if (options == null)
-				throw new ArgumentNullException(nameof(options));
-			this.options = options;
+			this.options = options ?? throw new ArgumentNullException(nameof(options));
 			logger = new MyLogger(this, options.Logger);
 			progressListener = options.ProgressListener ?? NoMSBuildProgressListener.Instance;
 			projects = new List<Project>();
 		}
 
 		public void Create() {
-			SatelliteAssemblyFinder satelliteAssemblyFinder = null;
+			SatelliteAssemblyFinder? satelliteAssemblyFinder = null;
 			try {
 				var opts = new ParallelOptions {
 					CancellationToken = options.CancellationToken,
@@ -99,8 +103,7 @@ namespace dnSpy.Decompiler.MSBuild {
 						throw;
 					}
 					catch (Exception ex) {
-						var fjob = job as IFileJob;
-						if (fjob != null)
+						if (job is IFileJob fjob)
 							logger.Error(string.Format(dnSpy_Decompiler_Resources.MSBuild_FileCreationFailed3, fjob.Filename, job.Description, ex.Message));
 						else
 							logger.Error(string.Format(dnSpy_Decompiler_Resources.MSBuild_FileCreationFailed2, job.Description, ex.Message));
@@ -139,7 +142,7 @@ namespace dnSpy.Decompiler.MSBuild {
 				progressListener.SetProgress(maxProgress);
 			}
 			finally {
-				if (satelliteAssemblyFinder != null)
+				if (satelliteAssemblyFinder is not null)
 					satelliteAssemblyFinder.Dispose();
 			}
 		}

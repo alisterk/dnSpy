@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -34,12 +34,10 @@ namespace dnSpy.Hex.Files.DnSpy {
 		readonly HexTextElementCreatorProvider hexTextElementCreatorProvider;
 
 		[ImportingConstructor]
-		ToolTipObjectFactoryImpl(HexTextElementCreatorProvider hexTextElementCreatorProvider) {
-			this.hexTextElementCreatorProvider = hexTextElementCreatorProvider;
-		}
+		ToolTipObjectFactoryImpl(HexTextElementCreatorProvider hexTextElementCreatorProvider) => this.hexTextElementCreatorProvider = hexTextElementCreatorProvider;
 
-		public override object Create(HexToolTipContent content) {
-			if (content == null)
+		public override object? Create(HexToolTipContent content) {
+			if (content is null)
 				throw new ArgumentNullException(nameof(content));
 
 			var res = new StackPanel {
@@ -56,7 +54,7 @@ namespace dnSpy.Hex.Files.DnSpy {
 				res.Children.Add(CreateTextElement(text));
 			}
 			var imgRef = content.Image as ImageReference?;
-			if (imgRef != null) {
+			if (imgRef is not null) {
 				var img = new DsImage {
 					ImageReference = imgRef.Value,
 					Margin = new Thickness(0, 0, 4, 0),

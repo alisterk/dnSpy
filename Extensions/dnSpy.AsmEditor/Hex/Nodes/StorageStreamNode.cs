@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -44,9 +44,7 @@ namespace dnSpy.AsmEditor.Hex.Nodes {
 		readonly StorageStreamVM storageStreamVM;
 
 		public StorageStreamNode(StorageStreamVM storageStream)
-			: base(storageStream.Span) {
-			storageStreamVM = storageStream;
-		}
+			: base(storageStream.Span) => storageStreamVM = storageStream;
 
 		public override void OnBufferChanged(NormalizedHexChangeCollection changes) {
 			base.OnBufferChanged(changes);
@@ -64,10 +62,10 @@ namespace dnSpy.AsmEditor.Hex.Nodes {
 			output.Write(BoxedTextColor.Number, StreamNumber.ToString());
 			output.Write(BoxedTextColor.Punctuation, ":");
 			output.WriteSpace();
-			output.Write(HeapKind == DotNetHeapKind.Unknown ? BoxedTextColor.HexStorageStreamNameInvalid : BoxedTextColor.HexStorageStreamName, string.Format("{0}", storageStreamVM.RCNameVM.StringZ));
+			output.Write(HeapKind == DotNetHeapKind.Unknown ? BoxedTextColor.HexStorageStreamNameInvalid : BoxedTextColor.HexStorageStreamName, storageStreamVM.RCNameVM.StringZ);
 		}
 
-		public MetaDataTableRecordNode FindTokenNode(uint token) {
+		public MetadataTableRecordNode? FindTokenNode(uint token) {
 			if (HeapKind != DotNetHeapKind.Tables)
 				return null;
 			return ((TablesStreamNode)TreeNode.Children[0].Data).FindTokenNode(token);
@@ -78,9 +76,7 @@ namespace dnSpy.AsmEditor.Hex.Nodes {
 		readonly TablesStreamVM tablesStream;
 
 		public TablesStorageStreamNode(StorageStreamVM storageStream, TablesStreamVM tablesStream)
-			: base(storageStream) {
-			this.tablesStream = tablesStream;
-		}
+			: base(storageStream) => this.tablesStream = tablesStream;
 
 		public override IEnumerable<TreeNodeData> CreateChildren() {
 			yield return new TablesStreamNode(tablesStream);

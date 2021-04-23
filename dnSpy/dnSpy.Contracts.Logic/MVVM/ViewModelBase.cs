@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -26,12 +26,7 @@ namespace dnSpy.Contracts.MVVM {
 	/// </summary>
 	public abstract class ViewModelBase : INotifyPropertyChanged, IDataErrorInfo {
 		/// <inheritdoc/>
-		public event PropertyChangedEventHandler PropertyChanged;
-
-		/// <summary>
-		/// true if someone has added a <see cref="PropertyChanged"/> handler
-		/// </summary>
-		protected internal bool HasPropertyChangedHandlers => PropertyChanged != null;
+		public event PropertyChangedEventHandler? PropertyChanged;
 
 		/// <summary>
 		/// Raises <see cref="PropertyChanged"/>
@@ -46,7 +41,7 @@ namespace dnSpy.Contracts.MVVM {
 		protected void OnPropertyChanged(PropertyChangedEventArgs e) => PropertyChanged?.Invoke(this, e);
 
 		string IDataErrorInfo.Error { get { throw new NotImplementedException(); } }
-		string IDataErrorInfo.this[string columnName] => Verify(columnName);
+		string? IDataErrorInfo.this[string columnName] => Verify(columnName);
 
 		/// <summary>
 		/// true if there's an error
@@ -59,7 +54,7 @@ namespace dnSpy.Contracts.MVVM {
 		/// </summary>
 		/// <param name="columnName">Name of property</param>
 		/// <returns></returns>
-		protected virtual string Verify(string columnName) => string.Empty;
+		protected virtual string? Verify(string columnName) => string.Empty;
 
 		/// <summary>
 		/// Call this method if some property's error state changed

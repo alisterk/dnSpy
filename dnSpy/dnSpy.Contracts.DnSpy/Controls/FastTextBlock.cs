@@ -1,4 +1,4 @@
-﻿/*
+/*
 	Copyright (c) 2015 Ki
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -36,18 +36,15 @@ namespace dnSpy.Contracts.Controls {
 		}
 
 		public string Text {
-			get { return (string)GetValue(TextProperty); }
-			set { SetValue(TextProperty, value); }
+			get => (string)GetValue(TextProperty);
+			set => SetValue(TextProperty, value);
 		}
 
-		readonly bool useNewFormatter;
-
-		public FastTextBlock(bool useNewFormatter)
-			: this(useNewFormatter, new TextSrc()) {
+		public FastTextBlock()
+			: this(new TextSrc()) {
 		}
 
-		public FastTextBlock(bool useNewFormatter, IFastTextSource src) {
-			this.useNewFormatter = useNewFormatter;
+		public FastTextBlock(IFastTextSource src) {
 			this.src = src;
 		}
 
@@ -75,7 +72,7 @@ namespace dnSpy.Contracts.Controls {
 			BackgroundProperty = TextElement.BackgroundProperty.AddOwner(typeof(FastTextBlock));
 		}
 
-		static int H(object obj) => obj == null ? 0 : obj.GetHashCode();
+		static int H(object obj) => obj is null ? 0 : obj.GetHashCode();
 
 		int CacheHash() {
 			int hash = 17;
@@ -108,39 +105,37 @@ namespace dnSpy.Contracts.Controls {
 		class TextProps : TextRunProperties {
 			FastTextBlock tb;
 
-			public TextProps(FastTextBlock tb) {
-				this.tb = tb;
-			}
+			public TextProps(FastTextBlock tb) => this.tb = tb;
 
 			public override Brush BackgroundBrush => (Brush)tb.GetValue(BackgroundProperty);
 			public override CultureInfo CultureInfo => CultureInfo.CurrentUICulture;
 			public override double FontHintingEmSize => 12;
 			public override double FontRenderingEmSize => (double)tb.GetValue(FontSizeProperty);
 			public override Brush ForegroundBrush => (Brush)tb.GetValue(ForegroundProperty);
-			public override TextDecorationCollection TextDecorations => null;
-			public override TextEffectCollection TextEffects => null;
+			public override TextDecorationCollection? TextDecorations => null;
+			public override TextEffectCollection? TextEffects => null;
 			public override Typeface Typeface => tb.GetTypeface();
 		}
 
 		class TextSrc : TextSource, IFastTextSource {
+#pragma warning disable CS8618 // Non-nullable field is uninitialized.
 			string text;
 			TextProps props;
+#pragma warning restore CS8618 // Non-nullable field is uninitialized.
 
 			public override TextRun GetTextRun(int textSourceCharacterIndex) {
+				Debug2.Assert(text is not null);
+				Debug2.Assert(props is not null);
 				if (textSourceCharacterIndex >= text.Length) {
 					return new TextEndOfParagraph(1);
 				}
 				return new TextCharacters(text, textSourceCharacterIndex, text.Length - textSourceCharacterIndex, props);
 			}
 
-			public override TextSpan<CultureSpecificCharacterBufferRange> GetPrecedingText(int textSourceCharacterIndexLimit) {
-				return new TextSpan<CultureSpecificCharacterBufferRange>(0,
+			public override TextSpan<CultureSpecificCharacterBufferRange> GetPrecedingText(int textSourceCharacterIndexLimit) => new TextSpan<CultureSpecificCharacterBufferRange>(0,
 					new CultureSpecificCharacterBufferRange(CultureInfo.CurrentUICulture, new CharacterBufferRange(string.Empty, 0, 0)));
-			}
 
-			public override int GetTextEffectCharacterIndexFromTextSourceCharacterIndex(int textSourceCharacterIndex) {
-				throw new NotSupportedException();
-			}
+			public override int GetTextEffectCharacterIndexFromTextSourceCharacterIndex(int textSourceCharacterIndex) => throw new NotSupportedException();
 
 			public void UpdateParent(FastTextBlock ftb) {
 				text = ftb.Text;
@@ -165,13 +160,13 @@ namespace dnSpy.Contracts.Controls {
 			public override double Indent => 0;
 			public override double LineHeight => 0;
 			public override TextAlignment TextAlignment => TextAlignment.Left;
-			public override TextMarkerProperties TextMarkerProperties => null;
+			public override TextMarkerProperties? TextMarkerProperties => null;
 			public override TextWrapping TextWrapping => TextWrapping.NoWrap;
 		}
 
 
-		ITextFormatter fmt = null;
-		TextLine line = null;
+		TextFormatter? fmt = null;
+		TextLine? line = null;
 
 		Typeface GetTypeface() {
 			var fontFamily = (FontFamily)GetValue(FontFamilyProperty);
@@ -184,10 +179,10 @@ namespace dnSpy.Contracts.Controls {
 		IFastTextSource src;
 
 		void MakeNewText() {
-			if (fmt == null)
-				fmt = TextFormatterFactory.Create(this, useNewFormatter);
+			if (fmt is null)
+				fmt = TextFormatterFactory.GetTextFormatter(this);
 
-			if (line != null)
+			if (line is not null)
 				line.Dispose();
 
 			src.UpdateParent(this);
@@ -196,7 +191,7 @@ namespace dnSpy.Contracts.Controls {
 
 		void EnsureText() {
 			var hash = CacheHash();
-			if (cache != hash || line == null) {
+			if (cache != hash || line is null) {
 				cache = hash;
 				MakeNewText();
 			}
@@ -205,12 +200,22 @@ namespace dnSpy.Contracts.Controls {
 
 		protected override Size MeasureOverride(Size availableSize) {
 			EnsureText();
+			Debug2.Assert(line is not null);
 			return new Size(line.Width, line.Height);
 		}
 
 		protected override void OnRender(DrawingContext drawingContext) {
 			EnsureText();
+			Debug2.Assert(line is not null);
 			line.Draw(drawingContext, new Point(0, 0), InvertAxes.None);
 		}
+	}
+
+	static class TextFormatterFactory {
+		static readonly TextFormatter TextFormatter_Ideal = TextFormatter.Create(TextFormattingMode.Ideal);
+		static readonly TextFormatter TextFormatter_Display = TextFormatter.Create(TextFormattingMode.Display);
+
+		public static TextFormatter GetTextFormatter(DependencyObject owner) =>
+			TextOptions.GetTextFormattingMode(owner) == TextFormattingMode.Ideal ? TextFormatter_Ideal : TextFormatter_Display;
 	}
 }

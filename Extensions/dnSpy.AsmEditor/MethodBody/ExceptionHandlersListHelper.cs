@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -44,9 +44,7 @@ namespace dnSpy.AsmEditor.MethodBody {
 		protected override string RemoveAllMessage => dnSpy_AsmEditor_Resources.EH_Command6;
 
 		public ExceptionHandlersListHelper(ListView listView, Window ownerWindow)
-			: base(listView) {
-			typeSigCreator = new TypeSigCreator(ownerWindow);
-		}
+			: base(listView) => typeSigCreator = new TypeSigCreator(ownerWindow);
 
 		protected override ExceptionHandlerVM[] GetSelectedItems() => listBox.SelectedItems.Cast<ExceptionHandlerVM>().ToArray();
 
@@ -59,7 +57,7 @@ namespace dnSpy.AsmEditor.MethodBody {
 			Add(new ContextMenuHandler {
 				Header = "res:CopyMetaDataToken",
 				HeaderPlural = "res:CopyMetaDataTokens",
-				Command = new RelayCommand(a => CopyCatchTypeMDTokens((ExceptionHandlerVM[])a), a => CopyCatchTypeMDTokensCanExecute((ExceptionHandlerVM[])a)),
+				Command = new RelayCommand(a => CopyCatchTypeMDTokens((ExceptionHandlerVM[])a!), a => CopyCatchTypeMDTokensCanExecute((ExceptionHandlerVM[])a!)),
 				InputGestureText = "res:ShortCutKeyCtrlM",
 				Modifiers = ModifierKeys.Control,
 				Key = Key.M,
@@ -72,12 +70,12 @@ namespace dnSpy.AsmEditor.MethodBody {
 			int lines = 0;
 			for (int i = 0; i < ehs.Length; i++) {
 				uint? token = GetCatchTypeToken(ehs[i].CatchType);
-				if (token == null)
+				if (token is null)
 					continue;
 
 				if (lines++ > 0)
 					sb.AppendLine();
-				sb.Append(string.Format("0x{0:X8}", token.Value));
+				sb.Append($"0x{token.Value:X8}");
 			}
 			if (lines > 1)
 				sb.AppendLine();
@@ -91,17 +89,17 @@ namespace dnSpy.AsmEditor.MethodBody {
 			}
 		}
 
-		bool CopyCatchTypeMDTokensCanExecute(ExceptionHandlerVM[] ehs) => ehs.Any(a => GetCatchTypeToken(a.CatchType) != null);
-		static uint? GetCatchTypeToken(ITypeDefOrRef type) => type == null ? (uint?)null : type.MDToken.Raw;
+		bool CopyCatchTypeMDTokensCanExecute(ExceptionHandlerVM[] ehs) => ehs.Any(a => GetCatchTypeToken(a.CatchType) is not null);
+		static uint? GetCatchTypeToken(ITypeDefOrRef? type) => type is null ? (uint?)null : type.MDToken.Raw;
 
-		void coll_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e) {
-			if (e.NewItems != null)
+		void coll_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) {
+			if (e.NewItems is not null)
 				InitializeExceptionHandlers(e.NewItems);
 		}
 
 		void InitializeExceptionHandlers(System.Collections.IList list) {
-			foreach (ExceptionHandlerVM eh in list)
-				eh.TypeSigCreator = typeSigCreator;
+			foreach (ExceptionHandlerVM? eh in list)
+				eh!.TypeSigCreator = typeSigCreator;
 		}
 
 		protected override void CopyItemsAsText(ExceptionHandlerVM[] ehs) {

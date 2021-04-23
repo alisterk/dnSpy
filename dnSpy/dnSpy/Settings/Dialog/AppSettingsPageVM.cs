@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -33,23 +33,23 @@ using dnSpy.Contracts.TreeView.Text;
 
 namespace dnSpy.Settings.Dialog {
 	sealed class AppSettingsPageVM : TreeNodeData, INotifyPropertyChanged {
-		public event PropertyChangedEventHandler PropertyChanged;
-		public AppSettingsPageVM Parent { get; set; }
+		public event PropertyChangedEventHandler? PropertyChanged;
+		public AppSettingsPageVM? Parent { get; set; }
 		public override Guid Guid => Guid.Empty;
-		public override object ToolTip => null;
+		public override object? ToolTip => null;
 		public override ImageReference Icon => Page.Icon;
 
 		public double Order => Page.Order;
 		public List<AppSettingsPageVM> Children { get; }
 		internal AppSettingsPage Page { get; }
-		public object UIObject => VisiblePageAndUIObject.UIObject;
-		internal AppSettingsPageVM VisiblePage => VisiblePageAndUIObject.Page;
-		PageAndUIObject VisiblePageAndUIObject => pageAndUIObject ?? (pageAndUIObject = GetOrCreatePageAndUIObject());
-		PageAndUIObject pageAndUIObject;
+		public object? UIObject => VisiblePageAndUIObject?.UIObject;
+		internal AppSettingsPageVM? VisiblePage => VisiblePageAndUIObject?.Page;
+		PageAndUIObject? VisiblePageAndUIObject => pageAndUIObject ??= GetOrCreatePageAndUIObject();
+		PageAndUIObject? pageAndUIObject;
 
 		sealed class PageAndUIObject {
 			public AppSettingsPageVM Page { get; }
-			public object UIObject { get; }
+			public object? UIObject { get; }
 			public PageAndUIObject(AppSettingsPageVM page, object uiObject) {
 				Page = page;
 				UIObject = uiObject;
@@ -58,7 +58,7 @@ namespace dnSpy.Settings.Dialog {
 
 		public bool SavedIsExpanded { get; set; }
 
-		public override object Text {
+		public override object? Text {
 			get {
 				var writer = new TextClassifierTextColorWriter();
 				writer.Write(BoxedTextColor.Text, Page.Title);
@@ -70,19 +70,15 @@ namespace dnSpy.Settings.Dialog {
 		readonly PageContext context;
 
 		public AppSettingsPageVM(AppSettingsPage page, PageContext context) {
-			if (page == null)
-				throw new ArgumentNullException(nameof(page));
-			if (context == null)
-				throw new ArgumentNullException(nameof(context));
-			Page = page;
+			Page = page ?? throw new ArgumentNullException(nameof(page));
 			Children = new List<AppSettingsPageVM>();
-			this.context = context;
+			this.context = context ?? throw new ArgumentNullException(nameof(context));
 		}
 
-		PageAndUIObject GetOrCreatePageAndUIObject() {
+		PageAndUIObject? GetOrCreatePageAndUIObject() {
 			var uiObj = context.PageUIObjectLoader.GetUIObject(Page);
-			if (uiObj != null)
-				return createdPageAndUIObject ?? (createdPageAndUIObject = new PageAndUIObject(this, CreateUIObject(uiObj)));
+			if (uiObj is not null)
+				return createdPageAndUIObject ??= new PageAndUIObject(this, CreateUIObject(uiObj));
 
 			// Try to pick a visible child
 			foreach (var child in Children) {
@@ -94,7 +90,7 @@ namespace dnSpy.Settings.Dialog {
 				return null;
 			return Children[0].VisiblePageAndUIObject;
 		}
-		PageAndUIObject createdPageAndUIObject;
+		PageAndUIObject? createdPageAndUIObject;
 
 		static object CreateUIObject(object uiObj) {
 			if (uiObj is ScrollViewer)
@@ -106,10 +102,9 @@ namespace dnSpy.Settings.Dialog {
 			};
 		}
 
-		public void ClearUICache() {
+		public void ClearUICache() =>
 			// Make sure we don't show hidden pages
 			pageAndUIObject = null;
-		}
 
 		public void RefreshUI() {
 			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(UIObject)));
@@ -117,7 +112,7 @@ namespace dnSpy.Settings.Dialog {
 		}
 
 		public IEnumerable<string> GetSearchableStrings(FrameworkElement fwElem) {
-			if (searchableStrings == null) {
+			if (searchableStrings is null) {
 				var list = new List<string>();
 				foreach (var s in GetDataTemplateStrings(fwElem))
 					list.Add(UIHelpers.RemoveAccessKeys(s));
@@ -127,55 +122,54 @@ namespace dnSpy.Settings.Dialog {
 			}
 			return searchableStrings;
 		}
-		string[] searchableStrings;
+		string[]? searchableStrings;
 
 		IEnumerable<string> GetDataTemplateStrings(FrameworkElement fwElem) {
 			var obj = Page.GetStringsObject();
-			if (obj == null)
+			if (obj is null)
 				return Array.Empty<string>();
 
-			var uiElem = obj as UIElement;
-			if (uiElem != null)
+			if (obj is UIElement uiElem)
 				return GetStrings(uiElem);
 
 			var key = new DataTemplateKey(obj as Type ?? obj.GetType());
 			var dt = fwElem.TryFindResource(key) as DataTemplate;
-			if (dt == null)
+			if (dt is null)
 				return Array.Empty<string>();
 
 			return GetStrings(dt.LoadContent());
 		}
 
 		static IEnumerable<string> GetStrings(DependencyObject obj) {
-			if (obj == null)
+			if (obj is null)
 				yield break;
 			var objString = TryGetString(obj);
-			if (objString != null)
+			if (objString is not null)
 				yield return objString;
 			foreach (var childObj in LogicalTreeHelper.GetChildren(obj)) {
 				var child = childObj as DependencyObject;
-				if (child == null)
+				if (child is null)
 					continue;
 				foreach (var s in GetStrings(child))
 					yield return s;
 			}
 		}
 
-		static string TryGetString(DependencyObject obj) {
-			string s;
+		static string? TryGetString(DependencyObject obj) {
+			string? s;
 
 			s = (obj as GroupBox)?.Header as string;
-			if (s != null)
+			if (s is not null)
 				return s;
 
 			// Label, CheckBox, Button, TextControl and others
 			s = (obj as ContentControl)?.Content as string;
-			if (s != null)
+			if (s is not null)
 				return s;
 
 			Debug.Assert(!(obj is TextBlock), $"Use {nameof(TextControl)} instead so the text can be highlighted");
 			s = (obj as TextBlock)?.Text;
-			if (s != null)
+			if (s is not null)
 				return s;
 
 			return null;

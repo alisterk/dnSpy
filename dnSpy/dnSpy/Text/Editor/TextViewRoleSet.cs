@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -27,28 +27,26 @@ namespace dnSpy.Text.Editor {
 		readonly HashSet<string> roles;
 
 		public TextViewRoleSet(IEnumerable<string> textViewRoles) {
-			if (textViewRoles == null)
+			if (textViewRoles is null)
 				throw new ArgumentNullException(nameof(textViewRoles));
 			roles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 			foreach (var s in textViewRoles) {
-				if (s == null)
+				if (s is null)
 					throw new ArgumentNullException(nameof(textViewRoles));
 				roles.Add(s.ToUpperInvariant());// VS returns upper case strings
 			}
 		}
 
-		TextViewRoleSet(HashSet<string> roles) {
-			this.roles = roles;
-		}
+		TextViewRoleSet(HashSet<string> roles) => this.roles = roles;
 
 		public bool Contains(string textViewRole) {
-			if (textViewRole == null)
+			if (textViewRole is null)
 				throw new ArgumentNullException(nameof(textViewRole));
 			return roles.Contains(textViewRole);
 		}
 
 		public bool ContainsAll(IEnumerable<string> textViewRoles) {
-			if (textViewRoles == null)
+			if (textViewRoles is null)
 				throw new ArgumentNullException(nameof(textViewRoles));
 			foreach (var s in textViewRoles) {
 				if (!roles.Contains(s))
@@ -58,7 +56,7 @@ namespace dnSpy.Text.Editor {
 		}
 
 		public bool ContainsAny(IEnumerable<string> textViewRoles) {
-			if (textViewRoles == null)
+			if (textViewRoles is null)
 				throw new ArgumentNullException(nameof(textViewRoles));
 			foreach (var s in textViewRoles) {
 				if (roles.Contains(s))
@@ -68,7 +66,7 @@ namespace dnSpy.Text.Editor {
 		}
 
 		public ITextViewRoleSet UnionWith(ITextViewRoleSet roleSet) {
-			if (roleSet == null)
+			if (roleSet is null)
 				throw new ArgumentNullException(nameof(roleSet));
 			if (this == roleSet)
 				return this;

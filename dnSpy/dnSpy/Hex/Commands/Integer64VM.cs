@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -40,18 +40,15 @@ namespace dnSpy.Hex.Commands {
 		/// <param name="value">Initial value</param>
 		/// <param name="onUpdated">Called when value gets updated</param>
 		public Integer64VM(ulong value, Action<DataFieldVM> onUpdated)
-			: base(onUpdated) {
-			SetValueFromConstructor(value);
-		}
+			: base(onUpdated) => SetValueFromConstructor(value);
 
 		/// <inheritdoc/>
 		protected override string OnNewValue(ulong value) => SimpleTypeConverter.ToString(value, ulong.MinValue, ulong.MaxValue, null);
 
 		/// <inheritdoc/>
-		protected override string ConvertToValue(out ulong value) {
-			string error;
-			long v = SimpleTypeConverter.ParseInt64(StringValue, long.MinValue, long.MaxValue, out error);
-			if (error == null) {
+		protected override string? ConvertToValue(out ulong value) {
+			long v = SimpleTypeConverter.ParseInt64(StringValue, long.MinValue, long.MaxValue, out var error);
+			if (error is null) {
 				value = (ulong)v;
 				return null;
 			}

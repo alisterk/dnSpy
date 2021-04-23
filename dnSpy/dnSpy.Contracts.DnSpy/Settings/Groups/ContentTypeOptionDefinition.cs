@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -40,7 +40,7 @@ namespace dnSpy.Contracts.Settings.Groups {
 		/// <summary>
 		/// Default value
 		/// </summary>
-		public object DefaultValue { get; set; }
+		public object? DefaultValue { get; set; }
 
 		/// <summary>
 		/// Gets the type
@@ -57,6 +57,9 @@ namespace dnSpy.Contracts.Settings.Groups {
 		/// </summary>
 		protected ContentTypeOptionDefinition() {
 			CanBeSaved = true;
+			Type = typeof(void);
+			Name = null!;
+			ContentType = null!;
 		}
 	}
 
@@ -68,7 +71,7 @@ namespace dnSpy.Contracts.Settings.Groups {
 		/// Constructor
 		/// </summary>
 		public ContentTypeOptionDefinition() {
-			DefaultValue = default(T);
+			DefaultValue = default(T)!;
 			Type = typeof(T);
 		}
 
@@ -77,17 +80,13 @@ namespace dnSpy.Contracts.Settings.Groups {
 		/// </summary>
 		/// <param name="option">Name of option</param>
 		public ContentTypeOptionDefinition(EditorOptionKey<T> option)
-			: this() {
-			Name = option.Name;
-		}
+			: this() => Name = option.Name;
 
 		/// <summary>
 		/// Constructor
 		/// </summary>
 		/// <param name="optionId">Name of option</param>
 		public ContentTypeOptionDefinition(string optionId)
-			: this() {
-			Name = optionId;
-		}
+			: this() => Name = optionId;
 	}
 }

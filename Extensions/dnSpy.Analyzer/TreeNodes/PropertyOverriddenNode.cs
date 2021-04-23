@@ -1,4 +1,4 @@
-﻿/*
+/*
     Copyright (C) 2017 HoLLy
 
     This file is part of dnSpy
@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using dnlib.DotNet;
 using dnSpy.Analyzer.Properties;
@@ -27,50 +28,60 @@ using dnSpy.Contracts.Text;
 
 namespace dnSpy.Analyzer.TreeNodes {
 	sealed class PropertyOverriddenNode : SearchNode {
+		readonly List<TypeDef> analyzedTypes;
 		readonly PropertyDef analyzedProperty;
 
 		public PropertyOverriddenNode(PropertyDef analyzedProperty) {
-			if (analyzedProperty == null)
-				throw new ArgumentNullException(nameof(analyzedProperty));
-
-			this.analyzedProperty = analyzedProperty;
+			this.analyzedProperty = analyzedProperty ?? throw new ArgumentNullException(nameof(analyzedProperty));
+			analyzedTypes = new List<TypeDef> { analyzedProperty.DeclaringType };
 		}
 
 		protected override void Write(ITextColorWriter output, IDecompiler decompiler) =>
 			output.Write(BoxedTextColor.Text, dnSpy_Analyzer_Resources.OverridesTreeNode);
 
 		protected override IEnumerable<AnalyzerTreeNodeData> FetchChildren(CancellationToken ct) {
-			//get base type (if any)
-			if (analyzedProperty.DeclaringType.BaseType == null) {
-				yield break;
-			}
-			ITypeDefOrRef baseType = analyzedProperty.DeclaringType.BaseType;
-
-			while (baseType != null) {
-				//only typedef has a Properties property
-				if (baseType is TypeDef def) {
-					foreach (PropertyDef property in def.Properties) {
-						if (TypesHierarchyHelpers.IsBaseProperty(property, analyzedProperty)) {
-							MethodDef anyAccessor = property.GetMethod ?? property.SetMethod;
-							if (anyAccessor == null)
-								continue;
-							yield return new PropertyNode(property) {Context = Context};
-							yield break;
+			AddTypeEquivalentTypes(Context.DocumentService, analyzedTypes[0], analyzedTypes);
+			foreach (var declType in analyzedTypes) {
+				var analyzedAccessor = GetVirtualAccessor(analyzedProperty.GetMethod) ?? GetVirtualAccessor(analyzedProperty.SetMethod);
+				if (analyzedAccessor?.Overrides is IList<MethodOverride> overrides && overrides.Count > 0) {
+					bool matched = false;
+					foreach (var o in overrides) {
+						if (o.MethodDeclaration.ResolveMethodDef() is MethodDef method && (method.IsVirtual || method.IsAbstract)) {
+							if (method.DeclaringType.Properties.FirstOrDefault(a => (object?)a.GetMethod == method || (object?)a.SetMethod == method) is PropertyDef property) {
+								matched = true;
+								yield return new PropertyNode(property) { Context = Context };
+							}
 						}
 					}
-					baseType = def.BaseType;
+					if (matched)
+						yield break;
 				}
-				else {
-					//try to resolve the TypeRef
-					//will be null if resolving failed
-					baseType = baseType.Resolve();
+
+				foreach (var property in TypesHierarchyHelpers.FindBaseProperties(analyzedProperty, declType)) {
+					var anyAccessor = GetVirtualAccessor(property.GetMethod) ?? GetVirtualAccessor(property.SetMethod);
+					if (anyAccessor is null || !(anyAccessor.IsVirtual || anyAccessor.IsAbstract))
+						continue;
+						yield return new PropertyNode(property) { Context = Context };
+					yield break;
 				}
 			}
 		}
 
-		public static bool CanShow(PropertyDef property) {
-			var accessor = property.GetMethod ?? property.SetMethod;
-			return accessor != null && accessor.IsVirtual && accessor.DeclaringType.BaseType != null;
+		public static bool CanShow(PropertyDef property) =>
+			(GetAccessor(property.GetMethod) ?? GetAccessor(property.SetMethod)) is not null;
+
+		static MethodDef? GetAccessor(MethodDef? accessor) {
+			if (accessor is not null &&
+				accessor.DeclaringType.BaseType is not null &&
+				(accessor.IsVirtual || accessor.IsAbstract) && accessor.IsReuseSlot)
+				return accessor;
+			return null;
+		}
+
+		static MethodDef? GetVirtualAccessor(MethodDef? accessor) {
+			if (accessor is not null && (accessor.IsVirtual || accessor.IsAbstract))
+				return accessor;
+			return null;
 		}
 	}
 }

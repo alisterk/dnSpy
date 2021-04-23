@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2011 AlphaSierraPapa for the SharpDevelop Team
+// Copyright (c) 2011 AlphaSierraPapa for the SharpDevelop Team
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this
 // software and associated documentation files (the "Software"), to deal in the Software
@@ -30,15 +30,17 @@ using dnSpy.Contracts.Text;
 namespace dnSpy.Analyzer.TreeNodes {
 	sealed class VirtualMethodUsedByNode : SearchNode {
 		readonly MethodDef analyzedMethod;
-		ConcurrentDictionary<MethodDef, int> foundMethods;
-		MethodDef baseMethod;
-		List<ITypeDefOrRef> possibleTypes;
+		readonly bool isSetter;
+		PropertyDef? property;
+		ConcurrentDictionary<MethodDef, int>? foundMethods;
+		MethodDef? baseMethod;
+		Guid comGuid;
+		bool isComType;
+		int vtblIndex;
 
-		public VirtualMethodUsedByNode(MethodDef analyzedMethod) {
-			if (analyzedMethod == null)
-				throw new ArgumentNullException(nameof(analyzedMethod));
-
-			this.analyzedMethod = analyzedMethod;
+		public VirtualMethodUsedByNode(MethodDef analyzedMethod, bool isSetter) {
+			this.analyzedMethod = analyzedMethod ?? throw new ArgumentNullException(nameof(analyzedMethod));
+			this.isSetter = isSetter;
 		}
 
 		protected override void Write(ITextColorWriter output, IDecompiler decompiler) =>
@@ -47,9 +49,32 @@ namespace dnSpy.Analyzer.TreeNodes {
 		protected override IEnumerable<AnalyzerTreeNodeData> FetchChildren(CancellationToken ct) {
 			InitializeAnalyzer();
 
-			var analyzer = new ScopedWhereUsedAnalyzer<AnalyzerTreeNodeData>(Context.DocumentService, analyzedMethod, FindReferencesInType);
+			if (isSetter)
+				property = analyzedMethod.DeclaringType.Properties.FirstOrDefault(a => a.SetMethod == analyzedMethod);
+
+			var includeAllModules = property is not null && CustomAttributesUtils.IsPseudoCustomAttributeType(analyzedMethod.DeclaringType);
+			ComUtils.GetMemberInfo(analyzedMethod, out isComType, out comGuid, out vtblIndex);
+			includeAllModules |= isComType;
+			var options = ScopedWhereUsedAnalyzerOptions.None;
+			if (includeAllModules)
+				options |= ScopedWhereUsedAnalyzerOptions.IncludeAllModules;
+			if (isComType)
+				options |= ScopedWhereUsedAnalyzerOptions.ForcePublic;
+			var analyzer = new ScopedWhereUsedAnalyzer<AnalyzerTreeNodeData>(Context.DocumentService, analyzedMethod, FindReferencesInType, options);
 			foreach (var child in analyzer.PerformAnalysis(ct)) {
 				yield return child;
+			}
+
+			if (property is not null) {
+				var hash = new HashSet<AssemblyDef>();
+				foreach (var module in analyzer.AllModules) {
+					if (module.Assembly is AssemblyDef asm && hash.Add(module.Assembly)) {
+						foreach (var node in FieldAccessNode.CheckCustomAttributeNamedArgumentWrite(Context, asm, property))
+							yield return node;
+					}
+					foreach (var node in FieldAccessNode.CheckCustomAttributeNamedArgumentWrite(Context, module, property))
+						yield return node;
+				}
 			}
 
 			ReleaseAnalyzer();
@@ -64,14 +89,6 @@ namespace dnSpy.Analyzer.TreeNodes {
 			}
 			else
 				baseMethod = analyzedMethod;
-
-			possibleTypes = new List<ITypeDefOrRef>();
-
-			ITypeDefOrRef type = analyzedMethod.DeclaringType.BaseType;
-			while (type != null) {
-				possibleTypes.Add(type);
-				type = type.ResolveTypeDef()?.BaseType;
-			}
 		}
 
 		void ReleaseAnalyzer() {
@@ -84,25 +101,38 @@ namespace dnSpy.Analyzer.TreeNodes {
 			foreach (MethodDef method in type.Methods) {
 				if (!method.HasBody)
 					continue;
-				Instruction foundInstr = null;
+				Instruction? foundInstr = null;
 				foreach (Instruction instr in method.Body.Instructions) {
-					IMethod mr = instr.Operand as IMethod;
-					if (mr != null && !mr.IsField && mr.Name == name) {
+					if (!(instr.Operand is IMethod mr) || mr.IsField)
+						continue;
+					MethodDef? md = null;
+
+					if (isComType) {
+						md ??= mr.ResolveMethodDef();
+						if (md is not null) {
+							ComUtils.GetMemberInfo(md, out bool otherIsComType, out var otherComGuid, out int otherVtblIndex);
+							if (otherIsComType && comGuid == otherComGuid && vtblIndex == otherVtblIndex) {
+								foundInstr = instr;
+								break;
+							}
+						}
+					}
+
+					if (mr.Name == name) {
 						// explicit call to the requested method 
-						if (instr.OpCode.Code == Code.Call
-							&& Helpers.IsReferencedBy(analyzedMethod.DeclaringType, mr.DeclaringType)
-							&& mr.ResolveMethodDef() == analyzedMethod) {
+						if (Helpers.IsReferencedBy(analyzedMethod.DeclaringType, mr.DeclaringType)
+							&& CheckEquals(md ??= mr.ResolveMethodDef(), analyzedMethod)) {
 							foundInstr = instr;
 							break;
 						}
 						// virtual call to base method
-						if (instr.OpCode.Code == Code.Callvirt) {
-							MethodDef md = mr.ResolveMethodDef();
-							if (md == null) {
+						if (instr.OpCode.Code == Code.Callvirt || instr.OpCode.Code == Code.Ldvirtftn) {
+							md ??= mr.ResolveMethodDef();
+							if (md is null) {
 								// cannot resolve the operand, so ignore this method
 								break;
 							}
-							if (md == baseMethod) {
+							if (CheckEquals(md, baseMethod)) {
 								foundInstr = instr;
 								break;
 							}
@@ -110,9 +140,8 @@ namespace dnSpy.Analyzer.TreeNodes {
 					}
 				}
 
-				if (foundInstr != null) {
-					MethodDef codeLocation = GetOriginalCodeLocation(method) as MethodDef;
-					if (codeLocation != null && !HasAlreadyBeenFound(codeLocation)) {
+				if (foundInstr is not null) {
+					if (GetOriginalCodeLocation(method) is MethodDef codeLocation && !HasAlreadyBeenFound(codeLocation)) {
 						var node = new MethodNode(codeLocation) { Context = Context };
 						if (codeLocation == method)
 							node.SourceRef = new SourceRef(method, foundInstr.Offset, foundInstr.Operand as IMDTokenProvider);
@@ -120,8 +149,16 @@ namespace dnSpy.Analyzer.TreeNodes {
 					}
 				}
 			}
+
+			if (property is not null) {
+				foreach (var node in FieldAccessNode.CheckCustomAttributeNamedArgumentWrite(Context, type, property)) {
+					if (node is MethodNode methodNode && methodNode.Member is MethodDef method && HasAlreadyBeenFound(method))
+						continue;
+					yield return node;
+				}
+			}
 		}
 
-		bool HasAlreadyBeenFound(MethodDef method) => !foundMethods.TryAdd(method, 0);
+		bool HasAlreadyBeenFound(MethodDef method) => !foundMethods!.TryAdd(method, 0);
 	}
 }

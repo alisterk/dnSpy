@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -33,22 +33,20 @@ namespace dnSpy.Documents.Tabs {
 		readonly IDocumentTabService documentTabService;
 
 		[ImportingConstructor]
-		AppCommandLineArgsHandler(IDocumentTabService documentTabService) {
-			this.documentTabService = documentTabService;
-		}
+		AppCommandLineArgsHandler(IDocumentTabService documentTabService) => this.documentTabService = documentTabService;
 
 		public double Order => -1000;
 
 		public void OnNewArgs(IAppCommandLineArgs args) {
 			if (!SelectMember(args)) {
 				var mod = GetLoadedFiles(args).FirstOrDefault();
-				if (mod != null)
+				if (mod is not null)
 					documentTabService.FollowReference((object)mod.Assembly ?? mod);
 				else {
 					foreach (var filename in args.Filenames) {
 						var key = new FilenameKey(filename);
 						var document = documentTabService.DocumentTreeView.DocumentService.GetDocuments().FirstOrDefault(a => a.Key.Equals(key));
-						if (document != null) {
+						if (document is not null) {
 							documentTabService.FollowReference(document);
 							break;
 						}
@@ -61,12 +59,11 @@ namespace dnSpy.Documents.Tabs {
 			if (string.IsNullOrEmpty(args.SelectMember))
 				return false;
 
-			string error;
-			uint token = SimpleTypeConverter.ParseUInt32(args.SelectMember, uint.MinValue, uint.MaxValue, out error);
+			uint token = SimpleTypeConverter.ParseUInt32(args.SelectMember, uint.MinValue, uint.MaxValue, out var error);
 			if (string.IsNullOrEmpty(error)) {
 				var mod = GetLoadedFiles(args).FirstOrDefault();
 				var member = mod?.ResolveToken(token);
-				if (member == null)
+				if (member is null)
 					return false;
 				documentTabService.FollowReference(member);
 				return true;
@@ -78,15 +75,15 @@ namespace dnSpy.Documents.Tabs {
 				if (isNamespace) {
 					var ns = args.SelectMember.Substring(XMLDOC_NS_PREFIX.Length);
 					var modNode = documentTabService.DocumentTreeView.FindNode(mod);
-					var nsNode = modNode == null ? null : documentTabService.DocumentTreeView.FindNamespaceNode(modNode.Document, ns);
-					if (nsNode != null) {
+					var nsNode = modNode is null ? null : documentTabService.DocumentTreeView.FindNamespaceNode(modNode.Document, ns);
+					if (nsNode is not null) {
 						documentTabService.FollowReference(nsNode);
 						return true;
 					}
 				}
 				else {
 					var member = XmlDocKeyProvider.FindMemberByKey(mod, args.SelectMember);
-					if (member != null) {
+					if (member is not null) {
 						documentTabService.FollowReference(member);
 						return true;
 					}
@@ -100,9 +97,9 @@ namespace dnSpy.Documents.Tabs {
 			foreach (var filename in args.Filenames) {
 				var key = new FilenameKey(filename);
 				var document = documentTabService.DocumentTreeView.DocumentService.GetDocuments().FirstOrDefault(a => key.Equals(a.Key));
-				if (document?.ModuleDef == null)
+				if (document?.ModuleDef is null)
 					continue;
-				if (document.AssemblyDef != null) {
+				if (document.AssemblyDef is not null) {
 					foreach (var mod in document.AssemblyDef.Modules)
 						yield return mod;
 				}

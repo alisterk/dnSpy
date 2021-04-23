@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -28,21 +28,17 @@ namespace dnSpy.Language.Intellisense {
 		readonly ITextView textView;
 
 		public QuickInfoController(IQuickInfoBroker quickInfoBroker, ITextView textView) {
-			if (quickInfoBroker == null)
-				throw new ArgumentNullException(nameof(quickInfoBroker));
-			if (textView == null)
-				throw new ArgumentNullException(nameof(textView));
-			this.textView = textView;
-			this.quickInfoBroker = quickInfoBroker;
+			this.textView = textView ?? throw new ArgumentNullException(nameof(textView));
+			this.quickInfoBroker = quickInfoBroker ?? throw new ArgumentNullException(nameof(quickInfoBroker));
 			textView.MouseHover += TextView_MouseHover;
 		}
 
 		public void ConnectSubjectBuffer(ITextBuffer subjectBuffer) { }
 		public void DisconnectSubjectBuffer(ITextBuffer subjectBuffer) { }
 
-		void TextView_MouseHover(object sender, MouseHoverEventArgs e) {
+		void TextView_MouseHover(object? sender, MouseHoverEventArgs e) {
 			var pos = e.TextPosition.GetPoint(textView.TextBuffer, PositionAffinity.Successor);
-			if (pos == null)
+			if (pos is null)
 				return;
 			var sessions = quickInfoBroker.GetSessions(textView);
 			foreach (var session in sessions) {
@@ -51,7 +47,7 @@ namespace dnSpy.Language.Intellisense {
 				if ((session as IQuickInfoSession2)?.HasInteractiveContent == true) {
 					foreach (var o in session.QuickInfoContent) {
 						var io = o as IInteractiveQuickInfoContent;
-						if (io == null)
+						if (io is null)
 							continue;
 						if (io.KeepQuickInfoOpen || io.IsMouseOverAggregated)
 							return;
@@ -65,7 +61,7 @@ namespace dnSpy.Language.Intellisense {
 		}
 
 		bool Intersects(ITrackingSpan span, SnapshotPoint point) {
-			if (span == null)
+			if (span is null)
 				return false;
 			if (point.Snapshot.TextBuffer != span.TextBuffer)
 				return false;

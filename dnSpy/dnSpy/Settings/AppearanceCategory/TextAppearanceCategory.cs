@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -31,32 +31,28 @@ using Microsoft.VisualStudio.Text.Classification;
 
 namespace dnSpy.Settings.AppearanceCategory {
 	interface ITextAppearanceCategory {
-		event EventHandler SettingsChanged;
+		event EventHandler? SettingsChanged;
 		ResourceDictionary CreateResourceDictionary(ITheme theme);
 	}
 
 	sealed class TextAppearanceCategory : ITextAppearanceCategory {
-		public string DisplayName => def.DisplayName;
+		public string? DisplayName => def.DisplayName;
 		public string Category => def.Category;
 		public bool IsUserVisible => def.IsUserVisible;
 		public ThemeFontSettings ThemeFontSettings { get; }
 
 		readonly TextAppearanceCategoryDefinition def;
-		ResourceDictionary resourceDictionary;
-		FontSettings activeFontSettings;
+		ResourceDictionary? resourceDictionary;
+		FontSettings? activeFontSettings;
 
 		public TextAppearanceCategory(TextAppearanceCategoryDefinition def, ThemeFontSettings themeFontSettings) {
-			if (def == null)
-				throw new ArgumentNullException(nameof(def));
-			if (themeFontSettings == null)
-				throw new ArgumentNullException(nameof(themeFontSettings));
-			this.def = def;
-			ThemeFontSettings = themeFontSettings;
+			this.def = def ?? throw new ArgumentNullException(nameof(def));
+			ThemeFontSettings = themeFontSettings ?? throw new ArgumentNullException(nameof(themeFontSettings));
 			themeFontSettings.PropertyChanged += ThemeFontSettings_PropertyChanged;
 			UpdateActive();
 		}
 
-		void ThemeFontSettings_PropertyChanged(object sender, PropertyChangedEventArgs e) {
+		void ThemeFontSettings_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
 			if (e.PropertyName == nameof(ThemeFontSettings.Active))
 				UpdateActive();
 		}
@@ -65,20 +61,20 @@ namespace dnSpy.Settings.AppearanceCategory {
 			var newActive = ThemeFontSettings.Active;
 			if (activeFontSettings == newActive)
 				return;
-			if (activeFontSettings != null)
+			if (activeFontSettings is not null)
 				activeFontSettings.PropertyChanged -= ActiveFontSettings_PropertyChanged;
 			activeFontSettings = newActive;
 			activeFontSettings.PropertyChanged += ActiveFontSettings_PropertyChanged;
 		}
 
-		void ActiveFontSettings_PropertyChanged(object sender, PropertyChangedEventArgs e) {
+		void ActiveFontSettings_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
 			if (e.PropertyName == nameof(activeFontSettings.FontFamily) || e.PropertyName == nameof(activeFontSettings.FontSize))
 				RaiseSettingsChanged();
 		}
 
 		public void ClearCache() => resourceDictionary = null;
 		public void OnThemeChanged() => RaiseSettingsChanged();
-		public event EventHandler SettingsChanged;
+		public event EventHandler? SettingsChanged;
 
 		void RaiseSettingsChanged() {
 			ClearCache();
@@ -87,12 +83,13 @@ namespace dnSpy.Settings.AppearanceCategory {
 
 		public ResourceDictionary CreateResourceDictionary(ITheme theme) {
 			Debug.Assert(theme.Guid == activeFontSettings?.ThemeGuid);
-			if (resourceDictionary == null)
+			if (resourceDictionary is null)
 				resourceDictionary = CreateResourceDictionaryCore(theme);
 			return resourceDictionary;
 		}
 
 		ResourceDictionary CreateResourceDictionaryCore(ITheme theme) {
+			Debug2.Assert(activeFontSettings is not null);
 			var res = new ResourceDictionary();
 
 			var tc = theme.GetColor(def.ColorType);

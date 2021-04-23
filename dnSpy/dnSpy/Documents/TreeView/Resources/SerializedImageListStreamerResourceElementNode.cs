@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using dnlib.DotNet;
 using dnlib.DotNet.Resources;
@@ -33,15 +34,14 @@ using dnSpy.Contracts.TreeView;
 namespace dnSpy.Documents.TreeView.Resources {
 	[ExportResourceNodeProvider(Order = DocumentTreeViewConstants.ORDER_RSRCPROVIDER_SERIALIZED_IMAGE_LIST_STREAMER_RESOURCE_ELEMENT_NODE)]
 	sealed class SerializedImageListStreamerResourceElementNodeProvider : IResourceNodeProvider {
-		public ResourceNode Create(ModuleDef module, Resource resource, ITreeNodeGroup treeNodeGroup) => null;
+		public DocumentTreeNodeData? Create(ModuleDef module, Resource resource, ITreeNodeGroup treeNodeGroup) => null;
 
-		public ResourceElementNode Create(ModuleDef module, ResourceElement resourceElement, ITreeNodeGroup treeNodeGroup) {
+		public DocumentTreeNodeData? Create(ModuleDef module, ResourceElement resourceElement, ITreeNodeGroup treeNodeGroup) {
 			var serializedData = resourceElement.ResourceData as BinaryResourceData;
-			if (serializedData == null)
+			if (serializedData is null)
 				return null;
 
-			byte[] imageData;
-			if (SerializedImageListStreamerUtilities.GetImageData(module, serializedData.TypeName, serializedData.Data, out imageData))
+			if (SerializedImageListStreamerUtilities.GetImageData(module, serializedData.TypeName, serializedData.Data, out var imageData))
 				return new SerializedImageListStreamerResourceElementNodeImpl(treeNodeGroup, resourceElement, imageData);
 
 			return null;
@@ -49,17 +49,15 @@ namespace dnSpy.Documents.TreeView.Resources {
 	}
 
 	sealed class SerializedImageListStreamerResourceElementNodeImpl : SerializedImageListStreamerResourceElementNode {
-		ImageListOptions imageListOptions;
-		byte[] imageData;
+		ImageListOptions? imageListOptions;
+		byte[]? imageData;
 
 		public override Guid Guid => new Guid(DocumentTreeViewConstants.SERIALIZED_IMAGE_LIST_STREAMER_RESOURCE_ELEMENT_NODE_GUID);
-		public override ImageListOptions ImageListOptions => new ImageListOptions(imageListOptions) { Name = Name };
+		public override ImageListOptions ImageListOptions => new ImageListOptions(imageListOptions!) { Name = Name };
 		protected override ImageReference GetIcon() => DsImages.Image;
 
 		public SerializedImageListStreamerResourceElementNodeImpl(ITreeNodeGroup treeNodeGroup, ResourceElement resourceElement, byte[] imageData)
-			: base(treeNodeGroup, resourceElement) {
-			InitializeImageData(imageData);
-		}
+			: base(treeNodeGroup, resourceElement) => InitializeImageData(imageData);
 
 		void InitializeImageData(byte[] imageData) {
 			imageListOptions = SerializedImageListStreamerUtilities.ReadImageData(imageData);
@@ -67,8 +65,8 @@ namespace dnSpy.Documents.TreeView.Resources {
 		}
 
 		public override void WriteShort(IDecompilerOutput output, IDecompiler decompiler, bool showOffset) {
-			var documentViewerOutput = output as IDocumentViewerOutput;
-			if (documentViewerOutput != null) {
+			Debug2.Assert(imageListOptions is not null);
+			if (output is IDocumentViewerOutput documentViewerOutput) {
 				for (int i = 0; i < imageListOptions.ImageSources.Count; i++) {
 					if (i > 0)
 						output.Write(" ", BoxedTextColor.Text);
@@ -86,10 +84,11 @@ namespace dnSpy.Documents.TreeView.Resources {
 
 		protected override IEnumerable<ResourceData> GetDeserializedData() {
 			var id = imageData;
+			Debug2.Assert(id is not null);
 			yield return new ResourceData(ResourceElement.Name, token => new MemoryStream(id));
 		}
 
-		public override string CheckCanUpdateData(ResourceElement newResElem) {
+		public override string? CheckCanUpdateData(ResourceElement newResElem) {
 			var res = base.CheckCanUpdateData(newResElem);
 			if (!string.IsNullOrEmpty(res))
 				return res;
@@ -100,8 +99,8 @@ namespace dnSpy.Documents.TreeView.Resources {
 			base.UpdateData(newResElem);
 
 			var binData = (BinaryResourceData)newResElem.ResourceData;
-			byte[] imageData;
-			SerializedImageListStreamerUtilities.GetImageData(this.GetModule(), binData.TypeName, binData.Data, out imageData);
+			SerializedImageListStreamerUtilities.GetImageData(this.GetModule(), binData.TypeName, binData.Data, out var imageData);
+			Debug2.Assert(imageData is not null);
 			InitializeImageData(imageData);
 		}
 	}

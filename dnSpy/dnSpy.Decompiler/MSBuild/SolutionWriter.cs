@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -30,7 +30,7 @@ namespace dnSpy.Decompiler.MSBuild {
 		readonly List<Project> projects;
 		readonly string filename;
 		readonly List<string> configs;
-		readonly List<string> platforms;
+		readonly List<string?> platforms;
 
 		public SolutionWriter(ProjectVersion projectVersion, IList<Project> projects, string filename) {
 			this.projectVersion = projectVersion;
@@ -51,8 +51,8 @@ namespace dnSpy.Decompiler.MSBuild {
 			configs.Add("Debug");
 			configs.Add("Release");
 
-			var hash = new HashSet<string>(projects.Select(a => a.Platform));
-			platforms = new List<string>(hash.Count);
+			var hash = new HashSet<string?>(projects.Select(a => a.Platform));
+			platforms = new List<string?>(hash.Count);
 			platforms.Add("Any CPU");
 			hash.Remove("AnyCPU");
 			if (hash.Count > 0)
@@ -62,7 +62,7 @@ namespace dnSpy.Decompiler.MSBuild {
 		}
 
 		public void Write() {
-			Directory.CreateDirectory(Path.GetDirectoryName(filename));
+			Directory.CreateDirectory(Path.GetDirectoryName(filename)!);
 			using (var writer = new StreamWriter(filename, false, Encoding.UTF8)) {
 				const string crlf = "\r\n"; // Make sure it's always CRLF
 				writer.Write(crlf);
@@ -111,13 +111,29 @@ namespace dnSpy.Decompiler.MSBuild {
 					writer.Write("MinimumVisualStudioVersion = 10.0.40219.1" + crlf);
 					break;
 
+				case ProjectVersion.VS2017:
+					writer.Write("Microsoft Visual Studio Solution File, Format Version 12.00" + crlf);
+					writer.Write("# Visual Studio 15" + crlf);
+					// https://www.visualstudio.com/en-us/news/releasenotes/vs2017-relnotes-v15.0
+					writer.Write("VisualStudioVersion = 15.0.26228.4" + crlf);
+					writer.Write("MinimumVisualStudioVersion = 10.0.40219.1" + crlf);
+					break;
+
+				case ProjectVersion.VS2019:
+					writer.Write("Microsoft Visual Studio Solution File, Format Version 12.00" + crlf);
+					writer.Write("# Visual Studio Version 16" + crlf);
+					// https://docs.microsoft.com/en-us/visualstudio/install/visual-studio-build-numbers-and-release-dates
+					writer.Write("VisualStudioVersion = 16.0.28729.10" + crlf);
+					writer.Write("MinimumVisualStudioVersion = 10.0.40219.1" + crlf);
+					break;
+
 				default:
 					throw new InvalidOperationException();
 				}
 				foreach (var p in projects) {
 					writer.Write("Project(\"{0}\") = \"{1}\", \"{1}\\{2}\", \"{3}\"" + crlf,
 						p.LanguageGuid.ToString("B").ToUpperInvariant(),
-						Path.GetFileName(Path.GetDirectoryName(p.Filename)),
+						Path.GetFileName(Path.GetDirectoryName(p.Filename)!),
 						Path.GetFileName(p.Filename),
 						p.Guid.ToString("B").ToUpperInvariant()
 					);
@@ -133,7 +149,7 @@ namespace dnSpy.Decompiler.MSBuild {
 				writer.Write("\tGlobalSection(ProjectConfigurationPlatforms) = postSolution" + crlf);
 				foreach (var p in projects) {
 					var prjGuid = p.Guid.ToString("B").ToUpperInvariant();
-					var pp = p.Platform.Equals("AnyCPU") ? "Any CPU" : p.Platform;
+					var pp = p.Platform == "AnyCPU" ? "Any CPU" : p.Platform;
 					foreach (var c in configs) {
 						foreach (var f in platforms) {
 							writer.Write("\t\t{0}.{1}|{2}.ActiveCfg = {1}|{3}" + crlf, prjGuid, c, f, pp);

@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -41,7 +41,7 @@ namespace dnSpy.Documents.Tabs.DocViewer {
 			appWindow.MainWindow.KeyDown += MainWindow_KeyDown;
 		}
 
-		void MainWindow_KeyDown(object sender, KeyEventArgs e) {
+		void MainWindow_KeyDown(object? sender, KeyEventArgs e) {
 			if (!waitingForSecondKey && e.KeyboardDevice.Modifiers == ModifierKeys.Control && e.Key == Key.E) {
 				waitingForSecondKey = true;
 				e.Handled = true;
@@ -64,9 +64,7 @@ namespace dnSpy.Documents.Tabs.DocViewer {
 		readonly Lazy<IDocumentViewerOptionsService> documentViewerOptionsService;
 
 		[ImportingConstructor]
-		WordWrapCommand(Lazy<IDocumentViewerOptionsService> documentViewerOptionsService) {
-			this.documentViewerOptionsService = documentViewerOptionsService;
-		}
+		WordWrapCommand(Lazy<IDocumentViewerOptionsService> documentViewerOptionsService) => this.documentViewerOptionsService = documentViewerOptionsService;
 
 		public override void Execute(IMenuItemContext context) => documentViewerOptionsService.Value.Default.WordWrapStyle ^= WordWrapStyles.WordWrap;
 		public override bool IsChecked(IMenuItemContext context) => (documentViewerOptionsService.Value.Default.WordWrapStyle & WordWrapStyles.WordWrap) != 0;
@@ -77,9 +75,7 @@ namespace dnSpy.Documents.Tabs.DocViewer {
 		readonly Lazy<IDocumentViewerOptionsService> documentViewerOptionsService;
 
 		[ImportingConstructor]
-		HighlightCurrentLineCommand(Lazy<IDocumentViewerOptionsService> documentViewerOptionsService) {
-			this.documentViewerOptionsService = documentViewerOptionsService;
-		}
+		HighlightCurrentLineCommand(Lazy<IDocumentViewerOptionsService> documentViewerOptionsService) => this.documentViewerOptionsService = documentViewerOptionsService;
 
 		public override void Execute(IMenuItemContext context) => documentViewerOptionsService.Value.Default.EnableHighlightCurrentLine = !documentViewerOptionsService.Value.Default.EnableHighlightCurrentLine;
 		public override bool IsChecked(IMenuItemContext context) => documentViewerOptionsService.Value.Default.EnableHighlightCurrentLine;
@@ -95,7 +91,7 @@ namespace dnSpy.Documents.Tabs.DocViewer {
 			if (context.CreatorObject.Guid != new Guid(MenuConstants.GUIDOBJ_DOCUMENTVIEWERCONTROL_GUID))
 				return false;
 			var uiContext = context.Find<IDocumentViewer>();
-			return uiContext != null && !uiContext.Selection.IsEmpty;
+			return uiContext is not null && !uiContext.Selection.IsEmpty;
 		}
 	}
 
@@ -103,15 +99,15 @@ namespace dnSpy.Documents.Tabs.DocViewer {
 	sealed class FindInCodeCommand : MenuItemBase {
 		public override void Execute(IMenuItemContext context) {
 			var elem = GetInputElement();
-			if (elem != null)
+			if (elem is not null)
 				ApplicationCommands.Find.Execute(null, elem);
 		}
 
-		public override bool IsEnabled(IMenuItemContext context) => GetInputElement() != null;
+		public override bool IsEnabled(IMenuItemContext context) => GetInputElement() is not null;
 
-		IInputElement GetInputElement() {
+		IInputElement? GetInputElement() {
 			var elem = Keyboard.FocusedElement;
-			return elem != null && ApplicationCommands.Find.CanExecute(null, elem) ? elem : null;
+			return elem is not null && ApplicationCommands.Find.CanExecute(null, elem) ? elem : null;
 		}
 	}
 
@@ -120,7 +116,7 @@ namespace dnSpy.Documents.Tabs.DocViewer {
 			: base(cmdId) {
 		}
 
-		protected override ICommandTarget GetCommandTarget(IMenuItemContext context) {
+		protected override ICommandTarget? GetCommandTarget(IMenuItemContext context) {
 			if (context.CreatorObject.Guid != new Guid(MenuConstants.GUIDOBJ_DOCUMENTVIEWERCONTROL_GUID))
 				return null;
 			return context.Find<IDocumentViewer>()?.TextView.CommandTarget;
@@ -128,15 +124,15 @@ namespace dnSpy.Documents.Tabs.DocViewer {
 	}
 
 	[ExportMenuItem(Header = "res:FindCommand2", Icon = DsImagesAttribute.Search, InputGestureText = "res:FindKey", Group = MenuConstants.GROUP_CTX_DOCVIEWER_EDITOR, Order = 10)]
-	sealed class FindInCodeContexMenuEntry : DocumentViewerCommandTargetMenuItemBase {
-		FindInCodeContexMenuEntry()
+	sealed class FindInCodeContextMenuEntry : DocumentViewerCommandTargetMenuItemBase {
+		FindInCodeContextMenuEntry()
 			: base(StandardIds.Find) {
 		}
 	}
 
 	[ExportMenuItem(Header = "res:IncrementalSearchCommand", Icon = DsImagesAttribute.Search, InputGestureText = "res:ShortCutKeyCtrlI", Group = MenuConstants.GROUP_CTX_DOCVIEWER_EDITOR, Order = 20)]
-	sealed class IncrementalSearchForwardContexMenuEntry : DocumentViewerCommandTargetMenuItemBase {
-		IncrementalSearchForwardContexMenuEntry()
+	sealed class IncrementalSearchForwardContextMenuEntry : DocumentViewerCommandTargetMenuItemBase {
+		IncrementalSearchForwardContextMenuEntry()
 			: base(StandardIds.IncrementalSearchForward) {
 		}
 	}

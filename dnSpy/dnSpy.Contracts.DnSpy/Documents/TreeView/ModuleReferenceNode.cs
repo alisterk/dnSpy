@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -31,16 +31,12 @@ namespace dnSpy.Contracts.Documents.TreeView {
 		/// </summary>
 		public ModuleRef ModuleRef { get; }
 
-		IMDTokenProvider IMDTokenNode.Reference => ModuleRef;
+		IMDTokenProvider? IMDTokenNode.Reference => ModuleRef;
 
 		/// <summary>
 		/// Constructor
 		/// </summary>
 		/// <param name="moduleRef">Module reference</param>
-		protected ModuleReferenceNode(ModuleRef moduleRef) {
-			if (moduleRef == null)
-				throw new ArgumentNullException(nameof(moduleRef));
-			ModuleRef = moduleRef;
-		}
+		protected ModuleReferenceNode(ModuleRef moduleRef) => ModuleRef = moduleRef ?? throw new ArgumentNullException(nameof(moduleRef));
 	}
 }

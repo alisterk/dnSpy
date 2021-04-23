@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -30,12 +30,8 @@ namespace dnSpy.Text.Editor.IncrementalSearch {
 		public ITextView TextView { get; }
 
 		public string SearchString {
-			get { return searchString; }
-			set {
-				if (value == null)
-					throw new ArgumentNullException(nameof(value));
-				searchString = value;
-			}
+			get => searchString;
+			set => searchString = value ?? throw new ArgumentNullException(nameof(value));
 		}
 		string searchString;
 
@@ -69,16 +65,12 @@ namespace dnSpy.Text.Editor.IncrementalSearch {
 		readonly IEditorOperations editorOperations;
 
 		public IncrementalSearch(ITextView textView, ITextSearchService textSearchService, IEditorOperationsFactoryService editorOperationsFactoryService) {
-			if (textView == null)
-				throw new ArgumentNullException(nameof(textView));
-			if (textSearchService == null)
-				throw new ArgumentNullException(nameof(textSearchService));
-			if (editorOperationsFactoryService == null)
+			if (editorOperationsFactoryService is null)
 				throw new ArgumentNullException(nameof(editorOperationsFactoryService));
-			TextView = textView;
-			this.textSearchService = textSearchService;
+			TextView = textView ?? throw new ArgumentNullException(nameof(textView));
+			this.textSearchService = textSearchService ?? throw new ArgumentNullException(nameof(textSearchService));
 			editorOperations = editorOperationsFactoryService.GetEditorOperations(textView);
-			SearchString = string.Empty;
+			searchString = string.Empty;
 		}
 
 		public void Start() {
@@ -93,7 +85,7 @@ namespace dnSpy.Text.Editor.IncrementalSearch {
 				throw new InvalidOperationException();
 			IsActive = false;
 			// Don't hold a strong reference to the snapshot
-			CaretStartPosition = default(SnapshotPoint);
+			CaretStartPosition = default;
 		}
 
 		public IncrementalSearchResult AppendCharAndSearch(char toAppend) {
@@ -125,7 +117,7 @@ namespace dnSpy.Text.Editor.IncrementalSearch {
 				return searchFailedResult;
 			TextView.Selection.Clear();
 			var res = textSearchService.FindNext(CaretStartPosition.Position, true, new FindData(SearchString, CaretStartPosition.Snapshot, FindOptions, null));
-			if (res == null)
+			if (res is null)
 				return searchFailedResult;
 			editorOperations.SelectAndMoveCaret(new VirtualSnapshotPoint(res.Value.Start), new VirtualSnapshotPoint(res.Value.End));
 			if (SearchDirection == IncrementalSearchDirection.Forward)

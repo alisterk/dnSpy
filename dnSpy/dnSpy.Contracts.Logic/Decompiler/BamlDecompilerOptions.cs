@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -25,7 +25,7 @@ namespace dnSpy.Contracts.Decompiler {
 		/// <summary>
 		/// x:ClassModifier value string when type is internal
 		/// </summary>
-		public string InternalClassModifier { get; set; }
+		public string? InternalClassModifier { get; set; }
 
 		/// <summary>
 		/// Creates a new instance
@@ -42,21 +42,17 @@ namespace dnSpy.Contracts.Decompiler {
 		/// Creates a new instance with C# values
 		/// </summary>
 		/// <returns></returns>
-		public static BamlDecompilerOptions CreateCSharp() {
-			return new BamlDecompilerOptions {
-				InternalClassModifier = "internal",
-			};
-		}
+		public static BamlDecompilerOptions CreateCSharp() => new BamlDecompilerOptions {
+			InternalClassModifier = "internal",
+		};
 
 		/// <summary>
 		/// Creates a new instance with VB values
 		/// </summary>
 		/// <returns></returns>
-		public static BamlDecompilerOptions CreateVisualBasic() {
-			return new BamlDecompilerOptions {
-				InternalClassModifier = "Friend",
-			};
-		}
+		public static BamlDecompilerOptions CreateVisualBasic() => new BamlDecompilerOptions {
+			InternalClassModifier = "Friend",
+		};
 
 		/// <summary>
 		/// Constructor

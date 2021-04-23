@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -44,23 +44,22 @@ namespace dnSpy.Analyzer {
 
 		public override void Execute(IMenuItemContext context) {
 			var @ref = GetReference(context);
-			if (@ref == null)
+			if (@ref is null)
 				return;
 			analyzerService.Value.FollowNode(@ref, newTab, useCodeRef);
 		}
 
-		public override bool IsVisible(IMenuItemContext context) => GetReference(context) != null;
+		public override bool IsVisible(IMenuItemContext context) => GetReference(context) is not null;
 
-		TreeNodeData GetReference(IMenuItemContext context) {
+		TreeNodeData? GetReference(IMenuItemContext context) {
 			if (context.CreatorObject.Guid != new Guid(MenuConstants.GUIDOBJ_ANALYZER_TREEVIEW_GUID))
 				return null;
 
 			var nodes = context.Find<TreeNodeData[]>();
-			if (nodes == null || nodes.Length != 1)
+			if (nodes is null || nodes.Length != 1)
 				return null;
 
-			var tokenNode = nodes[0] as IMDTokenNode;
-			if (tokenNode != null && tokenNode.Reference != null) {
+			if (nodes[0] is IMDTokenNode tokenNode && tokenNode.Reference is not null) {
 				if (!analyzerService.Value.CanFollowNode(nodes[0], useCodeRef))
 					return null;
 				return nodes[0];
@@ -118,9 +117,7 @@ namespace dnSpy.Analyzer {
 		readonly Lazy<IAnalyzerService> analyzerService;
 
 		[ImportingConstructor]
-		CopyCtxMenuCommand(Lazy<IAnalyzerService> analyzerService) {
-			this.analyzerService = analyzerService;
-		}
+		CopyCtxMenuCommand(Lazy<IAnalyzerService> analyzerService) => this.analyzerService = analyzerService;
 
 		public override bool IsVisible(IMenuItemContext context) => context.CreatorObject.Guid == new Guid(MenuConstants.GUIDOBJ_ANALYZER_TREEVIEW_GUID);
 		public override bool IsEnabled(IMenuItemContext context) => CanExecuteInternal(analyzerService);
@@ -134,8 +131,8 @@ namespace dnSpy.Analyzer {
 			foreach (var t in GetNodes(analyzerService.Value.TreeView, items)) {
 				if (count > 0)
 					sb.Append(Environment.NewLine);
-				sb.Append(new string('\t', t.Item1));
-				sb.Append(t.Item2.ToString());
+				sb.Append(new string('\t', t.level));
+				sb.Append(t.node.ToString());
 				count++;
 			}
 			if (count > 1)
@@ -158,7 +155,7 @@ namespace dnSpy.Analyzer {
 			}
 		}
 
-		static IEnumerable<Tuple<int, TreeNodeData>> GetNodes(ITreeView treeView, IEnumerable<TreeNodeData> nodes) {
+		static IEnumerable<(int level, TreeNodeData node)> GetNodes(ITreeView treeView, IEnumerable<TreeNodeData> nodes) {
 			var hash = new HashSet<TreeNodeData>(nodes);
 			var stack = new Stack<State>();
 			stack.Push(new State(treeView.Root, 0));
@@ -168,7 +165,7 @@ namespace dnSpy.Analyzer {
 					continue;
 				var child = state.Nodes[state.Index++];
 				if (hash.Contains(child.Data))
-					yield return Tuple.Create(state.Level, child.Data);
+					yield return (state.Level, child.Data);
 				stack.Push(state);
 				stack.Push(new State(child, state.Level + 1));
 			}
@@ -180,9 +177,7 @@ namespace dnSpy.Analyzer {
 		readonly AnalyzerSettingsImpl analyzerSettings;
 
 		[ImportingConstructor]
-		ShowTokensCtxMenuCommand(AnalyzerSettingsImpl analyzerSettings) {
-			this.analyzerSettings = analyzerSettings;
-		}
+		ShowTokensCtxMenuCommand(AnalyzerSettingsImpl analyzerSettings) => this.analyzerSettings = analyzerSettings;
 
 		public override bool IsVisible(IMenuItemContext context) => context.CreatorObject.Guid == new Guid(MenuConstants.GUIDOBJ_ANALYZER_TREEVIEW_GUID);
 		public override bool IsChecked(IMenuItemContext context) => analyzerSettings.ShowToken;
@@ -194,12 +189,22 @@ namespace dnSpy.Analyzer {
 		readonly AnalyzerSettingsImpl analyzerSettings;
 
 		[ImportingConstructor]
-		SyntaxHighlightCtxMenuCommand(AnalyzerSettingsImpl analyzerSettings) {
-			this.analyzerSettings = analyzerSettings;
-		}
+		SyntaxHighlightCtxMenuCommand(AnalyzerSettingsImpl analyzerSettings) => this.analyzerSettings = analyzerSettings;
 
 		public override bool IsVisible(IMenuItemContext context) => context.CreatorObject.Guid == new Guid(MenuConstants.GUIDOBJ_ANALYZER_TREEVIEW_GUID);
 		public override bool IsChecked(IMenuItemContext context) => analyzerSettings.SyntaxHighlight;
 		public override void Execute(IMenuItemContext context) => analyzerSettings.SyntaxHighlight = !analyzerSettings.SyntaxHighlight;
+	}
+
+	[ExportMenuItem(Header = "res:SingleClickExpandNodes", Group = MenuConstants.GROUP_CTX_ANALYZER_OPTIONS, Order = 20)]
+	sealed class SingleClickExpandNodesCtxMenuCommand : MenuItemBase {
+		readonly AnalyzerSettingsImpl analyzerSettings;
+
+		[ImportingConstructor]
+		SingleClickExpandNodesCtxMenuCommand(AnalyzerSettingsImpl analyzerSettings) => this.analyzerSettings = analyzerSettings;
+
+		public override bool IsVisible(IMenuItemContext context) => context.CreatorObject.Guid == new Guid(MenuConstants.GUIDOBJ_ANALYZER_TREEVIEW_GUID);
+		public override bool IsChecked(IMenuItemContext context) => analyzerSettings.SingleClickExpandsChildren;
+		public override void Execute(IMenuItemContext context) => analyzerSettings.SingleClickExpandsChildren = !analyzerSettings.SingleClickExpandsChildren;
 	}
 }

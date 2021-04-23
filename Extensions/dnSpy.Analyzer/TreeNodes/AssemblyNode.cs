@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2011 AlphaSierraPapa for the SharpDevelop Team
+// Copyright (c) 2011 AlphaSierraPapa for the SharpDevelop Team
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this
 // software and associated documentation files (the "Software"), to deal in the Software
@@ -25,13 +25,11 @@ namespace dnSpy.Analyzer.TreeNodes {
 	sealed class AssemblyNode : EntityNode {
 		readonly AssemblyDef analyzedAssembly;
 
-		public AssemblyNode(AssemblyDef analyzedAssembly) {
-			this.analyzedAssembly = analyzedAssembly;
-		}
+		public AssemblyNode(AssemblyDef analyzedAssembly) => this.analyzedAssembly = analyzedAssembly;
 
 		protected override ImageReference GetIcon(IDotNetImageService dnImgMgr) => dnImgMgr.GetImageReference(analyzedAssembly);
 		protected override void Write(ITextColorWriter output, IDecompiler decompiler) => output.Write(analyzedAssembly);
-		public override IMemberRef Member => null;
-		public override IMDTokenProvider Reference => analyzedAssembly;
+		public override IMemberRef? Member => null;
+		public override IMDTokenProvider? Reference => analyzedAssembly;
 	}
 }

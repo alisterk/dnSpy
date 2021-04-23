@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -51,7 +51,7 @@ namespace dnSpy.Images {
 				PhysicalSize.Equals(other.PhysicalSize) &&
 				Dpi.Equals(other.Dpi);
 
-			public override bool Equals(object obj) => obj is InternalImageOptions && Equals((InternalImageOptions)obj);
+			public override bool Equals(object? obj) => obj is InternalImageOptions && Equals((InternalImageOptions)obj);
 
 			public override int GetHashCode() =>
 				(BackgroundColor?.GetHashCode() ?? 0) ^
@@ -69,7 +69,7 @@ namespace dnSpy.Images {
 			}
 
 			public bool Equals(ImageKey other) => StringComparer.OrdinalIgnoreCase.Equals(uri, other.uri) && options.Equals(other.options);
-			public override bool Equals(object obj) => obj is ImageKey && Equals((ImageKey)obj);
+			public override bool Equals(object? obj) => obj is ImageKey && Equals((ImageKey)obj);
 			public override int GetHashCode() => StringComparer.OrdinalIgnoreCase.GetHashCode(uri) ^ options.GetHashCode();
 			public override string ToString() => uri;
 		}
@@ -82,8 +82,7 @@ namespace dnSpy.Images {
 			imageSourceInfoProvidersDict = new Dictionary<Assembly, List<Lazy<IImageSourceInfoProvider, IImageSourceInfoProviderMetadata>>>();
 			this.themeService.ThemeChangedHighPriority += ThemeService_ThemeChangedHighPriority;
 			foreach (var lz in imageSourceInfoProviders.OrderBy(a => a.Metadata.Order)) {
-				List<Lazy<IImageSourceInfoProvider, IImageSourceInfoProviderMetadata>> list;
-				if (!imageSourceInfoProvidersDict.TryGetValue(lz.Metadata.Type.Assembly, out list)) {
+				if (!imageSourceInfoProvidersDict.TryGetValue(lz.Metadata.Type.Assembly, out var list)) {
 					list = new List<Lazy<IImageSourceInfoProvider, IImageSourceInfoProviderMetadata>>();
 					imageSourceInfoProvidersDict.Add(lz.Metadata.Type.Assembly, list);
 					list.Add(CreateDefaultProvider(lz.Metadata.Type.Assembly));
@@ -95,19 +94,18 @@ namespace dnSpy.Images {
 		}
 
 		Lazy<IImageSourceInfoProvider, IImageSourceInfoProviderMetadata> CreateDefaultProvider(Assembly assembly) {
-			if (assembly == null)
+			if (assembly is null)
 				throw new ArgumentNullException(nameof(assembly));
-			var attr = new ExportImageSourceInfoProviderAttribute(double.MaxValue);
+			var attr = new ExportImageSourceInfoProviderAttribute(typeof(void), double.MaxValue);
 			var lz = new Lazy<IImageSourceInfoProvider, IImageSourceInfoProviderMetadata>(() => new DefaultImageSourceInfoProvider(assembly), attr, isThreadSafe: false);
 			var dummy = lz.Value;
 			return lz;
 		}
 
 		List<Lazy<IImageSourceInfoProvider, IImageSourceInfoProviderMetadata>> GetProviders(Assembly assembly) {
-			if (assembly == null)
+			if (assembly is null)
 				throw new ArgumentNullException(nameof(assembly));
-			List<Lazy<IImageSourceInfoProvider, IImageSourceInfoProviderMetadata>> list;
-			if (imageSourceInfoProvidersDict.TryGetValue(assembly, out list))
+			if (imageSourceInfoProvidersDict.TryGetValue(assembly, out var list))
 				return list;
 			list = new List<Lazy<IImageSourceInfoProvider, IImageSourceInfoProviderMetadata>>();
 			list.Add(CreateDefaultProvider(assembly));
@@ -115,17 +113,27 @@ namespace dnSpy.Images {
 			return list;
 		}
 
-		void ThemeService_ThemeChangedHighPriority(object sender, ThemeChangedEventArgs e) {
+		void ThemeService_ThemeChangedHighPriority(object? sender, ThemeChangedEventArgs e) {
 			imageCache.Clear();
 			isHighContrast = themeService.Theme.IsHighContrast;
 		}
 
-		Color? GetColor(Brush brush) => (brush as SolidColorBrush)?.Color;
+		Color? GetColor(Brush? brush) {
+			if (brush is SolidColorBrush scb)
+				return scb.Color;
+			if (brush is GradientBrush gb) {
+				int count = gb.GradientStops.Count;
+				if (count > 0) {
+					// Pick the middle one, perhaps it's more correct for most images
+					return gb.GradientStops[count / 2].Color;
+				}
+			}
+			return null;
+		}
 
-		Size GetDpi(DependencyObject dpiObject, Size dpi) {
-			if (dpiObject != null) {
-				var window = Window.GetWindow(dpiObject) as MetroWindow;
-				if (window != null)
+		Size GetDpi(DependencyObject? dpiObject, Size dpi) {
+			if (dpiObject is not null) {
+				if (Window.GetWindow(dpiObject) is MetroWindow window)
 					return window.WindowDpi;
 			}
 
@@ -137,10 +145,10 @@ namespace dnSpy.Images {
 
 		static Size Round(Size size) => new Size(Math.Round(size.Width), Math.Round(size.Height));
 
-		public BitmapSource GetImage(ImageReference imageReference, ImageOptions options) {
-			if (options == null)
+		public BitmapSource? GetImage(ImageReference imageReference, ImageOptions options) {
+			if (options is null)
 				throw new ArgumentNullException(nameof(options));
-			if (imageReference.Name == null)
+			if (imageReference.Name is null)
 				return null;
 
 			var internalOptions = new InternalImageOptions();
@@ -159,11 +167,11 @@ namespace dnSpy.Images {
 			if (internalOptions.PhysicalSize.Width == 0 || internalOptions.PhysicalSize.Height == 0)
 				return null;
 
-			if (imageReference.Assembly != null) {
+			if (imageReference.Assembly is not null) {
 				var name = imageReference.Name;
 				foreach (var provider in GetProviders(imageReference.Assembly)) {
 					var infos = provider.Value.GetImageSourceInfos(name);
-					if (infos == null)
+					if (infos is null)
 						continue;
 
 					var infoList = new List<ImageSourceInfo>(infos);
@@ -194,7 +202,7 @@ namespace dnSpy.Images {
 
 					foreach (var info in infoList) {
 						var bitmapSource = TryGetImage(info.Uri, internalOptions);
-						if (bitmapSource != null)
+						if (bitmapSource is not null)
 							return bitmapSource;
 					}
 
@@ -206,37 +214,35 @@ namespace dnSpy.Images {
 				return TryGetImage(imageReference.Name, internalOptions);
 		}
 
-		BitmapSource TryGetImage(string uriString, InternalImageOptions options) {
-			if (uriString == null)
+		BitmapSource? TryGetImage(string uriString, InternalImageOptions options) {
+			if (uriString is null)
 				return null;
 
 			var key = new ImageKey(uriString, options);
-			WeakReference weakImage;
-			BitmapSource image;
-			if (imageCache.TryGetValue(key, out weakImage)) {
+			BitmapSource? image;
+			if (imageCache.TryGetValue(key, out var weakImage)) {
 				image = weakImage.Target as BitmapSource;
-				if (image != null)
+				if (image is not null)
 					return image;
 			}
 
 			image = TryLoadImage(uriString, options.PhysicalSize);
-			if (image == null)
+			if (image is null)
 				return null;
 
-			if (options.BackgroundColor != null)
+			if (options.BackgroundColor is not null)
 				image = ThemedImageCreator.CreateThemedBitmapSource(image, options.BackgroundColor.Value, isHighContrast);
 			imageCache[key] = new WeakReference(image);
 			return image;
 		}
 
-		BitmapSource TryLoadImage(string uriString, Size physicalSize) {
+		BitmapSource? TryLoadImage(string uriString, Size physicalSize) {
 			try {
 				var uri = new Uri(uriString, UriKind.RelativeOrAbsolute);
 				var info = Application.GetResourceStream(uri);
 				if (info.ContentType.Equals("application/xaml+xml", StringComparison.OrdinalIgnoreCase) || info.ContentType.Equals("application/baml+xml", StringComparison.OrdinalIgnoreCase)) {
 					var component = Application.LoadComponent(uri);
-					var elem = component as FrameworkElement;
-					if (elem != null)
+					if (component is FrameworkElement elem)
 						return ResizeElement(elem, physicalSize);
 					return null;
 				}

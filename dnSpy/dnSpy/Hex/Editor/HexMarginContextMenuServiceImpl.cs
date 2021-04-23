@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.Diagnostics;
 using System.Linq;
 using System.Windows.Input;
 using dnSpy.Contracts.Hex.Editor;
@@ -32,16 +33,14 @@ namespace dnSpy.Hex.Editor {
 		readonly Lazy<HexMarginContextMenuHandlerProvider, IMarginContextMenuHandlerProviderMetadata>[] marginContextMenuHandlerProviders;
 
 		[ImportingConstructor]
-		HexMarginContextMenuServiceImpl([ImportMany] IEnumerable<Lazy<HexMarginContextMenuHandlerProvider, IMarginContextMenuHandlerProviderMetadata>> marginContextMenuHandlerProviders) {
-			this.marginContextMenuHandlerProviders = marginContextMenuHandlerProviders.ToArray();
-		}
+		HexMarginContextMenuServiceImpl([ImportMany] IEnumerable<Lazy<HexMarginContextMenuHandlerProvider, IMarginContextMenuHandlerProviderMetadata>> marginContextMenuHandlerProviders) => this.marginContextMenuHandlerProviders = marginContextMenuHandlerProviders.ToArray();
 
 		sealed class GuidObjectsProvider : IGuidObjectsProvider {
 			readonly WpfHexViewHost wpfHexViewHost;
 			readonly WpfHexViewMargin margin;
 			readonly string marginName;
 			readonly Lazy<HexMarginContextMenuHandlerProvider, IMarginContextMenuHandlerProviderMetadata>[] marginContextMenuHandlerProviders;
-			IHexMarginContextMenuHandler[] handlers;
+			IHexMarginContextMenuHandler[]? handlers;
 
 			public GuidObjectsProvider(WpfHexViewHost wpfHexViewHost, WpfHexViewMargin margin, string marginName, Lazy<HexMarginContextMenuHandlerProvider, IMarginContextMenuHandlerProviderMetadata>[] marginContextMenuHandlerProviders) {
 				this.wpfHexViewHost = wpfHexViewHost;
@@ -51,24 +50,25 @@ namespace dnSpy.Hex.Editor {
 			}
 
 			void InitializeHandlers() {
-				if (handlers != null)
+				if (handlers is not null)
 					return;
 				var list = new List<IHexMarginContextMenuHandler>(marginContextMenuHandlerProviders.Length);
 				foreach (var lazy in marginContextMenuHandlerProviders) {
 					if (!StringComparer.OrdinalIgnoreCase.Equals(lazy.Metadata.MarginName, marginName))
 						continue;
-					if (lazy.Metadata.TextViewRoles != null && !wpfHexViewHost.HexView.Roles.ContainsAny(lazy.Metadata.TextViewRoles))
+					if (lazy.Metadata.TextViewRoles is not null && !wpfHexViewHost.HexView.Roles.ContainsAny(lazy.Metadata.TextViewRoles))
 						continue;
 					var handler = lazy.Value.Create(wpfHexViewHost, margin);
-					if (handler != null)
+					if (handler is not null)
 						list.Add(handler);
 				}
 				handlers = list.ToArray();
 			}
 
 			public IEnumerable<GuidObject> GetGuidObjects(GuidObjectsProviderArgs args) {
-				if (handlers == null)
+				if (handlers is null)
 					InitializeHandlers();
+				Debug2.Assert(handlers is not null);
 
 				var point = Mouse.PrimaryDevice.GetPosition(margin.VisualElement);
 
@@ -85,11 +85,11 @@ namespace dnSpy.Hex.Editor {
 		}
 
 		public override IGuidObjectsProvider Create(WpfHexViewHost wpfHexViewHost, WpfHexViewMargin margin, string marginName) {
-			if (wpfHexViewHost == null)
+			if (wpfHexViewHost is null)
 				throw new ArgumentNullException(nameof(wpfHexViewHost));
-			if (margin == null)
+			if (margin is null)
 				throw new ArgumentNullException(nameof(margin));
-			if (marginName == null)
+			if (marginName is null)
 				throw new ArgumentNullException(nameof(marginName));
 			if (margin.GetHexViewMargin(marginName) != margin)
 				throw new ArgumentException();

@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -28,12 +28,10 @@ namespace dnSpy.Hex.Tagging {
 		readonly HexTaggerFactory hexTaggerFactory;
 
 		[ImportingConstructor]
-		HexBufferTagAggregatorFactoryServiceImpl(HexTaggerFactory hexTaggerFactory) {
-			this.hexTaggerFactory = hexTaggerFactory;
-		}
+		HexBufferTagAggregatorFactoryServiceImpl(HexTaggerFactory hexTaggerFactory) => this.hexTaggerFactory = hexTaggerFactory;
 
 		public override HexTagAggregator<T> CreateTagAggregator<T>(HexBuffer buffer) {
-			if (buffer == null)
+			if (buffer is null)
 				throw new ArgumentNullException(nameof(buffer));
 			return new HexBufferTagAggregator<T>(hexTaggerFactory, buffer).HexTagAggregator;
 		}

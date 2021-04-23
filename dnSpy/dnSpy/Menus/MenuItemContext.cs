@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -31,23 +31,22 @@ namespace dnSpy.Menus {
 		public IEnumerable<GuidObject> GuidObjects => guidObjects;
 		readonly List<GuidObject> guidObjects;
 
-		public MenuItemContext(Guid menuGuid, bool openedFromKeyboard, GuidObject creatorObject, IEnumerable<GuidObject> guidObjects) {
+		public MenuItemContext(Guid menuGuid, bool openedFromKeyboard, GuidObject creatorObject, IEnumerable<GuidObject>? guidObjects) {
 			MenuGuid = menuGuid;
 			OpenedFromKeyboard = openedFromKeyboard;
 			this.guidObjects = new List<GuidObject>();
 			this.guidObjects.Add(creatorObject);
-			if (guidObjects != null)
+			if (guidObjects is not null)
 				this.guidObjects.AddRange(guidObjects);
 			state = new Dictionary<object, object>();
 		}
 
-		public T GetOrCreateState<T>(object key, Func<T> createState) where T : class {
-			Debug.Assert(key != null);
-			object o;
-			T value;
-			if (state.TryGetValue(key, out o)) {
+		public T? GetOrCreateState<T>(object key, Func<T> createState) where T : class {
+			Debug2.Assert(key is not null);
+			T? value;
+			if (state.TryGetValue(key, out var o)) {
 				value = o as T;
-				Debug.Assert(o == null || value != null);
+				Debug2.Assert(o is null || value is not null);
 				return value;
 			}
 			value = createState();
@@ -61,18 +60,23 @@ namespace dnSpy.Menus {
 				if (o.Object is T)
 					return (T)o.Object;
 			}
-			return default(T);
+			return default!;
 		}
+
+		public event EventHandler? OnDisposed;
 
 		public void Dispose() {
 			if (IsDisposed)
 				return;
 			IsDisposed = true;
+			OnDisposed?.Invoke(this, EventArgs.Empty);
+			OnDisposed = null;
 
 			// Clear everything. We don't want to hold on to objects that could've gotten disposed,
 			// eg. IDocumentViewer. Those instances could throw ObjectDisposedException
 			guidObjects.Clear();
 			guidObjects.Add(new GuidObject(Guid.Empty, disposedObject));
+			state.Clear();
 		}
 		static readonly object disposedObject = new object();
 	}

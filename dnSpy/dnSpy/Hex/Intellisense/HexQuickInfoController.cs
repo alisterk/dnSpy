@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -28,23 +28,19 @@ namespace dnSpy.Hex.Intellisense {
 		readonly HexView hexView;
 
 		public HexQuickInfoController(HexQuickInfoBroker quickInfoBroker, HexView hexView) {
-			if (quickInfoBroker == null)
-				throw new ArgumentNullException(nameof(quickInfoBroker));
-			if (hexView == null)
-				throw new ArgumentNullException(nameof(hexView));
-			this.hexView = hexView;
-			this.quickInfoBroker = quickInfoBroker;
+			this.hexView = hexView ?? throw new ArgumentNullException(nameof(hexView));
+			this.quickInfoBroker = quickInfoBroker ?? throw new ArgumentNullException(nameof(quickInfoBroker));
 			hexView.MouseHover += HexView_MouseHover;
 		}
 
-		void HexView_MouseHover(object sender, HexMouseHoverEventArgs e) {
+		void HexView_MouseHover(object? sender, HexMouseHoverEventArgs e) {
 			var posInfo = e.Line.GetLinePositionInfo(e.TextPosition);
 			HexCellPosition triggerPoint;
-			if (posInfo.IsAsciiCell && posInfo.Cell.HasData)
+			if (posInfo.IsAsciiCell && posInfo.Cell!.HasData)
 				triggerPoint = new HexCellPosition(HexColumnType.Ascii, posInfo.Cell.BufferStart, posInfo.CellPosition);
-			else if (posInfo.IsValueCell && posInfo.Cell.HasData)
+			else if (posInfo.IsValueCell && posInfo.Cell!.HasData)
 				triggerPoint = new HexCellPosition(HexColumnType.Values, hexView.BufferLines.GetValueBufferSpan(posInfo.Cell, posInfo.CellPosition).Start, posInfo.CellPosition);
-			else if (posInfo.IsValueCellSeparator && posInfo.Cell.HasData)
+			else if (posInfo.IsValueCellSeparator && posInfo.Cell!.HasData)
 				triggerPoint = new HexCellPosition(HexColumnType.Values, hexView.BufferLines.GetValueBufferSpan(posInfo.Cell, posInfo.Cell.CellSpan.Length - 1).Start, posInfo.Cell.CellSpan.Length - 1);
 			else
 				return;
@@ -56,7 +52,7 @@ namespace dnSpy.Hex.Intellisense {
 				if (session.HasInteractiveContent) {
 					foreach (var o in session.QuickInfoContent) {
 						var io = o as IHexInteractiveQuickInfoContent;
-						if (io == null)
+						if (io is null)
 							continue;
 						if (io.KeepQuickInfoOpen || io.IsMouseOverAggregated)
 							return;

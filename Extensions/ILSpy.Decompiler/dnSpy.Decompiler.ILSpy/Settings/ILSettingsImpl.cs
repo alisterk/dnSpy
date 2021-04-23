@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -41,6 +41,8 @@ namespace dnSpy.Decompiler.ILSpy.Settings {
 			ShowILBytes = sect.Attribute<bool?>(nameof(ShowILBytes)) ?? ShowILBytes;
 			SortMembers = sect.Attribute<bool?>(nameof(SortMembers)) ?? SortMembers;
 			ShowPdbInfo = sect.Attribute<bool?>(nameof(ShowPdbInfo)) ?? ShowPdbInfo;
+			MaxStringLength = sect.Attribute<int?>(nameof(MaxStringLength)) ?? MaxStringLength;
+			HexadecimalNumbers = sect.Attribute<bool?>(nameof(HexadecimalNumbers)) ?? HexadecimalNumbers;
 			disableSave = false;
 		}
 		readonly bool disableSave;
@@ -56,6 +58,8 @@ namespace dnSpy.Decompiler.ILSpy.Settings {
 			sect.Attribute(nameof(ShowILBytes), ShowILBytes);
 			sect.Attribute(nameof(SortMembers), SortMembers);
 			sect.Attribute(nameof(ShowPdbInfo), ShowPdbInfo);
+			sect.Attribute(nameof(MaxStringLength), MaxStringLength);
+			sect.Attribute(nameof(HexadecimalNumbers), HexadecimalNumbers);
 		}
 	}
 }

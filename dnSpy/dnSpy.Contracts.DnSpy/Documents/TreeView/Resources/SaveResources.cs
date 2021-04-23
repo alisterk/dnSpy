@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -25,9 +25,10 @@ using System.Text;
 using System.Windows;
 using System.Windows.Threading;
 using dnSpy.Contracts.App;
+using dnSpy.Contracts.DnSpy.Properties;
 using dnSpy.Contracts.MVVM;
 using dnSpy.Contracts.MVVM.Dialogs;
-using dnSpy.Contracts.Properties;
+using Ookii.Dialogs.Wpf;
 using WF = System.Windows.Forms;
 
 namespace dnSpy.Contracts.Documents.TreeView.Resources {
@@ -49,8 +50,8 @@ namespace dnSpy.Contracts.Documents.TreeView.Resources {
 		/// <param name="nodes">Nodes</param>
 		/// <param name="resourceDataType">Type of data to get</param>
 		/// <returns></returns>
-		public static ResourceData[] GetResourceData(IResourceDataProvider[] nodes, ResourceDataType resourceDataType) {
-			if (nodes == null)
+		public static ResourceData[] GetResourceData(IResourceDataProvider[]? nodes, ResourceDataType resourceDataType) {
+			if (nodes is null)
 				return Array.Empty<ResourceData>();
 			return nodes.SelectMany(a => a.GetResourceData(resourceDataType)).ToArray();
 		}
@@ -62,11 +63,11 @@ namespace dnSpy.Contracts.Documents.TreeView.Resources {
 		/// <param name="useSubDirs">true to create sub directories, false to dump everything in the same folder</param>
 		/// <param name="resourceDataType">Type of data to save</param>
 		/// <param name="ownerWindow">Owner window</param>
-		public static void Save(IResourceDataProvider[] nodes, bool useSubDirs, ResourceDataType resourceDataType, Window ownerWindow = null) {
-			if (nodes == null)
+		public static void Save(IResourceDataProvider[]? nodes, bool useSubDirs, ResourceDataType resourceDataType, Window? ownerWindow = null) {
+			if (nodes is null)
 				return;
 
-			Tuple<ResourceData, string>[] files;
+			(ResourceData data, string filename)[] files;
 			try {
 				files = GetFiles(GetResourceData(nodes, resourceDataType), useSubDirs).ToArray();
 			}
@@ -90,7 +91,7 @@ namespace dnSpy.Contracts.Documents.TreeView.Resources {
 			MsgBox.Instance.Show(string.Format(dnSpy_Contracts_DnSpy_Resources.AnErrorOccurred, data.ErrorMessage));
 		}
 
-		static IEnumerable<Tuple<ResourceData, string>> GetFiles(ResourceData[] infos, bool useSubDirs) {
+		static IEnumerable<(ResourceData data, string filename)> GetFiles(ResourceData[] infos, bool useSubDirs) {
 			if (infos.Length == 1) {
 				var info = infos[0];
 				var name = FixFileNamePart(GetFileName(info.Name));
@@ -104,17 +105,17 @@ namespace dnSpy.Contracts.Documents.TreeView.Resources {
 				dlg.DefaultExt = string.IsNullOrEmpty(ext) ? string.Empty : ext.Substring(1);
 				if (dlg.ShowDialog() != WF.DialogResult.OK)
 					yield break;
-				yield return Tuple.Create(info, dlg.FileName);
+				yield return (info, dlg.FileName);
 			}
 			else {
-				var dlg = new WF.FolderBrowserDialog();
-				if (dlg.ShowDialog() != WF.DialogResult.OK)
+				var dlg = new VistaFolderBrowserDialog();
+				if (dlg.ShowDialog() != true)
 					yield break;
 				string baseDir = dlg.SelectedPath;
 				foreach (var info in infos) {
 					var name = GetCleanedPath(info.Name, useSubDirs);
 					var pathName = Path.Combine(baseDir, name);
-					yield return Tuple.Create(info, pathName);
+					yield return (info, pathName);
 				}
 			}
 		}
@@ -155,23 +156,21 @@ namespace dnSpy.Contracts.Documents.TreeView.Resources {
 		public double ProgressMinimum => 0;
 		public double ProgressMaximum => fileInfos.Length;
 
-		readonly Tuple<ResourceData, string>[] fileInfos;
+		readonly (ResourceData data, string filename)[] fileInfos;
 
-		public ResourceSaver(Tuple<ResourceData, string>[] files) {
-			fileInfos = files;
-		}
+		public ResourceSaver((ResourceData data, string filename)[] files) => fileInfos = files;
 
 		public void Execute(IProgress progress) {
 			var buf = new byte[64 * 1024];
 			for (int i = 0; i < fileInfos.Length; i++) {
 				progress.ThrowIfCancellationRequested();
 				var info = fileInfos[i];
-				progress.SetDescription(info.Item2);
+				progress.SetDescription(info.filename);
 				progress.SetTotalProgress(i);
-				Directory.CreateDirectory(Path.GetDirectoryName(info.Item2));
-				var file = File.Create(info.Item2);
+				Directory.CreateDirectory(Path.GetDirectoryName(info.filename)!);
+				var file = File.Create(info.filename);
 				try {
-					var stream = info.Item1.GetStream(progress.Token);
+					var stream = info.data.GetStream(progress.Token);
 					stream.Position = 0;
 					for (;;) {
 						int len = stream.Read(buf, 0, buf.Length);
@@ -185,7 +184,7 @@ namespace dnSpy.Contracts.Documents.TreeView.Resources {
 				}
 				catch {
 					file.Dispose();
-					try { File.Delete(info.Item2); }
+					try { File.Delete(info.filename); }
 					catch { }
 					throw;
 				}

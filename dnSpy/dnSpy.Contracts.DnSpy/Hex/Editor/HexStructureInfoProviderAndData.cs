@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -24,11 +24,11 @@ namespace dnSpy.Contracts.Hex.Editor {
 	/// Contains a <see cref="HexStructureInfoProvider"/> and data
 	/// </summary>
 	/// <typeparam name="TValue">Type of value</typeparam>
-	public struct HexStructureInfoProviderAndData<TValue> {
+	public readonly struct HexStructureInfoProviderAndData<TValue> {
 		/// <summary>
 		/// true if this is a default instance that hasn't been initialized
 		/// </summary>
-		public bool IsDefault => Provider == null;
+		public bool IsDefault => Provider is null;
 
 		/// <summary>
 		/// Gets the provider
@@ -46,9 +46,7 @@ namespace dnSpy.Contracts.Hex.Editor {
 		/// <param name="provider">Provider</param>
 		/// <param name="value">Value</param>
 		public HexStructureInfoProviderAndData(HexStructureInfoProvider provider, TValue value) {
-			if (provider == null)
-				throw new ArgumentNullException(nameof(provider));
-			Provider = provider;
+			Provider = provider ?? throw new ArgumentNullException(nameof(provider));
 			Value = value;
 		}
 	}

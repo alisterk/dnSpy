@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using dnSpy.Contracts.Decompiler;
 using dnSpy.Contracts.Text;
 using Microsoft.VisualStudio.Text;
@@ -32,7 +33,7 @@ namespace dnSpy.Documents.Tabs.DocViewer {
 		readonly SpanDataCollection<Span> rightSorted;
 
 		public BracePairCollection(CodeBracesRange[] ranges) {
-			if (ranges == null)
+			if (ranges is null)
 				throw new ArgumentNullException(nameof(ranges));
 
 			if (ranges.Length == 0) {
@@ -72,42 +73,42 @@ namespace dnSpy.Documents.Tabs.DocViewer {
 
 		sealed class LeftSorter : IComparer<CodeBracesRange> {
 			public static readonly LeftSorter Instance = new LeftSorter();
-			public int Compare(CodeBracesRange x, CodeBracesRange y) => x.Left.Start - y.Left.Start;
+			public int Compare([AllowNull] CodeBracesRange x, [AllowNull] CodeBracesRange y) => x.Left.Start - y.Left.Start;
 		}
 
 		sealed class RightSorter : IComparer<CodeBracesRange> {
 			public static readonly RightSorter Instance = new RightSorter();
-			public int Compare(CodeBracesRange x, CodeBracesRange y) => x.Right.Start - y.Right.Start;
+			public int Compare([AllowNull] CodeBracesRange x, [AllowNull] CodeBracesRange y) => x.Right.Start - y.Right.Start;
 		}
 
 		public BracePairResultCollection? GetBracePairs(int position) {
 			var left = leftSorted.Find(position);
 			var right = rightSorted.Find(position);
-			if (left != null && right != null)
+			if (left is not null && right is not null)
 				return new BracePairResultCollection(new BracePairResult(left.Value.Span, left.Value.Data), new BracePairResult(right.Value.Data, right.Value.Span));
-			if (left != null)
+			if (left is not null)
 				return new BracePairResultCollection(new BracePairResult(left.Value.Span, left.Value.Data), null);
-			if (right != null)
+			if (right is not null)
 				return new BracePairResultCollection(new BracePairResult(right.Value.Data, right.Value.Span), null);
 			return null;
 		}
 	}
 
-	struct BracePairResultCollection : IEquatable<BracePairResultCollection> {
-		public BracePairResult First;
-		public BracePairResult? Second;
+	readonly struct BracePairResultCollection : IEquatable<BracePairResultCollection> {
+		public readonly BracePairResult First;
+		public readonly BracePairResult? Second;
 		public BracePairResultCollection(BracePairResult first, BracePairResult? second) {
 			First = first;
 			Second = second;
 		}
 
 		public bool Equals(BracePairResultCollection other) => First.Equals(other.First) && Nullable.Equals(Second, other.Second);
-		public override bool Equals(object obj) => obj is BracePairResultCollection && Equals((BracePairResultCollection)obj);
+		public override bool Equals(object? obj) => obj is BracePairResultCollection && Equals((BracePairResultCollection)obj);
 		public override int GetHashCode() => First.GetHashCode() ^ (Second?.GetHashCode() ?? 0);
-		public override string ToString() => Second == null ? First.ToString() : "{" + First.ToString() + "," + Second.Value.ToString() + "}";
+		public override string ToString() => Second is null ? First.ToString() : "{" + First.ToString() + "," + Second.Value.ToString() + "}";
 	}
 
-	struct BracePairResult : IEquatable<BracePairResult> {
+	readonly struct BracePairResult : IEquatable<BracePairResult> {
 		public Span Left { get; }
 		public Span Right { get; }
 		public BracePairResult(Span left, Span right) {
@@ -119,7 +120,7 @@ namespace dnSpy.Documents.Tabs.DocViewer {
 		public static bool operator ==(BracePairResult left, BracePairResult right) => left.Equals(right);
 		public static bool operator !=(BracePairResult left, BracePairResult right) => !left.Equals(right);
 		public bool Equals(BracePairResult other) => Left == other.Left && Right == other.Right;
-		public override bool Equals(object obj) => obj is BracePairResult && Equals((BracePairResult)obj);
+		public override bool Equals(object? obj) => obj is BracePairResult && Equals((BracePairResult)obj);
 		public override int GetHashCode() => Left.GetHashCode() ^ Right.GetHashCode();
 		public override string ToString() => "[" + Left.ToString() + "," + Right.ToString() + "]";
 	}

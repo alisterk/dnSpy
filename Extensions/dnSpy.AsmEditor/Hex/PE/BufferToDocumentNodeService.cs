@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -28,7 +28,7 @@ using dnSpy.Contracts.Hex.Files;
 
 namespace dnSpy.AsmEditor.Hex.PE {
 	abstract class BufferToDocumentNodeService {
-		public abstract PENode FindPENode(HexBufferFile file);
+		public abstract PENode? FindPENode(HexBufferFile file);
 	}
 
 	[Export(typeof(BufferToDocumentNodeService))]
@@ -36,29 +36,27 @@ namespace dnSpy.AsmEditor.Hex.PE {
 		readonly IDocumentTabService documentTabService;
 
 		[ImportingConstructor]
-		BufferToDocumentNodeServiceImpl(IDocumentTabService documentTabService) {
-			this.documentTabService = documentTabService;
-		}
+		BufferToDocumentNodeServiceImpl(IDocumentTabService documentTabService) => this.documentTabService = documentTabService;
 
-		DsDocumentNode Find(HexBufferFile file) {
-			if (file == null)
+		DsDocumentNode? Find(HexBufferFile file) {
+			if (file is null)
 				throw new ArgumentNullException(nameof(file));
-			if (file.Name == string.Empty)
+			if (file.Filename == string.Empty)
 				return null;
-			var doc = documentTabService.DocumentTreeView.DocumentService.Find(new FilenameKey(file.Name));
-			if (doc == null)
+			var doc = documentTabService.DocumentTreeView.DocumentService.Find(new FilenameKey(file.Filename));
+			if (doc is null)
 				return null;
 			return documentTabService.DocumentTreeView.FindNode(doc);
 		}
 
-		public override PENode FindPENode(HexBufferFile file) {
-			if (file == null)
+		public override PENode? FindPENode(HexBufferFile file) {
+			if (file is null)
 				throw new ArgumentNullException(nameof(file));
 			var docNode = Find(file);
-			if (docNode == null)
+			if (docNode is null)
 				return null;
 			var modNode = documentTabService.DocumentTreeView.FindNode(docNode.Document.AssemblyDef?.ManifestModule);
-			if (modNode == null)
+			if (modNode is null)
 				return null;
 			modNode.TreeNode.EnsureChildrenLoaded();
 			return modNode.TreeNode.DataChildren.OfType<PENode>().FirstOrDefault();

@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -26,21 +26,21 @@ namespace dnSpy.Contracts.Images {
 	/// Image reference
 	/// </summary>
 	[TypeConverter(typeof(ImageReferenceConverter))]
-	public struct ImageReference {
+	public readonly struct ImageReference {
 		/// <summary>
 		/// Gets an <see cref="ImageReference"/> which isn't referencing any image
 		/// </summary>
-		public static readonly ImageReference None = default(ImageReference);
+		public static readonly ImageReference None = default;
 
 		/// <summary>
 		/// true if it's the default instance
 		/// </summary>
-		public bool IsDefault => Assembly == null && Name == null;
+		public bool IsDefault => Assembly is null && Name is null;
 
 		/// <summary>
 		/// Assembly of image or null if <see cref="Name"/> is a URI
 		/// </summary>
-		public Assembly Assembly { get; }
+		public Assembly? Assembly { get; }
 
 		/// <summary>
 		/// Name of image
@@ -52,11 +52,9 @@ namespace dnSpy.Contracts.Images {
 		/// </summary>
 		/// <param name="assembly">Assembly of image or null if <paramref name="name"/> is a pack: URI</param>
 		/// <param name="name">Name of image</param>
-		public ImageReference(Assembly assembly, string name) {
-			if (name == null)
-				throw new ArgumentNullException(nameof(name));
+		public ImageReference(Assembly? assembly, string name) {
 			Assembly = assembly;
-			Name = name;
+			Name = name ?? throw new ArgumentNullException(nameof(name));
 		}
 
 		/// <summary>
@@ -65,9 +63,9 @@ namespace dnSpy.Contracts.Images {
 		/// <param name="value">String to parse</param>
 		/// <param name="result">Result</param>
 		/// <returns></returns>
-		public static bool TryParse(string value, out ImageReference result) {
-			result = default(ImageReference);
-			if (value == null)
+		public static bool TryParse(string? value, out ImageReference result) {
+			result = default;
+			if (value is null)
 				return false;
 			if (value == string.Empty)
 				return true;
@@ -104,7 +102,7 @@ namespace dnSpy.Contracts.Images {
 		public override string ToString() {
 			if (IsDefault)
 				return string.Empty;
-			if (Assembly == null)
+			if (Assembly is null)
 				return Name;
 			return Assembly.GetName().Name + "," + Name;
 		}

@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -38,14 +38,12 @@ namespace dnSpy.Text.Editor {
 		readonly IGlyphTextMarkerServiceImpl glyphTextMarkerServiceImpl;
 
 		[ImportingConstructor]
-		GlyphTextViewMarkerClassificationTaggerProvider(IGlyphTextMarkerServiceImpl glyphTextMarkerServiceImpl) {
-			this.glyphTextMarkerServiceImpl = glyphTextMarkerServiceImpl;
-		}
+		GlyphTextViewMarkerClassificationTaggerProvider(IGlyphTextMarkerServiceImpl glyphTextMarkerServiceImpl) => this.glyphTextMarkerServiceImpl = glyphTextMarkerServiceImpl;
 
-		public ITagger<T> CreateTagger<T>(ITextView textView, ITextBuffer buffer) where T : ITag {
+		public ITagger<T>? CreateTagger<T>(ITextView textView, ITextBuffer buffer) where T : ITag {
 			var wpfTextView = textView as IWpfTextView;
-			Debug.Assert(wpfTextView != null);
-			if (wpfTextView == null)
+			Debug2.Assert(wpfTextView is not null);
+			if (wpfTextView is null)
 				return null;
 			if (textView.TextBuffer != buffer)
 				return null;
@@ -57,23 +55,21 @@ namespace dnSpy.Text.Editor {
 	sealed class GlyphTextViewMarkerClassificationTagger : ITagger<IClassificationTag> {
 		readonly GlyphTextViewMarkerService service;
 
-		public event EventHandler<SnapshotSpanEventArgs> TagsChanged;
+		public event EventHandler<SnapshotSpanEventArgs>? TagsChanged;
 
-		public GlyphTextViewMarkerClassificationTagger(GlyphTextViewMarkerService service) {
-			this.service = service;
-		}
+		public GlyphTextViewMarkerClassificationTagger(GlyphTextViewMarkerService service) => this.service = service;
 
 		public IEnumerable<ITagSpan<IClassificationTag>> GetTags(NormalizedSnapshotSpanCollection spans) =>
 			service.GetClassificationTags(spans);
 
 		public static GlyphTextViewMarkerClassificationTagger GetOrCreate(GlyphTextViewMarkerService service) {
-			if (service == null)
+			if (service is null)
 				throw new ArgumentNullException(nameof(service));
 			return service.TextView.TextBuffer.Properties.GetOrCreateSingletonProperty(typeof(GlyphTextViewMarkerClassificationTagger), () => new GlyphTextViewMarkerClassificationTagger(service));
 		}
 
 		public void RaiseTagsChanged(SnapshotSpan span) {
-			if (span.Snapshot == null)
+			if (span.Snapshot is null)
 				throw new ArgumentException();
 			TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(span));
 		}

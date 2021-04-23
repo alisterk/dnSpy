@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -21,6 +21,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace dnSpy.Contracts.Hex {
@@ -34,8 +35,8 @@ namespace dnSpy.Contracts.Hex {
 		/// <param name="index"></param>
 		/// <returns></returns>
 		public HexChange this[int index] {
-			get { return changes[index]; }
-			set { throw new NotSupportedException(); }
+			get => changes[index];
+			set => throw new NotSupportedException();
 		}
 
 		/// <summary>
@@ -47,9 +48,7 @@ namespace dnSpy.Contracts.Hex {
 
 		readonly HexChange[] changes;
 
-		NormalizedHexChangeCollection(HexChange[] changes) {
-			this.changes = changes;
-		}
+		NormalizedHexChangeCollection(HexChange[] changes) => this.changes = changes;
 
 		/// <summary>
 		/// Creates an instance
@@ -57,7 +56,7 @@ namespace dnSpy.Contracts.Hex {
 		/// <param name="change">Change</param>
 		/// <returns></returns>
 		public static NormalizedHexChangeCollection Create(HexChange change) {
-			if (change == null)
+			if (change is null)
 				throw new ArgumentNullException(nameof(change));
 			return new NormalizedHexChangeCollection(new[] { change });
 		}
@@ -68,7 +67,7 @@ namespace dnSpy.Contracts.Hex {
 		/// <param name="changes">Changes</param>
 		/// <returns></returns>
 		public static NormalizedHexChangeCollection Create(IList<HexChange> changes) {
-			if (changes == null)
+			if (changes is null)
 				throw new ArgumentNullException(nameof(changes));
 			if (changes.Count == 0)
 				return new NormalizedHexChangeCollection(Array.Empty<HexChange>());
@@ -122,7 +121,15 @@ namespace dnSpy.Contracts.Hex {
 
 		sealed class Comparer : IComparer<HexChange> {
 			public static readonly Comparer Instance = new Comparer();
-			public int Compare(HexChange x, HexChange y) => x.OldPosition.CompareTo(y.OldPosition);
+			public int Compare([AllowNull] HexChange x, [AllowNull] HexChange y) {
+				if ((object?)x == y)
+					return 0;
+				if (x is null)
+					return -1;
+				if (y is null)
+					return 1;
+				return x.OldPosition.CompareTo(y.OldPosition);
+			}
 		}
 
 		/// <summary>
@@ -157,24 +164,14 @@ namespace dnSpy.Contracts.Hex {
 				yield return c;
 		}
 
-		void ICollection<HexChange>.Add(HexChange item) {
-			throw new NotSupportedException();
-		}
+		void ICollection<HexChange>.Add(HexChange item) => throw new NotSupportedException();
 
-		void ICollection<HexChange>.Clear() {
-			throw new NotSupportedException();
-		}
+		void ICollection<HexChange>.Clear() => throw new NotSupportedException();
 
-		void IList<HexChange>.Insert(int index, HexChange item) {
-			throw new NotSupportedException();
-		}
+		void IList<HexChange>.Insert(int index, HexChange item) => throw new NotSupportedException();
 
-		bool ICollection<HexChange>.Remove(HexChange item) {
-			throw new NotSupportedException();
-		}
+		bool ICollection<HexChange>.Remove(HexChange item) => throw new NotSupportedException();
 
-		void IList<HexChange>.RemoveAt(int index) {
-			throw new NotSupportedException();
-		}
+		void IList<HexChange>.RemoveAt(int index) => throw new NotSupportedException();
 	}
 }

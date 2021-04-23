@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -27,11 +27,9 @@ namespace dnSpy.Hex.Intellisense {
 		readonly HexQuickInfoBroker quickInfoBroker;
 
 		[ImportingConstructor]
-		HexQuickInfoControllerProvider(HexQuickInfoBroker quickInfoBroker) {
-			this.quickInfoBroker = quickInfoBroker;
-		}
+		HexQuickInfoControllerProvider(HexQuickInfoBroker quickInfoBroker) => this.quickInfoBroker = quickInfoBroker;
 
-		public override HexIntellisenseController TryCreateIntellisenseController(HexView hexView) =>
+		public override HexIntellisenseController? TryCreateIntellisenseController(HexView hexView) =>
 			new HexQuickInfoController(quickInfoBroker, hexView);
 	}
 }

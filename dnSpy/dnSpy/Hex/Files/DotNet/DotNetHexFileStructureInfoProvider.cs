@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -33,19 +33,17 @@ namespace dnSpy.Hex.Files.DotNet {
 	[VSUTIL.Name(PredefinedHexFileStructureInfoProviderFactoryNames.DotNet)]
 	[VSUTIL.Order(Before = PredefinedHexFileStructureInfoProviderFactoryNames.Default)]
 	sealed class DotNetHexFileStructureInfoProviderFactory : HexFileStructureInfoProviderFactory {
-		public override HexFileStructureInfoProvider Create(HexView hexView) =>
+		public override HexFileStructureInfoProvider? Create(HexView hexView) =>
 			new DotNetHexFileStructureInfoProvider();
 	}
 
 	sealed class DotNetHexFileStructureInfoProvider : HexFileStructureInfoProvider {
-		public override HexIndexes[] GetSubStructureIndexes(HexBufferFile file, ComplexData structure, HexPosition position) {
-			var body = structure as DotNetMethodBody;
-			if (body != null) {
+		public override HexIndexes[]? GetSubStructureIndexes(HexBufferFile file, ComplexData structure, HexPosition position) {
+			if (structure is DotNetMethodBody body) {
 				if (body.Kind == DotNetMethodBodyKind.Tiny)
 					return Array.Empty<HexIndexes>();
-				var fatBody = body as FatMethodBody;
-				if (fatBody != null) {
-					if (fatBody.EHTable == null)
+				if (body is FatMethodBody fatBody) {
+					if (fatBody.EHTable is null)
 						return subStructFatWithoutEH;
 					return subStructFatWithEH;
 				}
@@ -54,8 +52,7 @@ namespace dnSpy.Hex.Files.DotNet {
 			if (structure is DotNetEmbeddedResource)
 				return Array.Empty<HexIndexes>();
 
-			var multiResource = structure as MultiResourceDataHeaderData;
-			if (multiResource != null) {
+			if (structure is MultiResourceDataHeaderData multiResource) {
 				if (multiResource is MultiResourceSimplDataHeaderData || multiResource is MultiResourceStringDataHeaderData)
 					return multiResourceFields2;
 				if (multiResource is MultiResourceArrayDataHeaderData)
@@ -64,12 +61,11 @@ namespace dnSpy.Hex.Files.DotNet {
 			}
 
 			var stringsRec = structure as StringsHeapRecordData;
-			if (stringsRec?.Terminator != null)
+			if (stringsRec?.Terminator is not null)
 				return stringsRecordIndexes;
 
-			var usRec = structure as USHeapRecordData;
-			if (usRec != null) {
-				if (usRec.TerminalByte != null)
+			if (structure is USHeapRecordData usRec) {
+				if (usRec.TerminalByte is not null)
 					return usRecordIndexes3;
 				return usRecordIndexes2;
 			}
@@ -116,28 +112,22 @@ namespace dnSpy.Hex.Files.DotNet {
 		};
 
 		public override HexSpan? GetFieldReferenceSpan(HexBufferFile file, ComplexData structure, HexPosition position) {
-			var resourceNameOffs = structure as MultiResourceUnicodeNameAndOffsetData;
-			if (resourceNameOffs != null)
+			if (structure is MultiResourceUnicodeNameAndOffsetData resourceNameOffs)
 				return GetFieldReferenceSpan(file, resourceNameOffs, position);
 
-			var cor20 = structure as DotNetCor20Data;
-			if (cor20 != null)
+			if (structure is DotNetCor20Data cor20)
 				return GetFieldReferenceSpan(file, cor20, position);
 
-			var multiResourceHeader = structure as DotNetMultiFileResourceHeaderData;
-			if (multiResourceHeader != null)
+			if (structure is DotNetMultiFileResourceHeaderData multiResourceHeader)
 				return GetFieldReferenceSpan(file, multiResourceHeader, position);
 
-			var mdHeader = structure as DotNetMetadataHeaderData;
-			if (mdHeader != null)
+			if (structure is DotNetMetadataHeaderData mdHeader)
 				return GetFieldReferenceSpan(file, mdHeader, position);
 
-			var fatBody = structure as FatMethodBody;
-			if (fatBody != null)
+			if (structure is FatMethodBody fatBody)
 				return GetFieldReferenceSpan(file, fatBody, position);
 
-			var record = structure as TableRecordData;
-			if (record != null)
+			if (structure is TableRecordData record)
 				return GetFieldReferenceSpan(file, record, position);
 
 			return null;
@@ -157,19 +147,19 @@ namespace dnSpy.Hex.Files.DotNet {
 
 		HexSpan? GetFieldReferenceSpan(HexBufferFile file, DotNetCor20Data cor20, HexPosition position) {
 			HexSpan? span;
-			if ((span = DataDirectoryDataUtils.TryGetSpan(file, cor20.MetaData.Data, position)) != null)
+			if ((span = DataDirectoryDataUtils.TryGetSpan(file, cor20.Metadata.Data, position)) is not null)
 				return span;
-			if ((span = DataDirectoryDataUtils.TryGetSpan(file, cor20.Resources.Data, position)) != null)
+			if ((span = DataDirectoryDataUtils.TryGetSpan(file, cor20.Resources.Data, position)) is not null)
 				return span;
-			if ((span = DataDirectoryDataUtils.TryGetSpan(file, cor20.StrongNameSignature.Data, position)) != null)
+			if ((span = DataDirectoryDataUtils.TryGetSpan(file, cor20.StrongNameSignature.Data, position)) is not null)
 				return span;
-			if ((span = DataDirectoryDataUtils.TryGetSpan(file, cor20.CodeManagerTable.Data, position)) != null)
+			if ((span = DataDirectoryDataUtils.TryGetSpan(file, cor20.CodeManagerTable.Data, position)) is not null)
 				return span;
-			if ((span = DataDirectoryDataUtils.TryGetSpan(file, cor20.VTableFixups.Data, position)) != null)
+			if ((span = DataDirectoryDataUtils.TryGetSpan(file, cor20.VTableFixups.Data, position)) is not null)
 				return span;
-			if ((span = DataDirectoryDataUtils.TryGetSpan(file, cor20.ExportAddressTableJumps.Data, position)) != null)
+			if ((span = DataDirectoryDataUtils.TryGetSpan(file, cor20.ExportAddressTableJumps.Data, position)) is not null)
 				return span;
-			if ((span = DataDirectoryDataUtils.TryGetSpan(file, cor20.ManagedNativeHeader.Data, position)) != null)
+			if ((span = DataDirectoryDataUtils.TryGetSpan(file, cor20.ManagedNativeHeader.Data, position)) is not null)
 				return span;
 
 			if (cor20.EntryPointTokenOrRVA.Data.Span.Span.Contains(position)) {
@@ -178,7 +168,7 @@ namespace dnSpy.Hex.Files.DotNet {
 					return null;
 				if ((cor20.Flags.Data.ReadValue() & 0x10) != 0) {
 					var peHeaders = file.GetHeaders<PeHeaders>();
-					if (peHeaders == null)
+					if (peHeaders is null)
 						return null;
 					return new HexSpan(peHeaders.RvaToBufferPosition(value), 0);
 				}
@@ -191,7 +181,7 @@ namespace dnSpy.Hex.Files.DotNet {
 
 		static HexSpan? TryGetTokenSpan(HexBufferFile file, uint token) {
 			var tablesStream = file.GetHeaders<DotNetHeaders>()?.MetadataHeaders?.TablesStream;
-			if (tablesStream == null)
+			if (tablesStream is null)
 				return null;
 			var mdToken = new MDToken(token);
 			if ((uint)mdToken.Table >= tablesStream.MDTables.Count)
@@ -204,7 +194,7 @@ namespace dnSpy.Hex.Files.DotNet {
 
 		HexSpan? GetFieldReferenceSpan(HexBufferFile file, DotNetMultiFileResourceHeaderData multiResourceHeader, HexPosition position) {
 			if (multiResourceHeader.NamePositions.Data.Span.Span.Contains(position)) {
-				var data = (UInt32Data)multiResourceHeader.NamePositions.Data.GetFieldByPosition(position).Data;
+				var data = (UInt32Data)multiResourceHeader.NamePositions.Data.GetFieldByPosition(position)!.Data;
 				uint offset = data.ReadValue();
 				var nameOffs = multiResourceHeader.Span.Span.End;
 				var pos = nameOffs + offset;
@@ -218,7 +208,7 @@ namespace dnSpy.Hex.Files.DotNet {
 
 		HexSpan? GetFieldReferenceSpan(HexBufferFile file, DotNetMetadataHeaderData header, HexPosition position) {
 			if (header.StreamHeaders.Data.Span.Span.Contains(position)) {
-				var stream = (DotNetStorageStream)header.StreamHeaders.Data.GetFieldByPosition(position).Data;
+				var stream = (DotNetStorageStream)header.StreamHeaders.Data.GetFieldByPosition(position)!.Data;
 				if (stream.Offset.Data.Span.Span.Contains(position)) {
 					uint offset = stream.Offset.Data.ReadValue();
 					uint size = stream.Size.Data.ReadValue();
@@ -226,7 +216,7 @@ namespace dnSpy.Hex.Files.DotNet {
 					if (pos >= file.Span.End)
 						return null;
 					var mdHeaders = file.GetHeaders<DotNetMetadataHeaders>();
-					if (mdHeaders == null)
+					if (mdHeaders is null)
 						return new HexSpan(pos, 0);
 					if (pos >= mdHeaders.MetadataSpan.End)
 						return null;
@@ -243,7 +233,7 @@ namespace dnSpy.Hex.Files.DotNet {
 
 		HexSpan? GetFieldReferenceSpan(HexBufferFile file, FatMethodBody fatBody, HexPosition position) {
 			var ehTable = fatBody.EHTable;
-			if (ehTable != null) {
+			if (ehTable is not null) {
 				if (!ehTable.Data.Span.Span.Contains(position))
 					return null;
 
@@ -251,13 +241,13 @@ namespace dnSpy.Hex.Files.DotNet {
 					var smallTable = (SmallExceptionHandlerTable)ehTable.Data;
 					if (!smallTable.Clauses.Data.Span.Span.Contains(position))
 						return null;
-					var clause = (SmallExceptionClause)smallTable.Clauses.Data.GetFieldByPosition(position)?.Data;
-					if (clause == null)
+					var clause = (SmallExceptionClause?)smallTable.Clauses.Data.GetFieldByPosition(position)?.Data;
+					if (clause is null)
 						return null;
 					HexSpan? span;
-					if ((span = TryGetSpan(fatBody, position, clause.TryOffset.Data, clause.TryLength.Data)) != null)
+					if ((span = TryGetSpan(fatBody, position, clause.TryOffset.Data, clause.TryLength.Data)) is not null)
 						return span;
-					if ((span = TryGetSpan(fatBody, position, clause.HandlerOffset.Data, clause.HandlerLength.Data)) != null)
+					if ((span = TryGetSpan(fatBody, position, clause.HandlerOffset.Data, clause.HandlerLength.Data)) is not null)
 						return span;
 					if (clause.ClassTokenOrFilterOffset.Data.Span.Span.Contains(position)) {
 						if (clause.Flags.Data.ReadValue() == 0)
@@ -270,13 +260,13 @@ namespace dnSpy.Hex.Files.DotNet {
 					var fatTable = (FatExceptionHandlerTable)ehTable.Data;
 					if (!fatTable.Clauses.Data.Span.Span.Contains(position))
 						return null;
-					var clause = (FatExceptionClause)fatTable.Clauses.Data.GetFieldByPosition(position)?.Data;
-					if (clause == null)
+					var clause = (FatExceptionClause?)fatTable.Clauses.Data.GetFieldByPosition(position)?.Data;
+					if (clause is null)
 						return null;
 					HexSpan? span;
-					if ((span = TryGetSpan(fatBody, position, clause.TryOffset.Data, clause.TryLength.Data)) != null)
+					if ((span = TryGetSpan(fatBody, position, clause.TryOffset.Data, clause.TryLength.Data)) is not null)
 						return span;
-					if ((span = TryGetSpan(fatBody, position, clause.HandlerOffset.Data, clause.HandlerLength.Data)) != null)
+					if ((span = TryGetSpan(fatBody, position, clause.HandlerOffset.Data, clause.HandlerLength.Data)) is not null)
 						return span;
 					if (clause.ClassTokenOrFilterOffset.Data.Span.Span.Contains(position)) {
 						if (clause.Flags.Data.ReadValue() == 0)
@@ -329,14 +319,13 @@ namespace dnSpy.Hex.Files.DotNet {
 				uint implementation = mdTable.TableInfo.Columns[3].Size == 2 ?
 					buffer.ReadUInt16(recordPos + mdTable.RowSize - 2) :
 					buffer.ReadUInt32(recordPos + mdTable.RowSize - 4);
-				MDToken implementationToken;
-				if (!CodedToken.Implementation.Decode(implementation, out implementationToken))
+				if (!CodedToken.Implementation.Decode(implementation, out MDToken implementationToken))
 					return null;
 				if (implementationToken.Rid != 0)
 					return null;
 
 				var resources = file.GetHeaders<DotNetHeaders>()?.ResourceProvider;
-				if (resources == null)
+				if (resources is null)
 					return null;
 				if (offset >= resources.ResourcesSpan.Length)
 					return null;

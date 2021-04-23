@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -32,33 +32,36 @@ namespace dnSpy.TreeView {
 		public IList<ITreeNode> Children => nodeList;
 		readonly SharpTreeNodeChildrenList nodeList;
 
-		public ITreeNode Parent {
+		public ITreeNode? Parent {
 			get {
 				var parent = (DsSharpTreeNode)nodeList.Node.Parent;
-				return parent == null ? null : parent.TreeNodeImpl;
+				return parent?.TreeNodeImpl;
 			}
 		}
 
 		public bool LazyLoading {
-			get { return Node.LazyLoading; }
-			set { Node.LazyLoading = value; }
+			get => Node.LazyLoading;
+			set {
+				if (Node.LazyLoading != value)
+					Node.LazyLoading = value;
+			}
 		}
 
 		public bool IsExpanded {
-			get { return Node.IsExpanded; }
-			set { Node.IsExpanded = value; }
+			get => Node.IsExpanded;
+			set => Node.IsExpanded = value;
 		}
 
 		public bool IsHidden {
-			get { return Node.IsHidden; }
-			set { Node.IsHidden = value; }
+			get => Node.IsHidden;
+			set => Node.IsHidden = value;
 		}
 
 		public bool IsVisible => Node.IsVisible;
 		ITreeView ITreeNode.TreeView => TreeView;
 
 		public TreeNodeImpl(TreeViewImpl treeViewImpl, TreeNodeData data) {
-			Debug.Assert(data.TreeNode == null);
+			Debug2.Assert(data.TreeNode is null);
 			TreeView = treeViewImpl;
 			nodeList = new SharpTreeNodeChildrenList(this);
 			Data = data;

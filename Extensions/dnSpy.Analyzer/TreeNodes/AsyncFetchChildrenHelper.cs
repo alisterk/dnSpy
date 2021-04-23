@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -18,8 +18,8 @@
 */
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using dnSpy.Analyzer.Properties;
-using dnSpy.Contracts.Documents.TreeView;
 using dnSpy.Contracts.Images;
 using dnSpy.Contracts.Text;
 using dnSpy.Contracts.Text.Classification;
@@ -41,13 +41,13 @@ namespace dnSpy.Analyzer.TreeNodes {
 		sealed class MessageNodeTreeNodeGroup : ITreeNodeGroup {
 			public double Order { get; }
 
-			public int Compare(TreeNodeData x, TreeNodeData y) {
+			public int Compare([AllowNull] TreeNodeData x, [AllowNull] TreeNodeData y) {
 				if (x == y)
 					return 0;
 				var a = x as MessageNode;
 				var b = y as MessageNode;
-				if (a == null) return -1;
-				if (b == null) return 1;
+				if (a is null) return -1;
+				if (b is null) return 1;
 				return 0;
 			}
 		}
@@ -55,30 +55,28 @@ namespace dnSpy.Analyzer.TreeNodes {
 		sealed class MessageNode : TreeNodeData {
 			public override Guid Guid => Guid.Empty;
 			public override ImageReference Icon => DsImages.Search;
-			public override object ToolTip => null;
+			public override object? ToolTip => null;
 			public override void OnRefreshUI() { }
-			public override ITreeNodeGroup TreeNodeGroup => treeNodeGroup;
+			public override ITreeNodeGroup? TreeNodeGroup => treeNodeGroup;
 			readonly ITreeNodeGroup treeNodeGroup = new MessageNodeTreeNodeGroup();
 
 			readonly IAnalyzerTreeNodeDataContext context;
 
-			public MessageNode(IAnalyzerTreeNodeDataContext context) {
-				this.context = context;
-			}
+			public MessageNode(IAnalyzerTreeNodeDataContext context) => this.context = context;
 
 			static class Cache {
 				static readonly TextClassifierTextColorWriter writer = new TextClassifierTextColorWriter();
 				public static TextClassifierTextColorWriter GetWriter() => writer;
-				public static void FreeWriter(TextClassifierTextColorWriter writer) { writer.Clear(); }
+				public static void FreeWriter(TextClassifierTextColorWriter writer) => writer.Clear();
 			}
 
-			public override object Text {
+			public override object? Text {
 				get {
 					var writer = Cache.GetWriter();
 					try {
 						writer.Write(BoxedTextColor.Text, dnSpy_Analyzer_Resources.Searching);
 						var classifierContext = new TreeViewNodeClassifierContext(writer.Text, context.TreeView, this, isToolTip: false, colorize: context.SyntaxHighlight, colors: writer.Colors);
-						var elem = context.TreeViewNodeTextElementProvider.CreateTextElement(classifierContext, TreeViewContentTypes.TreeViewNodeAnalyzer, TextElementFlags.FilterOutNewLines | (context.UseNewRenderer ? TextElementFlags.NewFormatter : 0));
+						var elem = context.TreeViewNodeTextElementProvider.CreateTextElement(classifierContext, TreeViewContentTypes.TreeViewNodeAnalyzer, TextElementFlags.FilterOutNewLines);
 						return elem;
 					}
 					finally {

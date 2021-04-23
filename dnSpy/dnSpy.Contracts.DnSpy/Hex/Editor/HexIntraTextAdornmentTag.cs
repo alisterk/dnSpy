@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -36,7 +36,7 @@ namespace dnSpy.Contracts.Hex.Editor {
 		/// <summary>
 		/// Gets the removal callback or null if none
 		/// </summary>
-		public VSTE.AdornmentRemovedCallback RemovalCallback { get; }
+		public VSTE.AdornmentRemovedCallback? RemovalCallback { get; }
 
 		/// <summary>
 		/// Gets the top space or null to use the default value
@@ -73,10 +73,8 @@ namespace dnSpy.Contracts.Hex.Editor {
 		/// <param name="textHeight">Text height or null to use the default value</param>
 		/// <param name="bottomSpace">Bottom space or null to use the default value</param>
 		/// <param name="affinity">Position affinity or null to use the default value</param>
-		public HexIntraTextAdornmentTag(UIElement adornment, VSTE.AdornmentRemovedCallback removalCallback, double? topSpace, double? baseline, double? textHeight, double? bottomSpace, VST.PositionAffinity? affinity) {
-			if (adornment == null)
-				throw new ArgumentNullException(nameof(adornment));
-			Adornment = adornment;
+		public HexIntraTextAdornmentTag(UIElement adornment, VSTE.AdornmentRemovedCallback? removalCallback, double? topSpace, double? baseline, double? textHeight, double? bottomSpace, VST.PositionAffinity? affinity) {
+			Adornment = adornment ?? throw new ArgumentNullException(nameof(adornment));
 			RemovalCallback = removalCallback;
 			TopSpace = topSpace;
 			Baseline = baseline;
@@ -91,7 +89,7 @@ namespace dnSpy.Contracts.Hex.Editor {
 		/// <param name="adornment">Adornment element</param>
 		/// <param name="removalCallback">Called when the adornment is removed, may be null</param>
 		/// <param name="affinity">Position affinity or null to use the default value</param>
-		public HexIntraTextAdornmentTag(UIElement adornment, VSTE.AdornmentRemovedCallback removalCallback, VST.PositionAffinity? affinity)
+		public HexIntraTextAdornmentTag(UIElement adornment, VSTE.AdornmentRemovedCallback? removalCallback, VST.PositionAffinity? affinity)
 			: this(adornment, removalCallback, null, null, null, null, affinity) {
 		}
 
@@ -100,7 +98,7 @@ namespace dnSpy.Contracts.Hex.Editor {
 		/// </summary>
 		/// <param name="adornment">Adornment element</param>
 		/// <param name="removalCallback">Called when the adornment is removed, may be null</param>
-		public HexIntraTextAdornmentTag(UIElement adornment, VSTE.AdornmentRemovedCallback removalCallback)
+		public HexIntraTextAdornmentTag(UIElement adornment, VSTE.AdornmentRemovedCallback? removalCallback)
 			: this(adornment, removalCallback, null, null, null, null, null) {
 		}
 	}

@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -38,26 +38,22 @@ namespace dnSpy.Text.Tagging {
 		protected ITextBuffer TextBuffer { get; }
 
 		protected TagAggregatorBase(IBufferGraph bufferGraph, ITextBuffer textBuffer, TagAggregatorOptions options) {
-			if (bufferGraph == null)
-				throw new ArgumentNullException(nameof(bufferGraph));
-			if (textBuffer == null)
-				throw new ArgumentNullException(nameof(textBuffer));
 			dispatcher = Dispatcher.CurrentDispatcher;
 			batchedTagsChangedList = new List<IMappingSpan>();
 			lockObj = new object();
-			BufferGraph = bufferGraph;
-			TextBuffer = textBuffer;
+			BufferGraph = bufferGraph ?? throw new ArgumentNullException(nameof(bufferGraph));
+			TextBuffer = textBuffer ?? throw new ArgumentNullException(nameof(textBuffer));
 			TextBuffer.ContentTypeChanged += TextBuffer_ContentTypeChanged;
 			taggers = Array.Empty<ITagger<T>>();
 		}
 
 		protected void Initialize() => RecreateTaggers();
 
-		public event EventHandler<BatchedTagsChangedEventArgs> BatchedTagsChanged;
-		public event EventHandler<TagsChangedEventArgs> TagsChanged;
+		public event EventHandler<BatchedTagsChangedEventArgs>? BatchedTagsChanged;
+		public event EventHandler<TagsChangedEventArgs>? TagsChanged;
 
 		public IEnumerable<IMappingTagSpan<T>> GetTags(NormalizedSnapshotSpanCollection snapshotSpans) {
-			if (snapshotSpans == null)
+			if (snapshotSpans is null)
 				throw new ArgumentNullException(nameof(snapshotSpans));
 			if (snapshotSpans.Count == 0)
 				yield break;
@@ -72,26 +68,26 @@ namespace dnSpy.Text.Tagging {
 		}
 
 		public IEnumerable<IMappingTagSpan<T>> GetTags(IMappingSpan span) {
-			if (span == null)
+			if (span is null)
 				throw new ArgumentNullException(nameof(span));
 			return GetTags(span.GetSpans(TextBuffer));
 		}
 
 		public IEnumerable<IMappingTagSpan<T>> GetTags(SnapshotSpan span) {
-			if (span.Snapshot == null)
+			if (span.Snapshot is null)
 				throw new ArgumentException();
 			return GetTags(new NormalizedSnapshotSpanCollection(span));
 		}
 
 		public IEnumerable<IMappingTagSpan<T>> GetTags(NormalizedSnapshotSpanCollection snapshotSpans, CancellationToken cancellationToken) {
-			if (snapshotSpans == null)
+			if (snapshotSpans is null)
 				throw new ArgumentNullException(nameof(snapshotSpans));
 			if (snapshotSpans.Count == 0)
 				yield break;
 			var snapshotSpansSnapshot = snapshotSpans[0].Snapshot;
 			foreach (var tagger in taggers) {
 				var syncTagger = tagger as ISynchronousTagger<T>;
-				var tags = syncTagger != null ? syncTagger.GetTags(snapshotSpans, cancellationToken) : tagger.GetTags(snapshotSpans);
+				var tags = syncTagger is not null ? syncTagger.GetTags(snapshotSpans, cancellationToken) : tagger.GetTags(snapshotSpans);
 				cancellationToken.ThrowIfCancellationRequested();
 				foreach (var tagSpan in tags) {
 					var newSpan = tagSpan.Span.TranslateTo(snapshotSpansSnapshot, SpanTrackingMode.EdgeExclusive);
@@ -102,18 +98,18 @@ namespace dnSpy.Text.Tagging {
 		}
 
 		public IEnumerable<IMappingTagSpan<T>> GetTags(IMappingSpan span, CancellationToken cancellationToken) {
-			if (span == null)
+			if (span is null)
 				throw new ArgumentNullException(nameof(span));
 			return GetTags(span.GetSpans(TextBuffer), cancellationToken);
 		}
 
 		public IEnumerable<IMappingTagSpan<T>> GetTags(SnapshotSpan span, CancellationToken cancellationToken) {
-			if (span.Snapshot == null)
+			if (span.Snapshot is null)
 				throw new ArgumentException();
 			return GetTags(new NormalizedSnapshotSpanCollection(span), cancellationToken);
 		}
 
-		void TextBuffer_ContentTypeChanged(object sender, ContentTypeChangedEventArgs e) {
+		void TextBuffer_ContentTypeChanged(object? sender, ContentTypeChangedEventArgs e) {
 			RecreateTaggers();
 			RaiseTagsChanged(new SnapshotSpan(TextBuffer.CurrentSnapshot, 0, TextBuffer.CurrentSnapshot.Length));
 		}
@@ -136,17 +132,16 @@ namespace dnSpy.Text.Tagging {
 			taggers = Array.Empty<ITagger<T>>();
 		}
 
-		void Tagger_TagsChanged(object sender, SnapshotSpanEventArgs e) {
+		void Tagger_TagsChanged(object? sender, SnapshotSpanEventArgs e) =>
 			// Use original sender, not us
 			RaiseTagsChanged(e.Span, sender);
-		}
 
-		void RaiseTagsChanged(SnapshotSpan span, object sender = null) {
+		void RaiseTagsChanged(SnapshotSpan span, object? sender = null) {
 			if (IsDisposed)
 				return;
-			IMappingSpan mappingSpan = null;
+			IMappingSpan? mappingSpan = null;
 			TagsChanged?.Invoke(sender ?? this, new TagsChangedEventArgs(mappingSpan = BufferGraph.CreateMappingSpan(span, SpanTrackingMode.EdgeExclusive)));
-			if (BatchedTagsChanged != null) {
+			if (BatchedTagsChanged is not null) {
 				lock (lockObj) {
 					batchedTagsChangedList.Add(mappingSpan ?? BufferGraph.CreateMappingSpan(span, SpanTrackingMode.EdgeExclusive));
 					if (batchedTagsChangedList.Count == 1)

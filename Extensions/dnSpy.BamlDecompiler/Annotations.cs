@@ -1,9 +1,7 @@
-﻿namespace dnSpy.BamlDecompiler {
+namespace dnSpy.BamlDecompiler {
 	internal class BamlConnectionId {
 		public uint Id { get; }
 
-		public BamlConnectionId(uint id) {
-			Id = id;
-		}
+		public BamlConnectionId(uint id) => Id = id;
 	}
 }

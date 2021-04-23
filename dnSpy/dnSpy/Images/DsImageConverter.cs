@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -27,10 +27,11 @@ using dnSpy.Contracts.Images;
 
 namespace dnSpy.Images {
 	sealed class DsImageConverter : IMultiValueConverter {
-		internal static IImageService imageService;
+		internal static IImageService? imageService;
 
-		public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture) {
-			if (values == null)
+		public object? Convert(object[] values, Type targetType, object parameter, CultureInfo culture) {
+			Debug2.Assert(imageService is not null);
+			if (values is null)
 				throw new ArgumentNullException(nameof(values));
 			bool b = values.Length == 7;
 			Debug.Assert(b);
@@ -56,8 +57,6 @@ namespace dnSpy.Images {
 			return imageService.GetImage(imageReference, options);
 		}
 
-		public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) {
-			throw new NotSupportedException();
-		}
+		public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) => throw new NotSupportedException();
 	}
 }

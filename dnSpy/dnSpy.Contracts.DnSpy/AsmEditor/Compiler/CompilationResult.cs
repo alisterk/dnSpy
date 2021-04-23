@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -24,16 +24,16 @@ namespace dnSpy.Contracts.AsmEditor.Compiler {
 	/// <summary>
 	/// Compilation result
 	/// </summary>
-	public struct CompilationResult {
+	public readonly struct CompilationResult {
 		/// <summary>
 		/// true if the compilation succeeded
 		/// </summary>
-		public bool Success => RawFile != null;
+		public bool Success => RawFile is not null;
 
 		/// <summary>
 		/// Result of compilation or null if compilation failed
 		/// </summary>
-		public byte[] RawFile { get; }
+		public byte[]? RawFile { get; }
 
 		/// <summary>
 		/// Debug file data (eg. PDB data)
@@ -51,10 +51,8 @@ namespace dnSpy.Contracts.AsmEditor.Compiler {
 		/// <param name="rawFile">Raw file data</param>
 		/// <param name="debugFile">Debug file result or null</param>
 		/// <param name="diagnostics">Diagnostics or null</param>
-		public CompilationResult(byte[] rawFile, DebugFileResult? debugFile = null, CompilerDiagnostic[] diagnostics = null) {
-			if (rawFile == null)
-				throw new ArgumentNullException(nameof(rawFile));
-			RawFile = rawFile;
+		public CompilationResult(byte[] rawFile, DebugFileResult? debugFile = null, CompilerDiagnostic[]? diagnostics = null) {
+			RawFile = rawFile ?? throw new ArgumentNullException(nameof(rawFile));
 			DebugFile = debugFile ?? new DebugFileResult();
 			Diagnostics = diagnostics ?? Array.Empty<CompilerDiagnostic>();
 		}
@@ -64,7 +62,7 @@ namespace dnSpy.Contracts.AsmEditor.Compiler {
 		/// </summary>
 		/// <param name="diagnostics">Diagnostics</param>
 		public CompilationResult(CompilerDiagnostic[] diagnostics) {
-			if (diagnostics == null)
+			if (diagnostics is null)
 				throw new ArgumentNullException(nameof(diagnostics));
 			Debug.Assert(diagnostics.Length != 0);
 			RawFile = null;

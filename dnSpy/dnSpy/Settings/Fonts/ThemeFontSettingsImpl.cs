@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -26,18 +26,16 @@ namespace dnSpy.Settings.Fonts {
 	sealed class ThemeFontSettingsImpl : ThemeFontSettings {
 		public override string Name { get; }
 		public override FontType FontType { get; }
-		public override FontSettings Active => active;
+		public override FontSettings Active => active!;
 
 		internal IEnumerable<FontSettingsImpl> FontSettings => toSettings.Values.ToArray();
 
 		readonly Dictionary<Guid, FontSettingsImpl> toSettings;
 		readonly DefaultFontInfo defaultFontInfo;
-		FontSettings active;
+		FontSettings? active;
 
 		public ThemeFontSettingsImpl(string name, FontType fontType, DefaultFontInfo defaultFontInfo) {
-			if (name == null)
-				throw new ArgumentNullException(nameof(name));
-			Name = name;
+			Name = name ?? throw new ArgumentNullException(nameof(name));
 			FontType = fontType;
 			toSettings = new Dictionary<Guid, FontSettingsImpl>();
 			this.defaultFontInfo = defaultFontInfo;
@@ -46,8 +44,7 @@ namespace dnSpy.Settings.Fonts {
 		internal void Initialize(Guid activeThemeGuid) => active = GetSettings(activeThemeGuid);
 
 		public override FontSettings GetSettings(Guid themeGuid) {
-			FontSettingsImpl settings;
-			if (toSettings.TryGetValue(themeGuid, out settings))
+			if (toSettings.TryGetValue(themeGuid, out var settings))
 				return settings;
 			settings = new FontSettingsImpl(this, themeGuid, defaultFontInfo.FontFamily, defaultFontInfo.FontSize);
 			toSettings.Add(themeGuid, settings);
@@ -63,15 +60,11 @@ namespace dnSpy.Settings.Fonts {
 			OnPropertyChanged(nameof(Active));
 		}
 
-		internal event EventHandler<FontSettingsCreatedEventArgs> FontSettingsCreated;
+		internal event EventHandler<FontSettingsCreatedEventArgs>? FontSettingsCreated;
 	}
 
 	sealed class FontSettingsCreatedEventArgs : EventArgs {
 		public FontSettings FontSettings { get; }
-		public FontSettingsCreatedEventArgs(FontSettings fontSettings) {
-			if (fontSettings == null)
-				throw new ArgumentNullException(nameof(fontSettings));
-			FontSettings = fontSettings;
-		}
+		public FontSettingsCreatedEventArgs(FontSettings fontSettings) => FontSettings = fontSettings ?? throw new ArgumentNullException(nameof(fontSettings));
 	}
 }

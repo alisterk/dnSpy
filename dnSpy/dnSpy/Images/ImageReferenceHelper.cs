@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -22,16 +22,15 @@ using dnSpy.Contracts.Images;
 
 namespace dnSpy.Images {
 	static class ImageReferenceHelper {
-		public static ImageReference? GetImageReference(object item, string iconName) {
-			if (string.IsNullOrEmpty(iconName))
+		public static ImageReference? GetImageReference(object item, string? iconName) {
+			if (string2.IsNullOrEmpty(iconName))
 				return null;
 			int colonIndex = iconName.IndexOf(':');
 			if (colonIndex >= 0) {
 				var type = iconName.Substring(0, colonIndex).Trim();
 				iconName = iconName.Substring(colonIndex + 1).Trim();
 				if (type.Equals("img", StringComparison.OrdinalIgnoreCase)) {
-					ImageReference imageReference;
-					if (ImageReference.TryParse(iconName, out imageReference))
+					if (ImageReference.TryParse(iconName, out var imageReference))
 						return imageReference;
 					return null;
 				}

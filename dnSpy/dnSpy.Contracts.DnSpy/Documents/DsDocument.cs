@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -20,7 +20,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using dnlib.DotNet;
 using dnlib.PE;
 using dnSpy.Contracts.Utilities;
@@ -29,21 +28,21 @@ namespace dnSpy.Contracts.Documents {
 	/// <summary>
 	/// Document base class
 	/// </summary>
-	public abstract class DsDocument : IDsDocument {
+	public abstract class DsDocument : IDsDocument2 {
 		/// <inheritdoc/>
 		public abstract DsDocumentInfo? SerializedDocument { get; }
 		/// <inheritdoc/>
 		public abstract IDsDocumentNameKey Key { get; }
 		/// <inheritdoc/>
-		public AssemblyDef AssemblyDef => ModuleDef?.Assembly;
+		public AssemblyDef? AssemblyDef => ModuleDef?.Assembly;
 		/// <inheritdoc/>
-		public virtual ModuleDef ModuleDef => null;
+		public virtual ModuleDef? ModuleDef => null;
 		/// <inheritdoc/>
-		public virtual IPEImage PEImage => (ModuleDef as ModuleDefMD)?.MetaData?.PEImage;
+		public virtual IPEImage? PEImage => (ModuleDef as ModuleDefMD)?.Metadata?.PEImage;
 
 		/// <inheritdoc/>
 		public string Filename {
-			get { return filename; }
+			get => filename;
 			set {
 				if (filename != value) {
 					filename = value;
@@ -51,7 +50,7 @@ namespace dnSpy.Contracts.Documents {
 				}
 			}
 		}
-		string filename;
+		string filename = string.Empty;
 
 		/// <summary>
 		/// Gets called when a property has changed
@@ -64,43 +63,49 @@ namespace dnSpy.Contracts.Documents {
 		public bool IsAutoLoaded { get; set; }
 
 		/// <inheritdoc/>
-		public List<IDsDocument> Children {
+		public TList<IDsDocument> Children {
 			get {
-				if (children == null) {
-					children = CreateChildren();
-					Debug.Assert(children != null);
-					if (children == null)
-						children = new List<IDsDocument>();
+				if (children is null) {
+					lock (lockObj) {
+						if (children is null) {
+							children = CreateChildren();
+							Debug2.Assert(children is not null);
+							if (children is null)
+								children = new TList<IDsDocument>();
+						}
+					}
 				}
 				return children;
 			}
 		}
-		List<IDsDocument> children;
+		readonly object lockObj;
+		TList<IDsDocument>? children;
 
 		/// <inheritdoc/>
-		public bool ChildrenLoaded => children != null;
+		public bool ChildrenLoaded => children is not null;
 
 		/// <summary>
 		/// Creates the children
 		/// </summary>
 		/// <returns></returns>
-		protected virtual List<IDsDocument> CreateChildren() => new List<IDsDocument>();
+		protected virtual TList<IDsDocument> CreateChildren() => new TList<IDsDocument>();
 
 		/// <summary>
 		/// Constructor
 		/// </summary>
-		protected DsDocument() {
-		}
+		protected DsDocument() => lockObj = new object();
 
 		/// <inheritdoc/>
-		public T AddAnnotation<T>(T annotation) where T : class => annotations.AddAnnotation(annotation);
+		public T? AddAnnotation<T>(T? annotation) where T : class => annotations.AddAnnotation(annotation);
 		/// <inheritdoc/>
-		public T Annotation<T>() where T : class => annotations.Annotation<T>();
+		public T? Annotation<T>() where T : class => annotations.Annotation<T>();
 		/// <inheritdoc/>
 		public IEnumerable<T> Annotations<T>() where T : class => annotations.Annotations<T>();
 		/// <inheritdoc/>
 		public void RemoveAnnotations<T>() where T : class => annotations.RemoveAnnotations<T>();
 		readonly AnnotationsImpl annotations = new AnnotationsImpl();
+		/// <inheritdoc/>
+		public virtual void OnAdded() { }
 	}
 
 	/// <summary>
@@ -117,9 +122,7 @@ namespace dnSpy.Contracts.Documents {
 		/// Constructor
 		/// </summary>
 		/// <param name="filename">Filename</param>
-		public DsUnknownDocument(string filename) {
-			Filename = filename ?? string.Empty;
-		}
+		public DsUnknownDocument(string filename) => Filename = filename ?? string.Empty;
 	}
 
 	/// <summary>
@@ -129,9 +132,9 @@ namespace dnSpy.Contracts.Documents {
 		/// <inheritdoc/>
 		public override DsDocumentInfo? SerializedDocument => DsDocumentInfo.CreateDocument(Filename);
 		/// <inheritdoc/>
-		public override IDsDocumentNameKey Key => new FilenameKey(Filename);
+		public override IDsDocumentNameKey Key => FilenameKey.CreateFullPath(Filename);
 		/// <inheritdoc/>
-		public override IPEImage PEImage { get; }
+		public override IPEImage? PEImage { get; }
 
 		/// <summary>
 		/// Constructor
@@ -139,11 +142,11 @@ namespace dnSpy.Contracts.Documents {
 		/// <param name="peImage">PE image</param>
 		public DsPEDocument(IPEImage peImage) {
 			PEImage = peImage;
-			Filename = peImage.FileName ?? string.Empty;
+			Filename = peImage.Filename ?? string.Empty;
 		}
 
 		/// <inheritdoc/>
-		public void Dispose() => PEImage.Dispose();
+		public void Dispose() => PEImage!.Dispose();
 	}
 
 	/// <summary>
@@ -151,7 +154,7 @@ namespace dnSpy.Contracts.Documents {
 	/// </summary>
 	public abstract class DsDotNetDocumentBase : DsDocument, IDsDotNetDocument, IInMemoryDocument {
 		/// <inheritdoc/>
-		public override ModuleDef ModuleDef { get; }
+		public override ModuleDef? ModuleDef { get; }
 		/// <inheritdoc/>
 		public virtual bool IsActive => true;
 
@@ -168,8 +171,13 @@ namespace dnSpy.Contracts.Documents {
 			loadedSymbols = loadSyms;
 			Filename = module.Location ?? string.Empty;
 			module.EnableTypeDefFindCache = true;
-			if (loadSyms)
-				LoadSymbols(module.Location);
+		}
+
+		/// <inheritdoc/>
+		public override void OnAdded() {
+			if (loadedSymbols)
+				LoadSymbols();
+			base.OnAdded();
 		}
 
 		/// <summary>
@@ -178,7 +186,7 @@ namespace dnSpy.Contracts.Documents {
 		/// <param name="asmResolver">Assembly resolver</param>
 		/// <returns></returns>
 		public static ModuleContext CreateModuleContext(IAssemblyResolver asmResolver) {
-			ModuleContext moduleCtx = new ModuleContext();
+			var moduleCtx = new ModuleContext();
 			moduleCtx.AssemblyResolver = asmResolver;
 			// Disable WinMD projection since the user probably expects that clicking on a type
 			// will take you to that type, and not to the projected CLR type.
@@ -188,21 +196,18 @@ namespace dnSpy.Contracts.Documents {
 			return moduleCtx;
 		}
 
-		void LoadSymbols(string dotNetFilename) {
-			if (!File.Exists(dotNetFilename))
-				return;
+		void LoadSymbols() {
+			Debug2.Assert(ModuleDef is not null);
 			// Happens if a module has been removed but then the exact same instance
 			// was re-added.
-			if (ModuleDef.PdbState != null)
+			if (ModuleDef.PdbState is not null)
 				return;
 
 			var m = ModuleDef as ModuleDefMD;
-			if (m == null)
+			if (m is null)
 				return;
 			try {
-				var pdbFilename = Path.Combine(Path.GetDirectoryName(dotNetFilename), Path.GetFileNameWithoutExtension(dotNetFilename) + ".pdb");
-				if (File.Exists(pdbFilename))
-					m.LoadPdb(pdbFilename);
+				m.LoadPdb();
 			}
 			catch {
 			}
@@ -216,7 +221,7 @@ namespace dnSpy.Contracts.Documents {
 		readonly bool isAsmNode;
 
 		/// <inheritdoc/>
-		public override IDsDocumentNameKey Key => new FilenameKey(Filename);
+		public override IDsDocumentNameKey Key => FilenameKey.CreateFullPath(Filename);
 		/// <inheritdoc/>
 		public override DsDocumentInfo? SerializedDocument => documentInfo;
 		DsDocumentInfo documentInfo;
@@ -267,10 +272,10 @@ namespace dnSpy.Contracts.Documents {
 		public static DsDotNetDocument CreateAssembly(IDsDotNetDocument module) => new DsDotNetDocumentAsmWithMod(module);
 
 		/// <inheritdoc/>
-		protected override List<IDsDocument> CreateChildren() {
+		protected override TList<IDsDocument> CreateChildren() {
 			var asm = AssemblyDef;
-			var list = new List<IDsDocument>(asm == null ? 1 : asm.Modules.Count);
-			if (isAsmNode && asm != null) {
+			var list = new TList<IDsDocument>(asm is null ? 1 : asm.Modules.Count);
+			if (isAsmNode && asm is not null) {
 				bool foundThis = false;
 				foreach (var module in asm.Modules) {
 					if (ModuleDef == module) {
@@ -285,21 +290,19 @@ namespace dnSpy.Contracts.Documents {
 		}
 
 		/// <inheritdoc/>
-		public void Dispose() => ModuleDef.Dispose();
+		public void Dispose() => ModuleDef!.Dispose();
 	}
 
 	sealed class DsDotNetDocumentAsmWithMod : DsDotNetDocument {
-		IDsDotNetDocument module;
+		IDsDotNetDocument? module;
 
 		public DsDotNetDocumentAsmWithMod(IDsDotNetDocument modmodule)
-			: base(modmodule.SerializedDocument ?? new DsDocumentInfo(), modmodule.ModuleDef, false, true) {
-			module = modmodule;
-		}
+			: base(modmodule.SerializedDocument ?? new DsDocumentInfo(), modmodule.ModuleDef!, false, true) => module = modmodule;
 
-		protected override List<IDsDocument> CreateChildren() {
-			Debug.Assert(module != null);
-			var list = new List<IDsDocument>();
-			if (module != null)
+		protected override TList<IDsDocument> CreateChildren() {
+			Debug2.Assert(module is not null);
+			var list = new TList<IDsDocument>();
+			if (module is not null)
 				list.Add(module);
 			module = null;
 			return list;
@@ -315,7 +318,7 @@ namespace dnSpy.Contracts.Documents {
 		/// </summary>
 		/// <param name="document">Document</param>
 		public static void DisableMemoryMappedIO(IDsDocument document) {
-			if (document == null)
+			if (document is null)
 				return;
 			DisableMemoryMappedIO(document.PEImage);
 		}
@@ -324,14 +327,14 @@ namespace dnSpy.Contracts.Documents {
 		/// Disable memory mapped I/O
 		/// </summary>
 		/// <param name="peImage">PE image</param>
-		public static void DisableMemoryMappedIO(IPEImage peImage) {
-			if (peImage == null)
+		public static void DisableMemoryMappedIO(IPEImage? peImage) {
+			if (peImage is null)
 				return;
 			// Files in the GAC are read-only so there's no need to disable memory mapped I/O to
 			// allow other programs to write to the file.
-			if (GacInfo.IsGacPath(peImage.FileName))
+			if (GacInfo.IsGacPath(peImage.Filename))
 				return;
-			peImage.UnsafeDisableMemoryMappedIO();
+			(peImage as IInternalPEImage)?.UnsafeDisableMemoryMappedIO();
 		}
 	}
 }

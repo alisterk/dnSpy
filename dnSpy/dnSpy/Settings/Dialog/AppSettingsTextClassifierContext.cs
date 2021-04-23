@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -25,11 +25,7 @@ using dnSpy.Contracts.Text.Classification;
 namespace dnSpy.Settings.Dialog {
 	sealed class AppSettingsTextClassifierContext : TextClassifierContext {
 		public SearchMatcher SearchMatcher { get; }
-		public AppSettingsTextClassifierContext(SearchMatcher searchMatcher, string text, string tag, bool colorize, IReadOnlyCollection<SpanData<object>> colors = null)
-			: base(text, tag, colorize, colors) {
-			if (searchMatcher == null)
-				throw new ArgumentNullException(nameof(searchMatcher));
-			SearchMatcher = searchMatcher;
-		}
+		public AppSettingsTextClassifierContext(SearchMatcher searchMatcher, string text, string tag, bool colorize, IReadOnlyCollection<SpanData<object>>? colors = null)
+			: base(text, tag, colorize, colors) => SearchMatcher = searchMatcher ?? throw new ArgumentNullException(nameof(searchMatcher));
 	}
 }

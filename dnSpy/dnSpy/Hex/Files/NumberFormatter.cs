@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -21,16 +21,14 @@ using System.Text;
 using dnSpy.Contracts.Hex.Files;
 
 namespace dnSpy.Hex.Files {
-	struct NumberFormatter {
+	readonly struct NumberFormatter {
 		public HexNumberOptions Options => options;
 		readonly HexNumberOptions options;
 
 		bool Decimal => (options & HexNumberOptions.NumberBaseMask) == HexNumberOptions.Decimal;
 		bool MinimumDigits => (options & HexNumberOptions.MinimumDigits) != 0;
 
-		public NumberFormatter(HexNumberOptions options) {
-			this.options = options;
-		}
+		public NumberFormatter(HexNumberOptions options) => this.options = options;
 
 		string AddHexIndicator(string text, bool isSigned) {
 			switch (options & HexNumberOptions.NumberBaseMask) {

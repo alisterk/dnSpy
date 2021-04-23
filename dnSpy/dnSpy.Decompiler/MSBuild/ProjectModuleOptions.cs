@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -65,7 +65,12 @@ namespace dnSpy.Decompiler.MSBuild {
 		/// true to generate .resx files from resources. Only used if <see cref="UnpackResources"/>
 		/// is true. Default value is true.
 		/// </summary>
-		public bool CreateResX { get; set; }
+		public bool CreateResX {
+			// Option is already disabled by default, but we should use a custom ResourceReader class in ResXProjectFile,
+			// so always ignore it for now.
+			get => false;
+			set { }
+		}
 
 		/// <summary>
 		/// true to decompile baml files to xaml files. Only used if <see cref="UnpackResources"/>
@@ -76,18 +81,12 @@ namespace dnSpy.Decompiler.MSBuild {
 		/// <summary>
 		/// Decompiles baml data to a <see cref="Stream"/>
 		/// </summary>
-		public Func<ModuleDef, byte[], CancellationToken, Stream, IList<string>> DecompileBaml;
+		public Func<ModuleDef, byte[], CancellationToken, Stream, IList<string>>? DecompileBaml;
 
 		public ProjectModuleOptions(ModuleDef module, IDecompiler decompiler, DecompilationContext decompilationContext) {
-			if (decompiler == null)
-				throw new ArgumentNullException(nameof(decompiler));
-			if (decompilationContext == null)
-				throw new ArgumentNullException(nameof(decompilationContext));
-			if (module == null)
-				throw new ArgumentNullException(nameof(module));
-			Module = module;
-			Decompiler = decompiler;
-			DecompilationContext = decompilationContext;
+			Module = module ?? throw new ArgumentNullException(nameof(module));
+			Decompiler = decompiler ?? throw new ArgumentNullException(nameof(decompiler));
+			DecompilationContext = decompilationContext ?? throw new ArgumentNullException(nameof(decompilationContext));
 			ProjectGuid = Guid.NewGuid();
 			UnpackResources = true;
 			CreateResX = true;

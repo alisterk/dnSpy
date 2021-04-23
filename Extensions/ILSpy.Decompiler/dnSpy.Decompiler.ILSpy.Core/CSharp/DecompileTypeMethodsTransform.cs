@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -23,27 +23,24 @@ using System.Linq;
 using dnlib.DotNet;
 using ICSharpCode.Decompiler.Ast.Transforms;
 using ICSharpCode.NRefactory.CSharp;
-using ICSharpCode.NRefactory.TypeSystem;
 
 namespace dnSpy.Decompiler.ILSpy.Core.CSharp {
 	sealed class DecompileTypeMethodsTransform : IAstTransform {
 		readonly HashSet<IMemberDef> defsToShow;
 		readonly HashSet<TypeDef> partialTypes;
 		readonly bool showDefinitions;
-		readonly bool makeEverythingPublic;
 		readonly bool showAll;
 
-		public DecompileTypeMethodsTransform(HashSet<MethodDef> methods, bool showDefinitions, bool makeEverythingPublic, bool showAll) {
+		public DecompileTypeMethodsTransform(HashSet<TypeDef> types, HashSet<MethodDef> methods, bool showDefinitions, bool showAll) {
 			defsToShow = new HashSet<IMemberDef>();
 			partialTypes = new HashSet<TypeDef>();
 			this.showDefinitions = showDefinitions;
-			this.makeEverythingPublic = makeEverythingPublic;
 			this.showAll = showAll;
 
 			foreach (var method in methods) {
 				// If it's part of a property or event, include the property or event since there are no partial props/events
 				var prop = method.DeclaringType.Properties.FirstOrDefault(a => a.GetMethods.Contains(method) || a.SetMethods.Contains(method));
-				if (prop != null) {
+				if (prop is not null) {
 					defsToShow.Add(prop);
 					foreach (var m in prop.GetMethods)
 						defsToShow.Add(m);
@@ -54,13 +51,13 @@ namespace dnSpy.Decompiler.ILSpy.Core.CSharp {
 				}
 				else {
 					var evt = method.DeclaringType.Events.FirstOrDefault(a => a.AddMethod == method || a.RemoveMethod == method);
-					if (evt != null) {
+					if (evt is not null) {
 						defsToShow.Add(evt);
-						if (evt.AddMethod != null)
+						if (evt.AddMethod is not null)
 							defsToShow.Add(evt.AddMethod);
-						if (evt.RemoveMethod != null)
+						if (evt.RemoveMethod is not null)
 							defsToShow.Add(evt.RemoveMethod);
-						if (evt.InvokeMethod != null)
+						if (evt.InvokeMethod is not null)
 							defsToShow.Add(evt.InvokeMethod);
 						foreach (var m in evt.OtherMethods)
 							defsToShow.Add(m);
@@ -69,73 +66,48 @@ namespace dnSpy.Decompiler.ILSpy.Core.CSharp {
 						defsToShow.Add(method);
 				}
 			}
-
+			foreach (var type in types) {
+				if (!type.IsEnum) {
+					defsToShow.Add(type);
+					partialTypes.Add(type);
+				}
+			}
 			foreach (var def in defsToShow) {
-				for (var declType = def.DeclaringType; declType != null; declType = declType.DeclaringType)
+				for (var declType = def.DeclaringType; declType is not null; declType = declType.DeclaringType)
 					partialTypes.Add(declType);
+			}
+			foreach (var type in types) {
+				if (type.IsEnum) {
+					defsToShow.Add(type);
+					foreach (var f in type.Fields)
+						defsToShow.Add(f);
+				}
 			}
 		}
 
 		public void Run(AstNode compilationUnit) {
 			foreach (var en in compilationUnit.Descendants.OfType<EntityDeclaration>()) {
 				var def = en.Annotation<IMemberDef>();
-				Debug.Assert(def != null);
-				if (def == null)
+				Debug2.Assert(def is not null);
+				if (def is null)
 					continue;
-
-				if (makeEverythingPublic) {
-					const Modifiers accessFlags = Modifiers.Private | Modifiers.Internal | Modifiers.Protected | Modifiers.Public;
-					en.Modifiers = (en.Modifiers & ~accessFlags) | Modifiers.Public;
-
-					bool clearModifiers = false;
-
-					var owner = en.Parent as TypeDeclaration;
-					if (owner?.ClassType == ClassType.Enum || owner?.ClassType == ClassType.Interface)
-						clearModifiers = true;
-					else if (en is Accessor) {
-						// If it's a getter/setter/adder/remover, its owner (the property/event) already is public,
-						// so remove the modifier from the accessor
-						clearModifiers = true;
-					}
-					else if (en.SymbolKind == SymbolKind.Destructor)
-						clearModifiers = true;
-					else if (en.SymbolKind == SymbolKind.Constructor && en.HasModifier(Modifiers.Static))
-						clearModifiers = true;
-					else if (en is MethodDeclaration) {
-						var md = (MethodDeclaration)en;
-						if (!md.PrivateImplementationType.IsNull || (md.Parent as TypeDeclaration)?.ClassType == ClassType.Interface)
-							clearModifiers = true;
-					}
-					else if (en is CustomEventDeclaration) {
-						var ed = (CustomEventDeclaration)en;
-						if (!ed.PrivateImplementationType.IsNull || (ed.Parent as TypeDeclaration)?.ClassType == ClassType.Interface)
-							clearModifiers = true;
-					}
-					else if (en is PropertyDeclaration) {
-						var pd = (PropertyDeclaration)en;
-						if (!pd.PrivateImplementationType.IsNull || (pd.Parent as TypeDeclaration)?.ClassType == ClassType.Interface)
-							clearModifiers = true;
-					}
-
-					if (clearModifiers)
-						en.Modifiers &= ~accessFlags;
-
-					// Make sure the comments are still shown before the method and its modifiers
-					var comments = en.GetChildrenByRole(Roles.Comment).Reverse().ToArray();
-					foreach (var c in comments) {
-						c.Remove();
-						en.InsertChildAfter(null, c, Roles.Comment);
-					}
-				}
 
 				if (partialTypes.Contains(def)) {
 					var tdecl = en as TypeDeclaration;
-					Debug.Assert(tdecl != null);
-					if (tdecl != null) {
-						tdecl.Modifiers |= Modifiers.Partial;
+					Debug2.Assert(tdecl is not null);
+					if (tdecl is not null) {
+						if (tdecl.ClassType != ClassType.Enum)
+							tdecl.Modifiers |= Modifiers.Partial;
 						if (!showDefinitions) {
 							tdecl.BaseTypes.Clear();
 							tdecl.Attributes.Clear();
+						}
+
+						// Make sure the comments are still shown before the method and its modifiers
+						var comments = en.GetChildrenByRole(Roles.Comment).Reverse().ToArray();
+						foreach (var c in comments) {
+							c.Remove();
+							en.InsertChildAfter(null, c, Roles.Comment);
 						}
 					}
 				}
@@ -147,13 +119,11 @@ namespace dnSpy.Decompiler.ILSpy.Core.CSharp {
 					else {
 						if (showAll || defsToShow.Contains(def))
 							en.Remove();
-						else if (en is CustomEventDeclaration) {
+						else if (en is CustomEventDeclaration ced) {
 							// Convert this hidden event to an event without accessor bodies.
 							// AstBuilder doesn't write empty bodies to it if it's a hidden event because
 							// then it can't be optimized to an auto event. We want real auto events to
 							// become auto events and custom events to stay custom, but without bodies.
-
-							var ced = (CustomEventDeclaration)en;
 							if (!ced.AddAccessor.IsNull)
 								ced.AddAccessor.Body = new BlockStatement();
 							if (!ced.RemoveAccessor.IsNull)

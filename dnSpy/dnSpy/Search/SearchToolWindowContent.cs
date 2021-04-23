@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -31,19 +31,17 @@ namespace dnSpy.Search {
 	sealed class SearchToolWindowContentProvider : IToolWindowContentProvider {
 		readonly Lazy<ISearchService> searchService;
 
-		SearchToolWindowContent SearchToolWindowContent => searchToolWindowContent ?? (searchToolWindowContent = new SearchToolWindowContent(searchService));
-		SearchToolWindowContent searchToolWindowContent;
+		SearchToolWindowContent SearchToolWindowContent => searchToolWindowContent ??= new SearchToolWindowContent(searchService);
+		SearchToolWindowContent? searchToolWindowContent;
 
 		[ImportingConstructor]
-		SearchToolWindowContentProvider(Lazy<ISearchService> searchService) {
-			this.searchService = searchService;
-		}
+		SearchToolWindowContentProvider(Lazy<ISearchService> searchService) => this.searchService = searchService;
 
 		public IEnumerable<ToolWindowContentInfo> ContentInfos {
 			get { yield return new ToolWindowContentInfo(SearchToolWindowContent.THE_GUID, SearchToolWindowContent.DEFAULT_LOCATION, AppToolWindowConstants.DEFAULT_CONTENT_ORDER_TOP_SEARCH, false); }
 		}
 
-		public ToolWindowContent GetOrCreate(Guid guid) {
+		public ToolWindowContent? GetOrCreate(Guid guid) {
 			if (guid == SearchToolWindowContent.THE_GUID)
 				return SearchToolWindowContent;
 			return null;
@@ -54,18 +52,16 @@ namespace dnSpy.Search {
 		public static readonly Guid THE_GUID = new Guid("8E359BE0-C8CD-4CA7-B228-8C836219AF85");
 		public const AppToolWindowLocation DEFAULT_LOCATION = AppToolWindowLocation.DefaultHorizontal;
 
-		public override IInputElement FocusedElement => searchService.Value.FocusedElement;
-		public override FrameworkElement ZoomElement => searchService.Value.ZoomElement;
+		public override IInputElement? FocusedElement => searchService.Value.FocusedElement;
+		public override FrameworkElement? ZoomElement => searchService.Value.ZoomElement;
 		public override Guid Guid => THE_GUID;
 		public override string Title => dnSpy_Resources.SearchWindow_Title;
-		public override object UIObject => searchService.Value.UIObject;
+		public override object? UIObject => searchService.Value.UIObject;
 		public bool CanFocus => true;
 
 		readonly Lazy<ISearchService> searchService;
 
-		public SearchToolWindowContent(Lazy<ISearchService> searchService) {
-			this.searchService = searchService;
-		}
+		public SearchToolWindowContent(Lazy<ISearchService> searchService) => this.searchService = searchService;
 
 		public override void OnVisibilityChanged(ToolWindowContentVisibilityEvent visEvent) {
 			if (visEvent == ToolWindowContentVisibilityEvent.Removed)

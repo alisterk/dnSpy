@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -35,16 +35,14 @@ namespace dnSpy.Hex.Editor {
 		readonly Lazy<WpfHexViewMarginProvider, IWpfHexViewMarginMetadata>[] wpfHexViewMarginProviders;
 
 		[ImportingConstructor]
-		WpfHexViewMarginProviderCollectionProviderImpl([ImportMany] IEnumerable<Lazy<WpfHexViewMarginProvider, IWpfHexViewMarginMetadata>> wpfHexViewMarginProviders) {
-			this.wpfHexViewMarginProviders = VSUTIL.Orderer.Order(wpfHexViewMarginProviders).ToArray();
-		}
+		WpfHexViewMarginProviderCollectionProviderImpl([ImportMany] IEnumerable<Lazy<WpfHexViewMarginProvider, IWpfHexViewMarginMetadata>> wpfHexViewMarginProviders) => this.wpfHexViewMarginProviders = VSUTIL.Orderer.Order(wpfHexViewMarginProviders).ToArray();
 
 		public override WpfHexViewMarginProviderCollection Create(WpfHexViewHost wpfHexViewHost, WpfHexViewMargin marginContainer, string marginContainerName) {
-			if (wpfHexViewHost == null)
+			if (wpfHexViewHost is null)
 				throw new ArgumentNullException(nameof(wpfHexViewHost));
-			if (marginContainer == null)
+			if (marginContainer is null)
 				throw new ArgumentNullException(nameof(marginContainer));
-			if (marginContainerName == null)
+			if (marginContainerName is null)
 				throw new ArgumentNullException(nameof(marginContainerName));
 			return new WpfHexViewMarginProviderCollectionImpl(wpfHexViewMarginProviders, wpfHexViewHost, marginContainer, marginContainerName);
 		}

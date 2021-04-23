@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -54,19 +54,17 @@ namespace dnSpy.Contracts.Command {
 		/// <param name="group">Command group, eg. <see cref="CommandConstants.StandardGroup"/></param>
 		/// <param name="cmdId">Command ID</param>
 		public CommandTargetCommand(ICommandTarget commandTarget, Guid group, int cmdId) {
-			if (commandTarget == null)
-				throw new ArgumentNullException(nameof(commandTarget));
-			this.commandTarget = commandTarget;
+			this.commandTarget = commandTarget ?? throw new ArgumentNullException(nameof(commandTarget));
 			this.group = group;
 			this.cmdId = cmdId;
 		}
 
-		event EventHandler ICommand.CanExecuteChanged {
-			add { CommandManager.RequerySuggested += value; }
-			remove { CommandManager.RequerySuggested -= value; }
+		event EventHandler? ICommand.CanExecuteChanged {
+			add => CommandManager.RequerySuggested += value;
+			remove => CommandManager.RequerySuggested -= value;
 		}
 
-		bool ICommand.CanExecute(object parameter) => commandTarget.CanExecute(group, cmdId) == CommandTargetStatus.Handled;
-		void ICommand.Execute(object parameter) => commandTarget.Execute(group, cmdId);
+		bool ICommand.CanExecute(object? parameter) => commandTarget.CanExecute(group, cmdId) == CommandTargetStatus.Handled;
+		void ICommand.Execute(object? parameter) => commandTarget.Execute(group, cmdId);
 	}
 }

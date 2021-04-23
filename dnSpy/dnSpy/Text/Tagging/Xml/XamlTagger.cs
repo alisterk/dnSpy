@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -33,11 +33,9 @@ namespace dnSpy.Text.Tagging.Xml {
 		readonly XamlTaggerClassificationTypes xamlTaggerClassificationTypes;
 
 		[ImportingConstructor]
-		XamlTaggerProvider(XamlTaggerClassificationTypes xamlTaggerClassificationTypes) {
-			this.xamlTaggerClassificationTypes = xamlTaggerClassificationTypes;
-		}
+		XamlTaggerProvider(XamlTaggerClassificationTypes xamlTaggerClassificationTypes) => this.xamlTaggerClassificationTypes = xamlTaggerClassificationTypes;
 
-		public ITagger<T> CreateTagger<T>(ITextBuffer buffer) where T : ITag => new XamlTagger(xamlTaggerClassificationTypes) as ITagger<T>;
+		public ITagger<T>? CreateTagger<T>(ITextBuffer buffer) where T : ITag => new XamlTagger(xamlTaggerClassificationTypes) as ITagger<T>;
 	}
 
 	sealed class XamlTagger : XmlTaggerBase {
@@ -61,13 +59,13 @@ namespace dnSpy.Text.Tagging.Xml {
 		IEnumerable<ITagSpan<IClassificationTag>> GetXamlAttributeValueTags() {
 			foreach (var info in xamlAttributeValueClassifier.GetTags()) {
 				var tag = GetClassificationTag(info.Kind);
-				if (tag == null)
+				if (tag is null)
 					continue;
 				yield return new TagSpan<IClassificationTag>(info.Span, tag);
 			}
 		}
 
-		ClassificationTag GetClassificationTag(XamlKind kind) {
+		ClassificationTag? GetClassificationTag(XamlKind kind) {
 			switch (kind) {
 			case XamlKind.Delimiter:
 				return xamlTaggerClassificationTypes.Delimiter;

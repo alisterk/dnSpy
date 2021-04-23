@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -27,23 +27,21 @@ namespace dnSpy.Hex {
 		public override int VersionNumber { get; }
 		public override int ReiteratedVersionNumber { get; }
 
-		public override NormalizedHexChangeCollection Changes => changes;
-		public override HexVersion Next => next;
+		public override NormalizedHexChangeCollection? Changes => changes;
+		public override HexVersion? Next => next;
 
-		NormalizedHexChangeCollection changes;
-		HexVersion next;
+		NormalizedHexChangeCollection? changes;
+		HexVersion? next;
 
 		public HexVersionImpl(HexBuffer buffer, int versionNumber, int reiteratedVersionNumber) {
-			if (buffer == null)
-				throw new ArgumentNullException(nameof(buffer));
-			Buffer = buffer;
+			Buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
 			VersionNumber = versionNumber;
 			ReiteratedVersionNumber = reiteratedVersionNumber;
 		}
 
 		public HexVersionImpl SetChanges(IList<HexChange> changes, int? reiteratedVersionNumber = null) {
 			var normalizedChanges = NormalizedHexChangeCollection.Create(changes);
-			if (reiteratedVersionNumber == null)
+			if (reiteratedVersionNumber is null)
 				reiteratedVersionNumber = changes.Count == 0 ? ReiteratedVersionNumber : VersionNumber + 1;
 			var newVersion = new HexVersionImpl(Buffer, VersionNumber + 1, reiteratedVersionNumber.Value);
 			this.changes = normalizedChanges;

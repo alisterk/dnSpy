@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -32,9 +32,7 @@ namespace dnSpy.Settings.Dialog {
 		public double Order => 0;
 
 		[ImportingConstructor]
-		SettingsAppCommandLineArgsHandler(Lazy<IAppSettingsService> appSettingsService) {
-			this.appSettingsService = appSettingsService;
-		}
+		SettingsAppCommandLineArgsHandler(Lazy<IAppSettingsService> appSettingsService) => this.appSettingsService = appSettingsService;
 
 		public void OnNewArgs(IAppCommandLineArgs args) {
 			if (!args.HasArgument(ARG_NAME))
@@ -42,16 +40,15 @@ namespace dnSpy.Settings.Dialog {
 			Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() => {
 				var guidString = args.GetArgumentValue(ARG_NAME);
 				var guid = TryParse(guidString);
-				if (guid != null)
+				if (guid is not null)
 					appSettingsService.Value.Show(guid.Value);
 				else
 					appSettingsService.Value.Show();
 			}));
 		}
 
-		static Guid? TryParse(string guidString) {
-			Guid guid;
-			if (Guid.TryParse(guidString, out guid))
+		static Guid? TryParse(string? guidString) {
+			if (Guid.TryParse(guidString, out var guid))
 				return guid;
 			return null;
 		}

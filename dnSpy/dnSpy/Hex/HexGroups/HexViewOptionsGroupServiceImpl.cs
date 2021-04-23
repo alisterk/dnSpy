@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -32,9 +32,7 @@ namespace dnSpy.Hex.HexGroups {
 		readonly HexViewOptionsGroupServiceImpl hexViewOptionsGroupServiceImpl;
 
 		[ImportingConstructor]
-		HexEditorFactoryServiceListenerImpl(HexViewOptionsGroupServiceImpl hexViewOptionsGroupServiceImpl) {
-			this.hexViewOptionsGroupServiceImpl = hexViewOptionsGroupServiceImpl;
-		}
+		HexEditorFactoryServiceListenerImpl(HexViewOptionsGroupServiceImpl hexViewOptionsGroupServiceImpl) => this.hexViewOptionsGroupServiceImpl = hexViewOptionsGroupServiceImpl;
 
 		public override void HexViewCreated(WpfHexView hexView) => hexViewOptionsGroupServiceImpl.HexViewCreated(hexView);
 	}
@@ -55,10 +53,10 @@ namespace dnSpy.Hex.HexGroups {
 			optionsStorage = new OptionsStorage(settingsService);
 		}
 
-		internal string GetSubGroup(WpfHexView hexView) {
+		internal string? GetSubGroup(WpfHexView hexView) {
 			foreach (var lz in tagOptionDefinitionProviders) {
 				var subGroup = lz.Value.GetSubGroup(hexView);
-				if (subGroup != null)
+				if (subGroup is not null)
 					return subGroup;
 			}
 			return null;
@@ -66,10 +64,9 @@ namespace dnSpy.Hex.HexGroups {
 
 		public override HexViewOptionsGroup GetGroup(string name) => GetGroupCore(name);
 		HexViewOptionsGroupImpl GetGroupCore(string name) {
-			if (name == null)
+			if (name is null)
 				throw new ArgumentNullException(nameof(name));
-			HexViewOptionsGroupImpl group;
-			if (!nameToGroup.TryGetValue(name, out group)) {
+			if (!nameToGroup.TryGetValue(name, out var group)) {
 				var defaultOptions = GetDefaultOptions(name);
 				nameToGroup.Add(name, group = new HexViewOptionsGroupImpl(this, name, defaultOptions, optionsStorage));
 			}
@@ -83,7 +80,7 @@ namespace dnSpy.Hex.HexGroups {
 					continue;
 				options.AddRange(lz.Value.GetOptions());
 			}
-			return options.Where(a => a.SubGroup != null && a.Name != null && a.Type != null).ToArray();
+			return options.Where(a => a.SubGroup is not null && a.Name is not null && a.Type is not null).ToArray();
 		}
 
 		internal void HexViewCreated(WpfHexView hexView) {
@@ -93,7 +90,7 @@ namespace dnSpy.Hex.HexGroups {
 
 			foreach (var lz in hexViewOptionsGroupNameProviders) {
 				var name = lz.Value.TryGetGroupName(hexView);
-				if (name != null) {
+				if (name is not null) {
 					var group = GetGroupCore(name);
 					group.HexViewCreated(hexView);
 					break;

@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -42,7 +42,7 @@ namespace dnSpy.Contracts.App {
 		/// <param name="settingsService">Settings manager</param>
 		/// <param name="args">Command line arguments</param>
 		/// <returns></returns>
-		IEnumerable<object> Load(ISettingsService settingsService, IAppCommandLineArgs args);
+		IEnumerable<object?> Load(ISettingsService settingsService, IAppCommandLineArgs args);
 
 		/// <summary>
 		/// Called when everything has been loaded
@@ -63,9 +63,7 @@ namespace dnSpy.Contracts.App {
 	public sealed class ExportDsLoaderAttribute : ExportAttribute, IDsLoaderMetadata {
 		/// <summary>Constructor</summary>
 		public ExportDsLoaderAttribute()
-			: base(typeof(IDsLoader)) {
-			Order = double.MaxValue;
-		}
+			: base(typeof(IDsLoader)) => Order = double.MaxValue;
 
 		/// <summary>
 		/// Order of this instance

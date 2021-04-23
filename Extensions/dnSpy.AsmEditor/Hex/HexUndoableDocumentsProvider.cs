@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -32,26 +32,22 @@ namespace dnSpy.AsmEditor.Hex {
 		readonly Lazy<IHexBufferService> hexBufferService;
 
 		[ImportingConstructor]
-		HexUndoableDocumentsProvider(Lazy<IHexBufferService> hexBufferService) {
-			this.hexBufferService = hexBufferService;
-		}
+		HexUndoableDocumentsProvider(Lazy<IHexBufferService> hexBufferService) => this.hexBufferService = hexBufferService;
 
-		IEnumerable<IUndoObject> IUndoableDocumentsProvider.GetObjects() => hexBufferService.Value.GetBuffers().Select(a => TryGetUndoObject(a)).Where(a => a != null);
+		IEnumerable<IUndoObject> IUndoableDocumentsProvider.GetObjects() => hexBufferService.Value.GetBuffers().Select(a => TryGetUndoObject(a)).Where(a => a is not null);
 
-		IUndoObject IUndoableDocumentsProvider.GetUndoObject(object obj) {
-			var buffer = obj as HexBuffer;
-			if (buffer != null)
+		IUndoObject? IUndoableDocumentsProvider.GetUndoObject(object obj) {
+			if (obj is HexBuffer buffer)
 				return TryGetUndoObject(buffer);
 			return null;
 		}
 
-		bool IUndoableDocumentsProvider.OnExecutedOneCommand(IUndoObject obj) => TryGetHexBuffer(obj) != null;
-		object IUndoableDocumentsProvider.GetDocument(IUndoObject obj) => TryGetHexBuffer(obj);
-		internal static HexBuffer TryGetHexBuffer(IUndoObject iuo) => (iuo as UndoObject)?.Value as HexBuffer;
+		bool IUndoableDocumentsProvider.OnExecutedOneCommand(IUndoObject obj) => TryGetHexBuffer(obj) is not null;
+		object? IUndoableDocumentsProvider.GetDocument(IUndoObject obj) => TryGetHexBuffer(obj);
+		internal static HexBuffer? TryGetHexBuffer(IUndoObject? iuo) => (iuo as UndoObject)?.Value as HexBuffer;
 
 		static IUndoObject TryGetUndoObject(HexBuffer buffer) {
-			IUndoObject undoObject;
-			buffer.Properties.TryGetProperty(undoObjectKey, out undoObject);
+			buffer.Properties.TryGetProperty(undoObjectKey, out IUndoObject undoObject);
 			return undoObject;
 		}
 

@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2011 AlphaSierraPapa for the SharpDevelop Team
+// Copyright (c) 2011 AlphaSierraPapa for the SharpDevelop Team
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this
 // software and associated documentation files (the "Software"), to deal in the Software
@@ -31,10 +31,7 @@ namespace dnSpy.Analyzer.TreeNodes {
 		readonly bool isSystemObject;
 
 		public TypeInstantiationsNode(TypeDef analyzedType) {
-			if (analyzedType == null)
-				throw new ArgumentNullException(nameof(analyzedType));
-
-			this.analyzedType = analyzedType;
+			this.analyzedType = analyzedType ?? throw new ArgumentNullException(nameof(analyzedType));
 			isSystemObject = analyzedType.DefinitionAssembly.IsCorLib() && analyzedType.FullName == "System.Object";
 		}
 
@@ -54,13 +51,12 @@ namespace dnSpy.Analyzer.TreeNodes {
 				// ignore chained constructors
 				// (since object is the root of everything, we can short circuit the test in this case)
 				if (method.Name == ".ctor" &&
-					(isSystemObject || analyzedType == type || TypesHierarchyHelpers.IsBaseType(analyzedType, type, false)))
+					(isSystemObject || new SigComparer().Equals(analyzedType, type) || TypesHierarchyHelpers.IsBaseType(analyzedType, type, false)))
 					continue;
 
-				Instruction foundInstr = null;
+				Instruction? foundInstr = null;
 				foreach (Instruction instr in method.Body.Instructions) {
-					IMethod mr = instr.Operand as IMethod;
-					if (mr != null && !mr.IsField && mr.Name == ".ctor") {
+					if (instr.Operand is IMethod mr && !mr.IsField && mr.Name == ".ctor") {
 						if (Helpers.IsReferencedBy(analyzedType, mr.DeclaringType)) {
 							foundInstr = instr;
 							break;
@@ -68,11 +64,11 @@ namespace dnSpy.Analyzer.TreeNodes {
 					}
 				}
 
-				if (foundInstr != null)
+				if (foundInstr is not null)
 					yield return new MethodNode(method) { Context = Context, SourceRef = new SourceRef(method, foundInstr.Offset, foundInstr.Operand as IMDTokenProvider) };
 			}
 		}
 
-		public static bool CanShow(TypeDef type) => (type.IsClass && !(type.IsAbstract && type.IsSealed) && !type.IsEnum);
+		public static bool CanShow(TypeDef type) => type.IsClass && !type.IsAbstract && !type.IsEnum;
 	}
 }

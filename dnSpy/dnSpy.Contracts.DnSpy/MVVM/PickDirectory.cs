@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -18,7 +18,7 @@
 */
 
 using System.ComponentModel.Composition;
-using System.Windows.Forms;
+using Ookii.Dialogs.Wpf;
 
 namespace dnSpy.Contracts.MVVM {
 	/// <summary>
@@ -30,7 +30,7 @@ namespace dnSpy.Contracts.MVVM {
 		/// </summary>
 		/// <param name="currentDir">Current directory or null</param>
 		/// <returns></returns>
-		string GetDirectory(string currentDir = null);
+		string? GetDirectory(string? currentDir = null);
 	}
 
 	/// <summary>
@@ -39,10 +39,10 @@ namespace dnSpy.Contracts.MVVM {
 	[Export(typeof(IPickDirectory))]
 	public sealed class PickDirectory : IPickDirectory {
 		/// <inheritdoc/>
-		public string GetDirectory(string currentDir) {
-			var dlg = new FolderBrowserDialog();
+		public string? GetDirectory(string? currentDir) {
+			var dlg = new VistaFolderBrowserDialog();
 			dlg.SelectedPath = currentDir ?? string.Empty;
-			if (dlg.ShowDialog() != DialogResult.OK)
+			if (dlg.ShowDialog() != true)
 				return null;
 
 			return dlg.SelectedPath;

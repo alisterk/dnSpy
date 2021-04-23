@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -26,19 +26,17 @@ using dnSpy.Contracts.Hex.Files.DotNet;
 namespace dnSpy.Hex.Files.DotNet {
 	sealed class DotNetMetadataHeadersImpl : DotNetMetadataHeaders {
 		public override DotNetMetadataHeaderData MetadataHeader { get; }
-		public override TablesHeap TablesStream { get; }
-		public override StringsHeap StringsStream { get; }
-		public override USHeap USStream { get; }
-		public override GUIDHeap GUIDStream { get; }
-		public override BlobHeap BlobStream { get; }
-		public override PdbHeap PdbStream { get; }
+		public override TablesHeap? TablesStream { get; }
+		public override StringsHeap? StringsStream { get; }
+		public override USHeap? USStream { get; }
+		public override GUIDHeap? GUIDStream { get; }
+		public override BlobHeap? BlobStream { get; }
+		public override PdbHeap? PdbStream { get; }
 		public override ReadOnlyCollection<DotNetHeap> Streams { get; }
 
 		public DotNetMetadataHeadersImpl(HexSpan metadataSpan, DotNetMetadataHeaderData metadataHeader, DotNetHeap[] streams)
 			: base(metadataSpan) {
-			if (metadataHeader == null)
-				throw new ArgumentNullException(nameof(metadataHeader));
-			MetadataHeader = metadataHeader;
+			MetadataHeader = metadataHeader ?? throw new ArgumentNullException(nameof(metadataHeader));
 			Streams = new ReadOnlyCollection<DotNetHeap>(streams);
 			TablesStream = FindStream<TablesHeap>(streams);
 			StringsStream = FindStream<StringsHeap>(streams);
@@ -50,16 +48,15 @@ namespace dnSpy.Hex.Files.DotNet {
 				heap.SetMetadata(this);
 		}
 
-		T FindStream<T>(DotNetHeap[] streams) where T : DotNetHeap {
+		T? FindStream<T>(DotNetHeap[] streams) where T : DotNetHeap {
 			foreach (var stream in streams) {
-				var t = stream as T;
-				if (t != null)
+				if (stream is T t)
 					return t;
 			}
 			return null;
 		}
 
-		public override ComplexData GetStructure(HexPosition position) {
+		public override ComplexData? GetStructure(HexPosition position) {
 			if (!MetadataSpan.Contains(position))
 				return null;
 

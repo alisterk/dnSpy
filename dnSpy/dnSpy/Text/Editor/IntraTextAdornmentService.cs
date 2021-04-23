@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -40,16 +40,14 @@ namespace dnSpy.Text.Editor {
 		readonly IIntraTextAdornmentServiceProvider intraTextAdornmentServiceProvider;
 
 		[ImportingConstructor]
-		IntraTextAdornmentServiceSpaceNegotiatingAdornmentTaggerProvider(IIntraTextAdornmentServiceProvider intraTextAdornmentServiceProvider) {
-			this.intraTextAdornmentServiceProvider = intraTextAdornmentServiceProvider;
-		}
+		IntraTextAdornmentServiceSpaceNegotiatingAdornmentTaggerProvider(IIntraTextAdornmentServiceProvider intraTextAdornmentServiceProvider) => this.intraTextAdornmentServiceProvider = intraTextAdornmentServiceProvider;
 
-		public ITagger<T> CreateTagger<T>(ITextView textView, ITextBuffer buffer) where T : ITag {
+		public ITagger<T>? CreateTagger<T>(ITextView textView, ITextBuffer buffer) where T : ITag {
 			if (textView.TextBuffer != buffer)
 				return null;
 			var wpfTextView = textView as IWpfTextView;
-			Debug.Assert(wpfTextView != null);
-			if (wpfTextView == null)
+			Debug2.Assert(wpfTextView is not null);
+			if (wpfTextView is null)
 				return null;
 			return wpfTextView.Properties.GetOrCreateSingletonProperty(
 				typeof(IntraTextAdornmentServiceSpaceNegotiatingAdornmentTagger),
@@ -62,14 +60,12 @@ namespace dnSpy.Text.Editor {
 	}
 
 	sealed class IntraTextAdornmentServiceSpaceNegotiatingAdornmentTagger : ITagger<SpaceNegotiatingAdornmentTag>, IIntraTextAdornmentServiceSpaceNegotiatingAdornmentTagger {
-		public event EventHandler<SnapshotSpanEventArgs> TagsChanged;
+		public event EventHandler<SnapshotSpanEventArgs>? TagsChanged;
 
 		readonly IIntraTextAdornmentService intraTextAdornmentService;
 
 		public IntraTextAdornmentServiceSpaceNegotiatingAdornmentTagger(IIntraTextAdornmentService intraTextAdornmentService) {
-			if (intraTextAdornmentService == null)
-				throw new ArgumentNullException(nameof(intraTextAdornmentService));
-			this.intraTextAdornmentService = intraTextAdornmentService;
+			this.intraTextAdornmentService = intraTextAdornmentService ?? throw new ArgumentNullException(nameof(intraTextAdornmentService));
 			intraTextAdornmentService.RegisterTagger(this);
 		}
 
@@ -88,12 +84,10 @@ namespace dnSpy.Text.Editor {
 		readonly IViewTagAggregatorFactoryService viewTagAggregatorFactoryService;
 
 		[ImportingConstructor]
-		IntraTextAdornmentServiceProvider(IViewTagAggregatorFactoryService viewTagAggregatorFactoryService) {
-			this.viewTagAggregatorFactoryService = viewTagAggregatorFactoryService;
-		}
+		IntraTextAdornmentServiceProvider(IViewTagAggregatorFactoryService viewTagAggregatorFactoryService) => this.viewTagAggregatorFactoryService = viewTagAggregatorFactoryService;
 
 		public IIntraTextAdornmentService Get(IWpfTextView wpfTextView) {
-			if (wpfTextView == null)
+			if (wpfTextView is null)
 				throw new ArgumentNullException(nameof(wpfTextView));
 			return wpfTextView.Properties.GetOrCreateSingletonProperty(typeof(IntraTextAdornmentService), () => new IntraTextAdornmentService(wpfTextView, viewTagAggregatorFactoryService));
 		}
@@ -105,37 +99,35 @@ namespace dnSpy.Text.Editor {
 	}
 
 	sealed class IntraTextAdornmentService : IIntraTextAdornmentService {
-#pragma warning disable 0169
+#pragma warning disable CS0169
 		[Export(typeof(AdornmentLayerDefinition))]
 		[Name(PredefinedDsAdornmentLayers.IntraTextAdornment)]
 		[Order(After = PredefinedDsAdornmentLayers.BottomLayer, Before = PredefinedDsAdornmentLayers.TopLayer)]
 		[Order(After = PredefinedAdornmentLayers.Text)]
-		static AdornmentLayerDefinition adornmentLayer;
-#pragma warning restore 0169
+		static AdornmentLayerDefinition? adornmentLayer;
+#pragma warning restore CS0169
 
 		readonly IWpfTextView wpfTextView;
 		readonly ITagAggregator<IntraTextAdornmentTag> tagAggregator;
 		readonly List<AdornmentTagInfo> adornmentTagInfos;
 		readonly HashSet<object> currentLineIdentityTags;
-		IAdornmentLayer layer;
-		IIntraTextAdornmentServiceSpaceNegotiatingAdornmentTagger tagger;
+		IAdornmentLayer? layer;
+		IIntraTextAdornmentServiceSpaceNegotiatingAdornmentTagger? tagger;
 		static readonly object providerTag = new object();
 
 		public IntraTextAdornmentService(IWpfTextView wpfTextView, IViewTagAggregatorFactoryService viewTagAggregatorFactoryService) {
-			if (wpfTextView == null)
-				throw new ArgumentNullException(nameof(wpfTextView));
-			if (viewTagAggregatorFactoryService == null)
+			if (viewTagAggregatorFactoryService is null)
 				throw new ArgumentNullException(nameof(viewTagAggregatorFactoryService));
 			adornmentTagInfos = new List<AdornmentTagInfo>();
 			currentLineIdentityTags = new HashSet<object>();
-			this.wpfTextView = wpfTextView;
+			this.wpfTextView = wpfTextView ?? throw new ArgumentNullException(nameof(wpfTextView));
 			tagAggregator = viewTagAggregatorFactoryService.CreateTagAggregator<IntraTextAdornmentTag>(wpfTextView);
 			tagAggregator.TagsChanged += TagAggregator_TagsChanged;
 			wpfTextView.Closed += WpfTextView_Closed;
 			wpfTextView.LayoutChanged += WpfTextView_LayoutChanged;
 		}
 
-		void Selection_SelectionChanged(object sender, EventArgs e) => UpdateIsSelected();
+		void Selection_SelectionChanged(object? sender, EventArgs e) => UpdateIsSelected();
 
 		void UpdateIsSelected() {
 			if (adornmentTagInfos.Count == 0)
@@ -150,21 +142,21 @@ namespace dnSpy.Text.Editor {
 			}
 		}
 
-		void UpdateIsSelected(AdornmentTagInfo adornmentInfo, ITextViewLine line) {
-			if (line == null)
+		void UpdateIsSelected(AdornmentTagInfo adornmentInfo, ITextViewLine? line) {
+			if (line is null)
 				line = wpfTextView.TextViewLines.GetTextViewLineContainingBufferPosition(adornmentInfo.Span.Start);
-			var selSpan = line == null ? null : wpfTextView.Selection.GetSelectionOnTextViewLine(line);
-			bool selected = selSpan != null && selSpan.Value.Contains(new VirtualSnapshotSpan(adornmentInfo.Span));
+			var selSpan = line is null ? null : wpfTextView.Selection.GetSelectionOnTextViewLine(line);
+			bool selected = selSpan is not null && selSpan.Value.Contains(new VirtualSnapshotSpan(adornmentInfo.Span));
 			IntraTextAdornment.SetIsSelected(adornmentInfo.UserUIElement, selected);
 		}
 
 		sealed class AdornmentTagInfo {
-			public SpaceNegotiatingAdornmentTag Tag;
+			public SpaceNegotiatingAdornmentTag? Tag;
 			public readonly SnapshotSpan Span;
 			public readonly UIElement UserUIElement;
-			public ZoomingUIElement TopUIElement;
+			public ZoomingUIElement? TopUIElement;
 			public readonly IMappingTagSpan<IntraTextAdornmentTag> TagSpan;
-			public object LineIdentityTag;
+			public object? LineIdentityTag;
 
 			public AdornmentTagInfo(SnapshotSpan span, UIElement element, IMappingTagSpan<IntraTextAdornmentTag> tagSpan) {
 				Span = span;
@@ -173,15 +165,16 @@ namespace dnSpy.Text.Editor {
 			}
 
 			public void Initialize() {
-				if (TopUIElement == null)
+				if (TopUIElement is null)
 					TopUIElement = new ZoomingUIElement(UserUIElement);
 				TopUIElement.Initialize();
 				TopUIElement.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
 			}
 		}
 
-		void WpfTextView_LayoutChanged(object sender, TextViewLayoutChangedEventArgs e) {
+		void WpfTextView_LayoutChanged(object? sender, TextViewLayoutChangedEventArgs e) {
 			if (adornmentTagInfos.Count > 0) {
+				Debug2.Assert(layer is not null);
 				currentLineIdentityTags.Clear();
 				foreach (var line in wpfTextView.TextViewLines)
 					currentLineIdentityTags.Add(line.IdentityTag);
@@ -189,7 +182,7 @@ namespace dnSpy.Text.Editor {
 					currentLineIdentityTags.Remove(line.IdentityTag);
 				for (int i = adornmentTagInfos.Count - 1; i >= 0; i--) {
 					var adornmentInfo = adornmentTagInfos[i];
-					if (!currentLineIdentityTags.Contains(adornmentInfo.LineIdentityTag))
+					if (!currentLineIdentityTags.Contains(adornmentInfo.LineIdentityTag!))
 						layer.RemoveAdornmentsByTag(adornmentInfo);
 				}
 				currentLineIdentityTags.Clear();
@@ -201,12 +194,12 @@ namespace dnSpy.Text.Editor {
 
 					foreach (var identityTag in tags) {
 						var adornmentInfo = identityTag as AdornmentTagInfo;
-						Debug.Assert(adornmentInfo != null);
-						if (adornmentInfo == null)
+						Debug2.Assert(adornmentInfo is not null);
+						if (adornmentInfo is null)
 							continue;
 						var bounds = line.GetAdornmentBounds(identityTag);
-						Debug.Assert(bounds != null);
-						if (bounds == null)
+						Debug2.Assert(bounds is not null);
+						if (bounds is null)
 							continue;
 
 						adornmentInfo.Initialize();
@@ -222,14 +215,14 @@ namespace dnSpy.Text.Editor {
 
 				foreach (var identityTag in tags) {
 					var adornmentInfo = identityTag as AdornmentTagInfo;
-					Debug.Assert(adornmentInfo != null);
-					if (adornmentInfo == null)
+					Debug2.Assert(adornmentInfo is not null);
+					if (adornmentInfo is null)
 						continue;
 					var bounds = line.GetAdornmentBounds(identityTag);
-					if (bounds == null)
+					if (bounds is null)
 						continue;
 
-					if (layer == null) {
+					if (layer is null) {
 						layer = wpfTextView.GetAdornmentLayer(PredefinedDsAdornmentLayers.IntraTextAdornment);
 						// Can't do this in the ctor since Selection hasn't been initialized yet
 						wpfTextView.Selection.SelectionChanged += Selection_SelectionChanged;
@@ -247,16 +240,19 @@ namespace dnSpy.Text.Editor {
 		}
 
 		void UpdateAdornmentUIState(ITextViewLine line, AdornmentTagInfo adornmentInfo, TextBounds bounds) {
+			Debug2.Assert(adornmentInfo.TopUIElement is not null);
 			double verticalScale = line.LineTransform.VerticalScale;
 			adornmentInfo.TopUIElement.SetScale(verticalScale);
-			Canvas.SetTop(adornmentInfo.TopUIElement, bounds.TextTop + line.Baseline - verticalScale * adornmentInfo.Tag.Baseline);
+			Canvas.SetTop(adornmentInfo.TopUIElement, bounds.TextTop + line.Baseline - verticalScale * adornmentInfo.Tag!.Baseline);
 			Canvas.SetLeft(adornmentInfo.TopUIElement, bounds.Left);
 		}
 
 		bool AddAdornment(AdornmentTagInfo adornmentInfo, ITextViewLine line) {
+			Debug2.Assert(adornmentInfo.TopUIElement is not null);
+			Debug2.Assert(layer is not null);
 			SizeChangedEventHandler sizeChanged = (a, e) => {
 				var bounds = line.GetAdornmentBounds(adornmentInfo);
-				if (bounds == null)
+				if (bounds is null)
 					return;
 				// Sometimes the size just gets changed very little, eg. from 400 to 399.95.....
 				const double d = 0.5;
@@ -285,9 +281,7 @@ namespace dnSpy.Text.Editor {
 
 		sealed class ZoomingUIElement : ContentControl {
 			readonly UIElement uiElem;
-			public ZoomingUIElement(UIElement uiElem) {
-				this.uiElem = uiElem;
-			}
+			public ZoomingUIElement(UIElement uiElem) => this.uiElem = uiElem;
 			public void Initialize() => Content = uiElem;
 			public void SetScale(double value) =>
 				LayoutTransform = value == 1 ? ScaleTransform.Identity : new ScaleTransform(1, value);
@@ -296,11 +290,9 @@ namespace dnSpy.Text.Editor {
 		}
 
 		public void RegisterTagger(IIntraTextAdornmentServiceSpaceNegotiatingAdornmentTagger tagger) {
-			if (this.tagger != null)
+			if (this.tagger is not null)
 				throw new InvalidOperationException();
-			if (tagger == null)
-				throw new ArgumentNullException(nameof(tagger));
-			this.tagger = tagger;
+			this.tagger = tagger ?? throw new ArgumentNullException(nameof(tagger));
 		}
 
 		public IEnumerable<ITagSpan<SpaceNegotiatingAdornmentTag>> GetTags(NormalizedSnapshotSpanCollection spans) {
@@ -330,14 +322,14 @@ namespace dnSpy.Text.Editor {
 
 		double Filter(double value) => value < 0 || value == double.PositiveInfinity || double.IsNaN(value) ? 0 : value;
 
-		void TagAggregator_TagsChanged(object sender, TagsChangedEventArgs e) {
+		void TagAggregator_TagsChanged(object? sender, TagsChangedEventArgs e) {
 			if (wpfTextView.IsClosed)
 				return;
 			foreach (var span in e.Span.GetSpans(wpfTextView.TextBuffer.CurrentSnapshot))
 				tagger?.RefreshSpans(new SnapshotSpanEventArgs(span));
 		}
 
-		void WpfTextView_Closed(object sender, EventArgs e) {
+		void WpfTextView_Closed(object? sender, EventArgs e) {
 			wpfTextView.Closed -= WpfTextView_Closed;
 			wpfTextView.LayoutChanged -= WpfTextView_LayoutChanged;
 			wpfTextView.Selection.SelectionChanged -= Selection_SelectionChanged;

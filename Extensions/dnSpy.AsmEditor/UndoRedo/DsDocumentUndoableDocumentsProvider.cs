@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -33,9 +33,7 @@ namespace dnSpy.AsmEditor.UndoRedo {
 		readonly IDocumentTabService documentTabService;
 
 		[ImportingConstructor]
-		DsDocumentUndoableDocumentsProvider(IDocumentTabService documentTabService) {
-			this.documentTabService = documentTabService;
-		}
+		DsDocumentUndoableDocumentsProvider(IDocumentTabService documentTabService) => this.documentTabService = documentTabService;
 
 		IEnumerable<IUndoObject> IUndoableDocumentsProvider.GetObjects() {
 			foreach (var file in GetAllDocuments())
@@ -44,29 +42,26 @@ namespace dnSpy.AsmEditor.UndoRedo {
 
 		IEnumerable<IDsDocument> GetAllDocuments() => documentTabService.DocumentTreeView.GetAllCreatedDocumentNodes().Select(a => a.Document);
 
-		IUndoObject IUndoableDocumentsProvider.GetUndoObject(object obj) {
-			var node = obj as DocumentTreeNodeData;
-			if (node != null) {
+		IUndoObject? IUndoableDocumentsProvider.GetUndoObject(object obj) {
+			if (obj is DocumentTreeNodeData node) {
 				var documentNode = node.GetDocumentNode();
-				Debug.Assert(documentNode != null);
-				if (documentNode != null) {
+				Debug2.Assert(documentNode is not null);
+				if (documentNode is not null) {
 					// Need this check here since some commands (eg. create netmodule) create nodes
 					// and they haven't yet been inserted into the treeview.
 					if (documentNode is ModuleDocumentNode)
 						return GetUndoObjectNoChecks(documentNode.Document);
-					if (documentNode is AssemblyDocumentNode) {
-						var asmNode = (AssemblyDocumentNode)documentNode;
+					if (documentNode is AssemblyDocumentNode asmNode) {
 						asmNode.TreeNode.EnsureChildrenLoaded();
 						var modNode = asmNode.TreeNode.DataChildren.FirstOrDefault() as ModuleDocumentNode;
-						Debug.Assert(modNode != null);
-						if (modNode != null)
+						Debug2.Assert(modNode is not null);
+						if (modNode is not null)
 							return GetUndoObjectNoChecks(modNode.Document);
 					}
 					return GetUndoObject(documentNode.Document);
 				}
 			}
-			var document = obj as IDsDocument;
-			if (document != null)
+			if (obj is IDsDocument document)
 				return GetUndoObject(document);
 
 			return null;
@@ -74,9 +69,9 @@ namespace dnSpy.AsmEditor.UndoRedo {
 
 		bool IUndoableDocumentsProvider.OnExecutedOneCommand(IUndoObject obj) {
 			var file = TryGetDocument(obj);
-			if (file != null) {
+			if (file is not null) {
 				var module = file.ModuleDef;
-				if (module != null)
+				if (module is not null)
 					module.ResetTypeDefFindCache();
 				documentTabService.RefreshModifiedDocument(file);
 				return true;
@@ -85,16 +80,15 @@ namespace dnSpy.AsmEditor.UndoRedo {
 			return false;
 		}
 
-		object IUndoableDocumentsProvider.GetDocument(IUndoObject obj) => TryGetDocument(obj);
+		object? IUndoableDocumentsProvider.GetDocument(IUndoObject obj) => TryGetDocument(obj);
 
 		IDsDocument GetDocumentFile(IDsDocument document) {
-			var dnDocument = document as IDsDotNetDocument;
-			if (dnDocument != null) {
+			if (document is IDsDotNetDocument dnDocument) {
 				// Assemblies and manifest modules don't share a IDsDocument instance, but we must
 				// use the same IUndoObject instance since they're part of the same file.
 				var module = document.ModuleDef;
-				Debug.Assert(module != null);
-				if (module == null)
+				Debug2.Assert(module is not null);
+				if (module is null)
 					throw new InvalidOperationException();
 				var modFile = FindModule(module);
 				// It could've been removed but some menu item handler could still have a reference
@@ -105,15 +99,15 @@ namespace dnSpy.AsmEditor.UndoRedo {
 			return document;
 		}
 
-		IDsDocument FindModule(ModuleDef module) => documentTabService.DocumentTreeView.FindNode(module)?.Document;
+		IDsDocument? FindModule(ModuleDef module) => documentTabService.DocumentTreeView.FindNode(module)?.Document;
 		IUndoObject GetUndoObject(IDsDocument document) => GetUndoObjectNoChecks(GetDocumentFile(document));
 
 		IUndoObject GetUndoObjectNoChecks(IDsDocument document) {
-			var uo = document.Annotation<UndoObject>() ?? document.AddAnnotation(new UndoObject());
+			var uo = document.Annotation<UndoObject>() ?? document.AddAnnotation(new UndoObject())!;
 			uo.Value = document;
 			return uo;
 		}
 
-		public static IDsDocument TryGetDocument(IUndoObject iuo) => (iuo as UndoObject)?.Value as IDsDocument;
+		public static IDsDocument? TryGetDocument(IUndoObject iuo) => (iuo as UndoObject)?.Value as IDsDocument;
 	}
 }

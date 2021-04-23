@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -29,11 +29,11 @@ using System.Reflection;
 using System.Security;
 using System.Text;
 using dnlib.DotNet;
+using dnSpy.Console.Properties;
 using dnSpy.Contracts.Decompiler;
 using dnSpy.Contracts.Text;
 using dnSpy.Contracts.Utilities;
 using dnSpy.Decompiler.MSBuild;
-using dnSpy_Console.Properties;
 
 namespace dnSpy_Console {
 	[Serializable]
@@ -58,7 +58,7 @@ namespace dnSpy_Console {
 				return new DnSpyDecompiler().Run(args);
 			}
 			catch (Exception ex) {
-				Console.Error.WriteLine(string.Format("{0}", ex));
+				Console.Error.WriteLine(ex.ToString());
 				return 1;
 			}
 			finally {
@@ -67,7 +67,7 @@ namespace dnSpy_Console {
 		}
 	}
 
-	struct ConsoleColorPair {
+	readonly struct ConsoleColorPair {
 		public ConsoleColor? Foreground { get; }
 		public ConsoleColor? Background { get; }
 		public ConsoleColorPair(ConsoleColor? foreground, ConsoleColor? background) {
@@ -80,15 +80,14 @@ namespace dnSpy_Console {
 		readonly Dictionary<TextColor, ConsoleColorPair> colors = new Dictionary<TextColor, ConsoleColorPair>();
 
 		public void Add(TextColor color, ConsoleColor? foreground, ConsoleColor? background = null) {
-			if (foreground != null || background != null)
+			if (foreground is not null || background is not null)
 				colors[color] = new ConsoleColorPair(foreground, background);
 		}
 
 		public ConsoleColorPair? GetColor(TextColor? color) {
-			if (color == null)
+			if (color is null)
 				return null;
-			ConsoleColorPair ccPair;
-			return colors.TryGetValue(color.Value, out ccPair) ? ccPair : (ConsoleColorPair?)null;
+			return colors.TryGetValue(color.Value, out var ccPair) ? ccPair : (ConsoleColorPair?)null;
 		}
 	}
 
@@ -105,15 +104,9 @@ namespace dnSpy_Console {
 		bool IDecompilerOutput.UsesCustomData => false;
 
 		public ConsoleColorizerOutput(TextWriter writer, ColorProvider colorProvider, Indenter indenter) {
-			if (writer == null)
-				throw new ArgumentNullException(nameof(writer));
-			if (colorProvider == null)
-				throw new ArgumentNullException(nameof(colorProvider));
-			if (indenter == null)
-				throw new ArgumentNullException(nameof(indenter));
-			this.writer = writer;
-			this.colorProvider = colorProvider;
-			this.indenter = indenter;
+			this.writer = writer ?? throw new ArgumentNullException(nameof(writer));
+			this.colorProvider = colorProvider ?? throw new ArgumentNullException(nameof(colorProvider));
+			this.indenter = indenter ?? throw new ArgumentNullException(nameof(indenter));
 		}
 
 		void IDecompilerOutput.AddCustomData<TData>(string id, TData data) { }
@@ -141,10 +134,10 @@ namespace dnSpy_Console {
 			if (addIndent)
 				AddIndent();
 			var colorPair = colorProvider.GetColor(color as TextColor?);
-			if (colorPair != null) {
-				if (colorPair.Value.Foreground != null)
+			if (colorPair is not null) {
+				if (colorPair.Value.Foreground is not null)
 					Console.ForegroundColor = colorPair.Value.Foreground.Value;
-				if (colorPair.Value.Background != null)
+				if (colorPair.Value.Background is not null)
 					Console.BackgroundColor = colorPair.Value.Background.Value;
 				writer.Write(text);
 				Console.ResetColor();
@@ -164,9 +157,9 @@ namespace dnSpy_Console {
 
 		public void Write(string text, object color) => AddText(text, color);
 		public void Write(string text, int index, int length, object color) => AddText(text, index, length, color);
-		public void Write(string text, object reference, DecompilerReferenceFlags flags, object color) => AddText(text, color);
-		public void Write(string text, int index, int length, object reference, DecompilerReferenceFlags flags, object color) => AddText(text, index, length, color);
-		public override string ToString() => writer.ToString();
+		public void Write(string text, object? reference, DecompilerReferenceFlags flags, object color) => AddText(text, color);
+		public void Write(string text, int index, int length, object? reference, DecompilerReferenceFlags flags, object color) => AddText(text, index, length, color);
+		public override string ToString() => writer.ToString()!;
 		public void Dispose() => writer.Dispose();
 	}
 
@@ -183,9 +176,9 @@ namespace dnSpy_Console {
 		int numThreads;
 		int mdToken;
 		int spaces;
-		string typeName;
+		string? typeName;
 		ProjectVersion projectVersion = ProjectVersion.VS2010;
-		string outputDir;
+		string? outputDir;
 		string slnName = "solution.sln";
 		readonly List<string> files;
 		readonly List<string> asmPaths;
@@ -195,24 +188,31 @@ namespace dnSpy_Console {
 		readonly DecompilationContext decompilationContext;
 		readonly ModuleContext moduleContext;
 		readonly AssemblyResolver assemblyResolver;
-		readonly IBamlDecompiler bamlDecompiler;
+		readonly IBamlDecompiler? bamlDecompiler;
 		readonly HashSet<string> reservedOptions;
+#if NET
+		readonly dnSpy.MainApp.DotNetAssemblyLoader dotNetAssemblyLoader = new dnSpy.MainApp.DotNetAssemblyLoader(System.Runtime.Loader.AssemblyLoadContext.Default);
+#endif
 
 		static readonly char PATHS_SEP = Path.PathSeparator;
 
 		public DnSpyDecompiler() {
+#if NET
+			// This assembly is always in the bin sub dir if one exists
+			dotNetAssemblyLoader.AddSearchPath(Path.GetDirectoryName(typeof(ILSpan).Assembly.Location)!);
+#endif
 			files = new List<string>();
 			asmPaths = new List<string>();
 			userGacPaths = new List<string>();
 			gacFiles = new List<string>();
 			decompilationContext = new DecompilationContext();
-			moduleContext = ModuleDef.CreateModuleContext(false); // Same as dnSpy.exe
+			moduleContext = ModuleDef.CreateModuleContext(); // Same as dnSpy.exe
 			assemblyResolver = (AssemblyResolver)moduleContext.AssemblyResolver;
 			assemblyResolver.EnableFrameworkRedirect = false; // Same as dnSpy.exe
 			assemblyResolver.FindExactMatch = true; // Same as dnSpy.exe
 			assemblyResolver.EnableTypeDefCache = true;
 			bamlDecompiler = TryLoadBamlDecompiler();
-			decompileBaml = bamlDecompiler != null;
+			decompileBaml = bamlDecompiler is not null;
 			reservedOptions = GetReservedOptions();
 			colorizeOutput = !Console.IsOutputRedirected;
 
@@ -234,10 +234,10 @@ namespace dnSpy_Console {
 
 		static IEnumerable<IDecompiler> GetLanguagesInAssembly(string asmName) {
 			var asm = TryLoad(asmName);
-			if (asm != null) {
+			if (asm is not null) {
 				foreach (var type in asm.GetTypes()) {
 					if (!type.IsAbstract && !type.IsInterface && typeof(IDecompilerProvider).IsAssignableFrom(type)) {
-						var p = (IDecompilerProvider)Activator.CreateInstance(type);
+						var p = (IDecompilerProvider)Activator.CreateInstance(type)!;
 						foreach (var l in p.Create())
 							yield return l;
 					}
@@ -245,9 +245,9 @@ namespace dnSpy_Console {
 			}
 		}
 
-		static IBamlDecompiler TryLoadBamlDecompiler() => TryCreateType<IBamlDecompiler>("dnSpy.BamlDecompiler.x", "dnSpy.BamlDecompiler.BamlDecompiler");
+		static IBamlDecompiler? TryLoadBamlDecompiler() => TryCreateType<IBamlDecompiler>("dnSpy.BamlDecompiler.x", "dnSpy.BamlDecompiler.BamlDecompiler");
 
-		static Assembly TryLoad(string asmName) {
+		static Assembly? TryLoad(string asmName) {
 			try {
 				return Assembly.Load(asmName);
 			}
@@ -256,10 +256,10 @@ namespace dnSpy_Console {
 			return null;
 		}
 
-		static T TryCreateType<T>(string asmName, string typeFullName) {
+		static T? TryCreateType<T>(string asmName, string typeFullName) where T : class {
 			var asm = TryLoad(asmName);
 			var type = asm?.GetType(typeFullName);
-			return type == null ? default(T) : (T)Activator.CreateInstance(type);
+			return type is null ? default! : (T)Activator.CreateInstance(type)!;
 		}
 
 		public int Run(string[] args) {
@@ -267,7 +267,7 @@ namespace dnSpy_Console {
 				ParseCommandLine(args);
 				if (allLanguages.Length == 0)
 					throw new ErrorException(dnSpy_Console_Resources.NoLanguagesFound);
-				if (GetLanguage() == null)
+				if (GetLanguageOrNull() is null)
 					throw new ErrorException(string.Format(dnSpy_Console_Resources.LanguageXDoesNotExist, language));
 				Decompile();
 			}
@@ -290,7 +290,7 @@ namespace dnSpy_Console {
 			Console.WriteLine();
 			foreach (var info in usageInfos) {
 				var arg = info.Option;
-				if (info.OptionArgument != null)
+				if (info.OptionArgument is not null)
 					arg = arg + " " + info.OptionArgument;
 				Console.WriteLine("  {0,-12}   {1}", arg, string.Format(info.Description, PATHS_SEP));
 			}
@@ -320,11 +320,11 @@ namespace dnSpy_Console {
 			}
 		}
 
-		struct UsageInfo {
+		readonly struct UsageInfo {
 			public string Option { get; }
-			public string OptionArgument { get; }
+			public string? OptionArgument { get; }
 			public string Description { get; }
-			public UsageInfo(string option, string optionArgument, string description) {
+			public UsageInfo(string option, string? optionArgument, string description) {
 				Option = option;
 				OptionArgument = optionArgument;
 				Description = description;
@@ -343,7 +343,7 @@ namespace dnSpy_Console {
 			new UsageInfo("--no-baml", null, dnSpy_Console_Resources.CmdLineDescription_NoBAML),
 			new UsageInfo("--no-color", null, dnSpy_Console_Resources.CmdLineDescription_NoColor),
 			new UsageInfo("--spaces", "N", dnSpy_Console_Resources.CmdLineDescription_Spaces),
-			new UsageInfo("--vs", "N", string.Format(dnSpy_Console_Resources.CmdLineDescription_VSVersion, 2015)),
+			new UsageInfo("--vs", "N", string.Format(dnSpy_Console_Resources.CmdLineDescription_VSVersion, 2017)),
 			new UsageInfo("--project-guid", "N", dnSpy_Console_Resources.CmdLineDescription_ProjectGUID),
 			new UsageInfo("-t", dnSpy_Console_Resources.CmdLineName, dnSpy_Console_Resources.CmdLineDescription_Type1),
 			new UsageInfo("--type", dnSpy_Console_Resources.CmdLineName, dnSpy_Console_Resources.CmdLineDescription_Type2),
@@ -354,7 +354,7 @@ namespace dnSpy_Console {
 			new UsageInfo("-l", dnSpy_Console_Resources.CmdLineLanguage, dnSpy_Console_Resources.CmdLineDescription_Language),
 		};
 
-		struct HelpInfo {
+		readonly struct HelpInfo {
 			public string CommandLine { get; }
 			public string Description { get; }
 			public HelpInfo(string description, string commandLine) {
@@ -370,9 +370,9 @@ namespace dnSpy_Console {
 			new HelpInfo(dnSpy_Console_Resources.ExampleDescription5, @"-t system.int32 --gac-file ""mscorlib, Version=4.0.0.0"""),
 		};
 
-		string GetOptionName(IDecompilerOption opt, string extraPrefix = null) {
+		string GetOptionName(IDecompilerOption opt, string? extraPrefix = null) {
 			var prefix = "--" + extraPrefix;
-			var o = prefix + FixInvalidSwitchChars((opt.Name != null ? opt.Name : opt.Guid.ToString()));
+			var o = prefix + FixInvalidSwitchChars((opt.Name is not null ? opt.Name : opt.Guid.ToString()));
 			if (reservedOptions.Contains(o))
 				o = prefix + FixInvalidSwitchChars(opt.Guid.ToString());
 			return o;
@@ -384,8 +384,7 @@ namespace dnSpy_Console {
 			var list = new List<List<IDecompiler>>();
 			var dict = new Dictionary<object, List<IDecompiler>>();
 			foreach (var lang in AllLanguages) {
-				List<IDecompiler> opts;
-				if (!dict.TryGetValue(lang.Settings, out opts)) {
+				if (!dict.TryGetValue(lang.Settings, out var opts)) {
 					dict.Add(lang.Settings, opts = new List<IDecompiler>());
 					list.Add(opts);
 				}
@@ -394,8 +393,8 @@ namespace dnSpy_Console {
 			return list;
 		}
 
-		void Dump(Exception ex) {
-			while (ex != null) {
+		void Dump(Exception? ex) {
+			while (ex is not null) {
 				Console.WriteLine(dnSpy_Console_Resources.Error1, ex.GetType());
 				Console.WriteLine("  {0}", ex.Message);
 				Console.WriteLine("  {0}", ex.StackTrace);
@@ -452,10 +451,10 @@ namespace dnSpy_Console {
 				throw new ErrorException(dnSpy_Console_Resources.MissingOptions);
 
 			bool canParseCommands = true;
-			IDecompiler lang = null;
-			Dictionary<string, Tuple<IDecompilerOption, Action<string>>> langDict = null;
+			IDecompiler? lang = null;
+			Dictionary<string, (IDecompilerOption setOption, Action<string> setOptionValue)>? langDict = null;
 			for (int i = 0; i < args.Length; i++) {
-				if (lang == null) {
+				if (lang is null) {
 					lang = GetLanguage();
 					langDict = CreateDecompilerOptionsDictionary(lang);
 				}
@@ -469,7 +468,7 @@ namespace dnSpy_Console {
 				// **********************************************************************
 
 				if (canParseCommands && arg[0] == '-') {
-					string error;
+					string? error;
 					switch (arg) {
 					case "--":
 						canParseCommands = false;
@@ -482,7 +481,7 @@ namespace dnSpy_Console {
 
 					case "-o":
 					case "--output-dir":
-						if (next == null)
+						if (next is null)
 							throw new ErrorException(dnSpy_Console_Resources.MissingOutputDir);
 						outputDir = Path.GetFullPath(next);
 						i++;
@@ -490,25 +489,25 @@ namespace dnSpy_Console {
 
 					case "-l":
 					case "--lang":
-						if (next == null)
+						if (next is null)
 							throw new ErrorException(dnSpy_Console_Resources.MissingLanguageName);
 						language = next;
 						i++;
-						if (GetLanguage() == null)
+						if (GetLanguageOrNull() is null)
 							throw new ErrorException(string.Format(dnSpy_Console_Resources.LanguageDoesNotExist, language));
 						lang = null;
 						langDict = null;
 						break;
 
 					case "--asm-path":
-						if (next == null)
+						if (next is null)
 							throw new ErrorException(dnSpy_Console_Resources.MissingAsmSearchPath);
 						asmPaths.AddRange(next.Split(new char[] { PATHS_SEP }, StringSplitOptions.RemoveEmptyEntries));
 						i++;
 						break;
 
 					case "--user-gac":
-						if (next == null)
+						if (next is null)
 							throw new ErrorException(dnSpy_Console_Resources.MissingUserGacPath);
 						userGacPaths.AddRange(next.Split(new char[] { PATHS_SEP }, StringSplitOptions.RemoveEmptyEntries));
 						i++;
@@ -527,7 +526,7 @@ namespace dnSpy_Console {
 						break;
 
 					case "--sln-name":
-						if (next == null)
+						if (next is null)
 							throw new ErrorException(dnSpy_Console_Resources.MissingSolutionName);
 						slnName = next;
 						i++;
@@ -536,21 +535,21 @@ namespace dnSpy_Console {
 						break;
 
 					case "--threads":
-						if (next == null)
+						if (next is null)
 							throw new ErrorException(dnSpy_Console_Resources.MissingNumberOfThreads);
 						i++;
 						numThreads = SimpleTypeConverter.ParseInt32(next, int.MinValue, int.MaxValue, out error);
-						if (!string.IsNullOrEmpty(error))
+						if (!string2.IsNullOrEmpty(error))
 							throw new ErrorException(error);
 						break;
 
 					case "--vs":
-						if (next == null)
+						if (next is null)
 							throw new ErrorException(dnSpy_Console_Resources.MissingVSVersion);
 						i++;
 						int vsVer;
 						vsVer = SimpleTypeConverter.ParseInt32(next, int.MinValue, int.MaxValue, out error);
-						if (!string.IsNullOrEmpty(error))
+						if (!string2.IsNullOrEmpty(error))
 							throw new ErrorException(error);
 						switch (vsVer) {
 						case 2005: projectVersion = ProjectVersion.VS2005; break;
@@ -559,6 +558,8 @@ namespace dnSpy_Console {
 						case 2012: projectVersion = ProjectVersion.VS2012; break;
 						case 2013: projectVersion = ProjectVersion.VS2013; break;
 						case 2015: projectVersion = ProjectVersion.VS2015; break;
+						case 2017: projectVersion = ProjectVersion.VS2017; break;
+						case 2019: projectVersion = ProjectVersion.VS2019; break;
 						default: throw new ErrorException(string.Format(dnSpy_Console_Resources.InvalidVSVersion, vsVer));
 						}
 						break;
@@ -580,7 +581,7 @@ namespace dnSpy_Console {
 						break;
 
 					case "--spaces":
-						if (next == null)
+						if (next is null)
 							throw new ErrorException(dnSpy_Console_Resources.MissingArgument);
 						const int MIN_SPACES = 0, MAX_SPACES = 100;
 						if (!int.TryParse(next, out spaces) || spaces < MIN_SPACES || spaces > MAX_SPACES)
@@ -590,43 +591,44 @@ namespace dnSpy_Console {
 
 					case "-t":
 					case "--type":
-						if (next == null)
+						if (next is null)
 							throw new ErrorException(dnSpy_Console_Resources.MissingTypeName);
 						i++;
 						typeName = next;
 						break;
 
 					case "--md":
-						if (next == null)
+						if (next is null)
 							throw new ErrorException(dnSpy_Console_Resources.MissingMDToken);
 						i++;
 						mdToken = SimpleTypeConverter.ParseInt32(next, int.MinValue, int.MaxValue, out error);
-						if (!string.IsNullOrEmpty(error))
+						if (!string2.IsNullOrEmpty(error))
 							throw new ErrorException(error);
 						break;
 
 					case "--gac-file":
-						if (next == null)
+						if (next is null)
 							throw new ErrorException(dnSpy_Console_Resources.MissingGacFile);
 						i++;
 						gacFiles.Add(next);
 						break;
 
 					case "--project-guid":
-						if (next == null || !Guid.TryParse(next, out projectGuid))
+						if (next is null || !Guid.TryParse(next, out projectGuid))
 							throw new ErrorException(dnSpy_Console_Resources.InvalidGuid);
 						i++;
 						break;
 
 					default:
-						Tuple<IDecompilerOption, Action<string>> tuple;
+						(IDecompilerOption option, Action<string> setOptionValue) tuple;
+						Debug2.Assert(langDict is not null);
 						if (langDict.TryGetValue(arg, out tuple)) {
-							bool hasArg = tuple.Item1.Type != typeof(bool);
-							if (hasArg && next == null)
+							bool hasArg = tuple.option.Type != typeof(bool);
+							if (hasArg && next is null)
 								throw new ErrorException(dnSpy_Console_Resources.MissingOptionArgument);
 							if (hasArg)
 								i++;
-							tuple.Item2(next);
+							tuple.setOptionValue(next ?? string.Empty);
 							break;
 						}
 
@@ -639,32 +641,31 @@ namespace dnSpy_Console {
 		}
 
 		static int ParseInt32(string s) {
-			string error;
-			var v = SimpleTypeConverter.ParseInt32(s, int.MinValue, int.MaxValue, out error);
-			if (!string.IsNullOrEmpty(error))
+			var v = SimpleTypeConverter.ParseInt32(s, int.MinValue, int.MaxValue, out var error);
+			if (!string2.IsNullOrEmpty(error))
 				throw new ErrorException(error);
 			return v;
 		}
 
 		static string ParseString(string s) => s;
 
-		Dictionary<string, Tuple<IDecompilerOption, Action<string>>> CreateDecompilerOptionsDictionary(IDecompiler decompiler) {
-			var dict = new Dictionary<string, Tuple<IDecompilerOption, Action<string>>>();
+		Dictionary<string, (IDecompilerOption option, Action<string> setOptionValue)> CreateDecompilerOptionsDictionary(IDecompiler decompiler) {
+			var dict = new Dictionary<string, (IDecompilerOption, Action<string>)>();
 
-			if (decompiler == null)
+			if (decompiler is null)
 				return dict;
 
 			foreach (var tmp in decompiler.Settings.Options) {
 				var opt = tmp;
 				if (opt.Type == typeof(bool)) {
-					dict[GetOptionName(opt)] = Tuple.Create(opt, new Action<string>(a => opt.Value = true));
-					dict[GetOptionName(opt, BOOLEAN_NO_PREFIX)] = Tuple.Create(opt, new Action<string>(a => opt.Value = false));
-					dict[GetOptionName(opt, BOOLEAN_DONT_PREFIX)] = Tuple.Create(opt, new Action<string>(a => opt.Value = false));
+					dict[GetOptionName(opt)] = (opt, new Action<string?>(a => opt.Value = true));
+					dict[GetOptionName(opt, BOOLEAN_NO_PREFIX)] = (opt, new Action<string?>(a => opt.Value = false));
+					dict[GetOptionName(opt, BOOLEAN_DONT_PREFIX)] = (opt, new Action<string?>(a => opt.Value = false));
 				}
 				else if (opt.Type == typeof(int))
-					dict[GetOptionName(opt)] = Tuple.Create(opt, new Action<string>(a => opt.Value = ParseInt32(a)));
+					dict[GetOptionName(opt)] = (opt, new Action<string>(a => opt.Value = ParseInt32(a)));
 				else if (opt.Type == typeof(string))
-					dict[GetOptionName(opt)] = Tuple.Create(opt, new Action<string>(a => opt.Value = ParseString(a)));
+					dict[GetOptionName(opt)] = (opt, new Action<string>(a => opt.Value = ParseString(a)));
 				else
 					Debug.Fail($"Unsupported type: {opt.Type}");
 			}
@@ -694,19 +695,19 @@ namespace dnSpy_Console {
 			foreach (var file in files.OrderBy(a => a.Module.Location, StringComparer.InvariantCultureIgnoreCase))
 				file.ProjectGuid = new Guid(string.Format(guidFormat, guidNum++));
 
-			if (mdToken != 0 || typeName != null) {
+			if (mdToken != 0 || typeName is not null) {
 				if (files.Count == 0)
 					throw new ErrorException(dnSpy_Console_Resources.MissingDotNetFilename);
 				if (files.Count != 1)
 					throw new ErrorException(dnSpy_Console_Resources.OnlyOneFileCanBeDecompiled);
 
-				IMemberDef member;
-				if (typeName != null)
+				IMemberDef? member;
+				if (typeName is not null)
 					member = FindType(files[0].Module, typeName);
 				else
 					member = files[0].Module.ResolveToken(mdToken) as IMemberDef;
-				if (member == null) {
-					if (typeName != null)
+				if (member is null) {
+					if (typeName is not null)
 						throw new ErrorException(string.Format(dnSpy_Console_Resources.CouldNotFindTypeX, typeName));
 					throw new ErrorException(dnSpy_Console_Resources.InvalidToken);
 				}
@@ -733,11 +734,12 @@ namespace dnSpy_Console {
 					throw new ErrorException(dnSpy_Console_Resources.InvalidMemberToDecompile);
 			}
 			else {
-				if (string.IsNullOrEmpty(outputDir))
+				if (string2.IsNullOrEmpty(outputDir))
 					throw new ErrorException(dnSpy_Console_Resources.MissingOutputDir);
-				if (GetLanguage().ProjectFileExtension == null)
+				if (GetLanguage().ProjectFileExtension is null)
 					throw new ErrorException(string.Format(dnSpy_Console_Resources.LanguageXDoesNotSupportProjects, GetLanguage().UniqueNameUI));
 
+				decompilationContext.AsyncMethodBodyDecompilation = false;
 				var options = new ProjectCreatorOptions(outputDir, decompilationContext.CancellationToken);
 				options.Logger = this;
 				options.ProjectVersion = projectVersion;
@@ -758,22 +760,21 @@ namespace dnSpy_Console {
 			return new Indenter(spaces, spaces, false);
 		}
 
-		static TypeDef FindType(ModuleDef module, string name) {
-			return FindTypeFullName(module, name, StringComparer.Ordinal) ??
-				FindTypeFullName(module, name, StringComparer.OrdinalIgnoreCase) ??
-				FindTypeName(module, name, StringComparer.Ordinal) ??
-				FindTypeName(module, name, StringComparer.OrdinalIgnoreCase);
-		}
+		static TypeDef? FindType(ModuleDef module, string name) =>
+			FindTypeFullName(module, name, StringComparer.Ordinal) ??
+			FindTypeFullName(module, name, StringComparer.OrdinalIgnoreCase) ??
+			FindTypeName(module, name, StringComparer.Ordinal) ??
+			FindTypeName(module, name, StringComparer.OrdinalIgnoreCase);
 
-		static TypeDef FindTypeFullName(ModuleDef module, string name, StringComparer comparer) {
+		static TypeDef? FindTypeFullName(ModuleDef module, string name, StringComparer comparer) {
 			var sb = new StringBuilder();
 			return module.GetTypes().FirstOrDefault(a => {
 				sb.Clear();
 				string s1, s2;
-				if (comparer.Equals(s1 = FullNameCreator.FullName(a, false, null, sb), name))
+				if (comparer.Equals(s1 = FullNameFactory.FullName(a, false, null, sb), name))
 					return true;
 				sb.Clear();
-				if (comparer.Equals(s2 = FullNameCreator.FullName(a, true, null, sb), name))
+				if (comparer.Equals(s2 = FullNameFactory.FullName(a, true, null, sb), name))
 					return true;
 				sb.Clear();
 				if (comparer.Equals(CleanTypeName(s1), name))
@@ -783,15 +784,15 @@ namespace dnSpy_Console {
 			});
 		}
 
-		static TypeDef FindTypeName(ModuleDef module, string name, StringComparer comparer) {
+		static TypeDef? FindTypeName(ModuleDef module, string name, StringComparer comparer) {
 			var sb = new StringBuilder();
 			return module.GetTypes().FirstOrDefault(a => {
 				sb.Clear();
 				string s1, s2;
-				if (comparer.Equals(s1 = FullNameCreator.Name(a, false, sb), name))
+				if (comparer.Equals(s1 = FullNameFactory.Name(a, false, sb), name))
 					return true;
 				sb.Clear();
-				if (comparer.Equals(s2 = FullNameCreator.Name(a, true, sb), name))
+				if (comparer.Equals(s2 = FullNameFactory.Name(a, true, sb), name))
 					return true;
 				sb.Clear();
 				if (comparer.Equals(CleanTypeName(s1), name))
@@ -812,7 +813,7 @@ namespace dnSpy_Console {
 			foreach (var file in files) {
 				if (File.Exists(file)) {
 					var info = OpenNetFile(file);
-					if (info == null)
+					if (info is null)
 						throw new Exception(string.Format(dnSpy_Console_Resources.NotDotNetFile, file));
 					yield return info;
 				}
@@ -824,6 +825,7 @@ namespace dnSpy_Console {
 					var path = Path.GetDirectoryName(file);
 					var name = Path.GetFileName(file);
 					if (Directory.Exists(path)) {
+						Debug2.Assert(path is not null);
 						foreach (var info in DumpDir(path, name))
 							yield return info;
 					}
@@ -838,15 +840,15 @@ namespace dnSpy_Console {
 			assemblyResolver.FindExactMatch = false;
 			foreach (var asmName in gacFiles) {
 				var asm = assemblyResolver.Resolve(new AssemblyNameInfo(asmName), null);
-				if (asm == null)
+				if (asm is null)
 					throw new ErrorException(string.Format(dnSpy_Console_Resources.CouldNotResolveGacFileX, asmName));
 				yield return CreateProjectModuleOptions(asm.ManifestModule);
 			}
 			assemblyResolver.FindExactMatch = oldFindExactMatch;
 		}
 
-		IEnumerable<ProjectModuleOptions> DumpDir(string path, string pattern) {
-			pattern = pattern ?? "*";
+		IEnumerable<ProjectModuleOptions> DumpDir(string path, string? pattern) {
+			pattern ??= "*";
 			Stack<string> stack = new Stack<string>();
 			stack.Push(path);
 			while (stack.Count > 0) {
@@ -861,7 +863,7 @@ namespace dnSpy_Console {
 		}
 
 		IEnumerable<DirectoryInfo> GetDirs(string path) {
-			IEnumerable<FileSystemInfo> fsysIter = null;
+			IEnumerable<FileSystemInfo>? fsysIter = null;
 			try {
 				fsysIter = new DirectoryInfo(path).EnumerateFileSystemInfos("*", SearchOption.TopDirectoryOnly);
 			}
@@ -871,13 +873,13 @@ namespace dnSpy_Console {
 			}
 			catch (SecurityException) {
 			}
-			if (fsysIter == null)
+			if (fsysIter is null)
 				yield break;
 
 			foreach (var info in fsysIter) {
 				if ((info.Attributes & System.IO.FileAttributes.Directory) == 0)
 					continue;
-				DirectoryInfo di = null;
+				DirectoryInfo? di = null;
 				try {
 					di = new DirectoryInfo(info.FullName);
 				}
@@ -887,22 +889,22 @@ namespace dnSpy_Console {
 				}
 				catch (SecurityException) {
 				}
-				if (di != null)
+				if (di is not null)
 					yield return di;
 			}
 		}
 
 		IEnumerable<ProjectModuleOptions> DumpDir2(string path, string pattern) {
-			pattern = pattern ?? "*";
+			pattern ??= "*";
 			foreach (var fi in GetFiles(path, pattern)) {
 				var info = OpenNetFile(fi.FullName);
-				if (info != null)
+				if (info is not null)
 					yield return info;
 			}
 		}
 
 		IEnumerable<FileInfo> GetFiles(string path, string pattern) {
-			IEnumerable<FileSystemInfo> fsysIter = null;
+			IEnumerable<FileSystemInfo>? fsysIter = null;
 			try {
 				fsysIter = new DirectoryInfo(path).EnumerateFileSystemInfos(pattern, SearchOption.TopDirectoryOnly);
 			}
@@ -912,13 +914,13 @@ namespace dnSpy_Console {
 			}
 			catch (SecurityException) {
 			}
-			if (fsysIter == null)
+			if (fsysIter is null)
 				yield break;
 
 			foreach (var info in fsysIter) {
 				if ((info.Attributes & System.IO.FileAttributes.Directory) != 0)
 					continue;
-				FileInfo fi = null;
+				FileInfo? fi = null;
 				try {
 					fi = new FileInfo(info.FullName);
 				}
@@ -928,12 +930,12 @@ namespace dnSpy_Console {
 				}
 				catch (SecurityException) {
 				}
-				if (fi != null)
+				if (fi is not null)
 					yield return fi;
 			}
 		}
 
-		ProjectModuleOptions OpenNetFile(string file) {
+		ProjectModuleOptions? OpenNetFile(string file) {
 			try {
 				file = Path.GetFullPath(file);
 				if (!File.Exists(file))
@@ -947,27 +949,27 @@ namespace dnSpy_Console {
 
 		ProjectModuleOptions CreateProjectModuleOptions(ModuleDef mod) {
 			mod.EnableTypeDefFindCache = true;
-			moduleContext.AssemblyResolver.AddToCache(mod);
-			AddSearchPath(Path.GetDirectoryName(mod.Location));
+			((AssemblyResolver)moduleContext.AssemblyResolver).AddToCache(mod);
+			AddSearchPath(Path.GetDirectoryName(mod.Location)!);
 			var proj = new ProjectModuleOptions(mod, GetLanguage(), decompilationContext);
 			proj.DontReferenceStdLib = !addCorlibRef;
 			proj.UnpackResources = unpackResources;
 			proj.CreateResX = createResX;
-			proj.DecompileXaml = decompileBaml && bamlDecompiler != null;
+			proj.DecompileXaml = decompileBaml && bamlDecompiler is not null;
 			var o = BamlDecompilerOptions.Create(GetLanguage());
 			var outputOptions = new XamlOutputOptions {
 				IndentChars = "\t",
 				NewLineChars = Environment.NewLine,
 				NewLineOnAttributes = true,
 			};
-			if (bamlDecompiler != null)
+			if (bamlDecompiler is not null)
 				proj.DecompileBaml = (a, b, c, d) => bamlDecompiler.Decompile(a, b, c, o, d, outputOptions);
 			return proj;
 		}
 
-		IDecompiler GetLanguage() {
-			Guid guid;
-			bool hasGuid = Guid.TryParse(language, out guid);
+		IDecompiler GetLanguage() => GetLanguageOrNull() ?? throw new InvalidOperationException();
+		IDecompiler? GetLanguageOrNull() {
+			bool hasGuid = Guid.TryParse(language, out var guid);
 			return AllLanguages.FirstOrDefault(a => {
 				if (StringComparer.OrdinalIgnoreCase.Equals(language, a.UniqueNameUI))
 					return true;

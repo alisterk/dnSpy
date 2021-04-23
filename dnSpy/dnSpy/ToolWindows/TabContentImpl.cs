@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -36,21 +36,21 @@ namespace dnSpy.ToolWindows {
 		bool IFocusable.CanFocus {
 			get {
 				var focusable = Content as IFocusable;
-				return focusable != null && focusable.CanFocus;
+				return focusable is not null && focusable.CanFocus;
 			}
 		}
 
 		void IFocusable.Focus() {
 			var focusable = Content as IFocusable;
-			Debug.Assert(focusable != null);
-			if (focusable != null)
+			Debug2.Assert(focusable is not null);
+			if (focusable is not null)
 				focusable.Focus();
 		}
 
-		public IInputElement FocusedElement => Content.FocusedElement ?? Content.UIObject as IInputElement;
+		public IInputElement? FocusedElement => Content.FocusedElement ?? Content.UIObject as IInputElement;
 
 		public bool IsActive {
-			get { return isActive; }
+			get => isActive;
 			set {
 				if (isActive != value) {
 					isActive = value;
@@ -60,21 +60,20 @@ namespace dnSpy.ToolWindows {
 		}
 		bool isActive;
 
-		public string Title => Content.Title;
+		public string? Title => Content.Title;
 
-		public object ToolTip => Content.ToolTip;
+		public object? ToolTip => Content.ToolTip;
 
-		public object UIObject {
+		public object? UIObject {
 			get {
-				if (contentPresenter == null) {
+				if (contentPresenter is null) {
 					contentPresenter = new ContentPresenter { Content = this };
 					contentPresenter.MouseDown += (s, e) => {
-						if (!e.Handled && Owner != null) {
+						if (!e.Handled && Owner is not null) {
 							Owner.SetFocus(this);
 							e.Handled = true;
 						}
 					};
-					UpdateZoomElement();
 					contentPresenter.InputBindings.Add(new KeyBinding(CloseCommand, Key.Escape, ModifierKeys.Shift));
 					// Needed if the content already has keyboard focus, eg. happens when moving
 					// the tool window from one side to the other.
@@ -83,12 +82,12 @@ namespace dnSpy.ToolWindows {
 				return contentPresenter;
 			}
 		}
-		ContentPresenter contentPresenter;
+		ContentPresenter? contentPresenter;
 
 		void UpdateZoomElement() => elementZoomer.InstallZoom(Content, Content.ZoomElement);
 
-		void ContentPresenter_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e) {
-			var cp = (ContentPresenter)sender;
+		void ContentPresenter_IsVisibleChanged(object? sender, DependencyPropertyChangedEventArgs e) {
+			var cp = (ContentPresenter)sender!;
 			cp.IsVisibleChanged -= ContentPresenter_IsVisibleChanged;
 
 			if ((bool)e.NewValue)
@@ -97,14 +96,14 @@ namespace dnSpy.ToolWindows {
 
 		bool IsKeyboardFocusWithin {
 			get {
-				if (contentPresenter.IsKeyboardFocusWithin)
+				if (contentPresenter?.IsKeyboardFocusWithin == true)
 					return true;
 				var f = ContentUIObject as IInputElement;
-				return f != null && f.IsKeyboardFocusWithin;
+				return f is not null && f.IsKeyboardFocusWithin;
 			}
 		}
 
-		public object ContentUIObject {
+		public object? ContentUIObject {
 			get {
 				if (!contentUIObject_initd) {
 					contentUIObject_initd = true;
@@ -120,20 +119,20 @@ namespace dnSpy.ToolWindows {
 				}
 			}
 		}
-		object contentUIObject;
+		object? contentUIObject;
 		bool contentUIObject_initd;
 
-		public event PropertyChangedEventHandler PropertyChanged;
+		public event PropertyChangedEventHandler? PropertyChanged;
 		public ToolWindowContent Content { get; }
 
-		public ToolWindowGroup Owner {
+		public ToolWindowGroup? Owner {
 			get {
-				Debug.Assert(owner != null);
+				Debug2.Assert(owner is not null);
 				return owner;
 			}
-			set { owner = value; }
+			set => owner = value;
 		}
-		ToolWindowGroup owner;
+		ToolWindowGroup? owner;
 
 		readonly TabElementZoomer elementZoomer;
 
@@ -149,7 +148,7 @@ namespace dnSpy.ToolWindows {
 
 		public void OnVisibilityChanged(TabContentVisibilityEvent visEvent) {
 			var ev = Convert(visEvent);
-			if (ev != null) {
+			if (ev is not null) {
 #if DEBUG
 				switch (ev) {
 				case ToolWindowContentVisibilityEvent.Added:
@@ -183,10 +182,21 @@ namespace dnSpy.ToolWindows {
 			}
 
 			switch (visEvent) {
+			case TabContentVisibilityEvent.Added:
+				installZoom = true;
+				break;
+
+			case TabContentVisibilityEvent.Visible:
+				if (installZoom) {
+					installZoom = false;
+					UpdateZoomElement();
+				}
+				break;
+
 			case TabContentVisibilityEvent.Removed:
 				elementZoomer.Dispose();
 				RemoveEvents();
-				if (contentPresenter != null)
+				if (contentPresenter is not null)
 					contentPresenter.Content = null;
 				contentPresenter = null;
 				OnPropertyChanged(nameof(UIObject));
@@ -205,6 +215,7 @@ namespace dnSpy.ToolWindows {
 #if DEBUG
 		bool _added, _visible;
 #endif
+		bool installZoom;
 
 		static ToolWindowContentVisibilityEvent? Convert(TabContentVisibilityEvent ev) {
 			switch (ev) {
@@ -215,7 +226,7 @@ namespace dnSpy.ToolWindows {
 			case TabContentVisibilityEvent.GotKeyboardFocus:	return ToolWindowContentVisibilityEvent.GotKeyboardFocus;
 			case TabContentVisibilityEvent.LostKeyboardFocus:	return ToolWindowContentVisibilityEvent.LostKeyboardFocus;
 			default:
-				Debug.Fail(string.Format("Unknown event: {0}", ev));
+				Debug.Fail($"Unknown event: {ev}");
 				return null;
 			}
 		}
@@ -223,18 +234,16 @@ namespace dnSpy.ToolWindows {
 		void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
 		void AddEvents() {
-			var npc = Content as INotifyPropertyChanged;
-			if (npc != null)
+			if (Content is INotifyPropertyChanged npc)
 				npc.PropertyChanged += ToolWindowContent_PropertyChanged;
 		}
 
 		void RemoveEvents() {
-			var npc = Content as INotifyPropertyChanged;
-			if (npc != null)
+			if (Content is INotifyPropertyChanged npc)
 				npc.PropertyChanged -= ToolWindowContent_PropertyChanged;
 		}
 
-		void ToolWindowContent_PropertyChanged(object sender, PropertyChangedEventArgs e) {
+		void ToolWindowContent_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
 			if (e.PropertyName == nameof(ToolWindowContent.Title))
 				OnPropertyChanged(nameof(Title));
 			else if (e.PropertyName == nameof(ToolWindowContent.ToolTip))
@@ -250,19 +259,19 @@ namespace dnSpy.ToolWindows {
 		void Close() {
 			if (!CanClose)
 				return;
-			if (Owner != null)
+			if (Owner is not null)
 				Owner.Close(this);
 		}
 
 		bool CanShowWindowPositionMenu => true;
 
-		void ShowWindowPositionMenu(object uiObj) {
+		void ShowWindowPositionMenu(object? uiObj) {
 			var fe = uiObj as FrameworkElement;
-			Debug.Assert(fe != null);
-			if (fe == null)
+			Debug2.Assert(fe is not null);
+			if (fe is null)
 				return;
 
-			Owner.SetFocus(this);
+			Owner!.SetFocus(this);
 			Owner.TabGroup.ContextMenuProvider.Show(fe);
 		}
 	}

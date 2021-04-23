@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -49,7 +49,7 @@ namespace dnSpy.Text.Editor {
 			this.textFormatterProvider = textFormatterProvider;
 		}
 
-		public IWpfTextViewMargin CreateMargin(IWpfTextViewHost wpfTextViewHost, IWpfTextViewMargin marginContainer) =>
+		public IWpfTextViewMargin? CreateMargin(IWpfTextViewHost wpfTextViewHost, IWpfTextViewMargin marginContainer) =>
 			new SpacerMargin(wpfTextViewHost);
 	}
 
@@ -62,9 +62,7 @@ namespace dnSpy.Text.Editor {
 		readonly IWpfTextViewHost wpfTextViewHost;
 
 		public SpacerMargin(IWpfTextViewHost wpfTextViewHost) {
-			if (wpfTextViewHost == null)
-				throw new ArgumentNullException(nameof(wpfTextViewHost));
-			this.wpfTextViewHost = wpfTextViewHost;
+			this.wpfTextViewHost = wpfTextViewHost ?? throw new ArgumentNullException(nameof(wpfTextViewHost));
 			wpfTextViewHost.TextView.Options.OptionChanged += Options_OptionChanged;
 			Width = SELECTION_MARGIN_WIDTH;
 			ClipToBounds = true;
@@ -74,10 +72,10 @@ namespace dnSpy.Text.Editor {
 
 		void UpdateVisibility() => Visibility = Enabled ? Visibility.Visible : Visibility.Collapsed;
 
-		public ITextViewMargin GetTextViewMargin(string marginName) =>
+		public ITextViewMargin? GetTextViewMargin(string marginName) =>
 			StringComparer.OrdinalIgnoreCase.Equals(marginName, PredefinedMarginNames.Spacer) ? this : null;
 
-		void Options_OptionChanged(object sender, EditorOptionChangedEventArgs e) {
+		void Options_OptionChanged(object? sender, EditorOptionChangedEventArgs e) {
 			if (e.OptionId == DefaultTextViewHostOptions.SelectionMarginName)
 				UpdateVisibility();
 		}

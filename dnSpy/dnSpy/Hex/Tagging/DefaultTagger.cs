@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -52,27 +52,21 @@ namespace dnSpy.Hex.Tagging {
 		readonly HexClassificationTags hexClassificationTags;
 
 		[ImportingConstructor]
-		DefaultTaggerProvider(HexClassificationTags hexClassificationTags) {
-			this.hexClassificationTags = hexClassificationTags;
-		}
+		DefaultTaggerProvider(HexClassificationTags hexClassificationTags) => this.hexClassificationTags = hexClassificationTags;
 
-		public override IHexTagger<T> CreateTagger<T>(HexBuffer buffer) =>
+		public override IHexTagger<T>? CreateTagger<T>(HexBuffer buffer) =>
 			new DefaultTagger(hexClassificationTags) as IHexTagger<T>;
 	}
 
 	sealed class DefaultTagger : HexTagger<HexClassificationTag> {
-		public override event EventHandler<HexBufferSpanEventArgs> TagsChanged {
+		public override event EventHandler<HexBufferSpanEventArgs>? TagsChanged {
 			add { }
 			remove { }
 		}
 
 		readonly HexClassificationTags hexClassificationTags;
 
-		public DefaultTagger(HexClassificationTags hexClassificationTags) {
-			if (hexClassificationTags == null)
-				throw new ArgumentNullException(nameof(hexClassificationTags));
-			this.hexClassificationTags = hexClassificationTags;
-		}
+		public DefaultTagger(HexClassificationTags hexClassificationTags) => this.hexClassificationTags = hexClassificationTags ?? throw new ArgumentNullException(nameof(hexClassificationTags));
 
 		static bool IsValid(HexCell cell, HexBufferLine line) {
 			long len = checked((long)cell.BufferSpan.Length.ToUInt64());
@@ -123,7 +117,7 @@ namespace dnSpy.Hex.Tagging {
 			}
 
 			var allValid = context.Line.HexBytes.AllValid;
-			if (allValid == null) {
+			if (allValid is null) {
 				foreach (var cell in context.Line.ValueCells.GetVisibleCells()) {
 					if (!IsValid(cell, context.Line))
 						yield return new HexTextTagSpan<HexClassificationTag>(cell.FullSpan, hexClassificationTags.HexErrorTag);

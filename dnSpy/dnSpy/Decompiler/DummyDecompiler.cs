@@ -1,5 +1,5 @@
-﻿/*
-    Copyright (C) 2014-2016 de4dot@gmail.com
+/*
+    Copyright (C) 2014-2019 de4dot@gmail.com
 
     This file is part of dnSpy
 
@@ -36,18 +36,18 @@ namespace dnSpy.Decompiler {
 
 		sealed class DummySettings : DecompilerSettingsBase {
 			public override DecompilerSettingsBase Clone() => new DummySettings();
+			public override int Version => 0;
+			public override event EventHandler? VersionChanged { add { } remove { } }
 
 			public override IEnumerable<IDecompilerOption> Options {
 				get { yield break; }
 			}
 
-			protected override bool EqualsCore(object obj) => obj is DummySettings;
-			protected override int GetHashCodeCore() => 0;
+			public override bool Equals(object? obj) => obj is DummySettings;
+			public override int GetHashCode() => 0;
 		}
 
-		public DummyDecompiler() {
-			Settings = new DummySettings();
-		}
+		public DummyDecompiler() => Settings = new DummySettings();
 
 		public override void Decompile(MethodDef method, IDecompilerOutput output, DecompilationContext ctx) => WriteError(output);
 		public override void Decompile(PropertyDef property, IDecompilerOutput output, DecompilationContext ctx) => WriteError(output);
